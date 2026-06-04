@@ -11,8 +11,8 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
     "@clerk/nextjs": "^6.9.6",
+    "openai": "^4.77.0",
     "@prisma/client": "^6.1.0",
     "@stripe/stripe-js": "^5.4.0",
     "clsx": "^2.1.1",

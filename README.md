@@ -11,7 +11,7 @@ Plataforma SaaS Next.js 14+ (App Router) com Clerk, Stripe, Prisma + Postgres e 
 - **Tailwind CSS** com design system "terminal institucional" (charcoal + electric emerald + warm amber)
 - **Clerk** — autenticação e proteção de rotas
 - **Stripe** — assinatura mensal (com modo mock para MVP, `STRIPE_MOCK=true`)
-- **Anthropic SDK** — Claude com visão (modelo configurável via `ANTHROPIC_MODEL`)
+- **OpenAI SDK** — GPT-4o com visão (modelo configurável via `OPENAI_MODEL`)
 - **Prisma + PostgreSQL** — usuários e histórico de análises
 
 ## Estrutura

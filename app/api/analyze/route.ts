@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { requireActiveSubscription } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 
@@ -50,13 +50,6 @@ function cleanJson(raw: string): string {
   return s.trim();
 }
 
-function detectMediaType(dataUrl: string): "image/png" | "image/jpeg" | "image/webp" | "image/gif" {
-  const m = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,/i);
-  if (!m) return "image/png";
-  const mt = m[1].toLowerCase().replace("image/jpg", "image/jpeg");
-  return mt as "image/png" | "image/jpeg" | "image/webp" | "image/gif";
-}
-
 export async function POST(req: Request) {
   const sub = await requireActiveSubscription();
   if (!sub.ok) {
@@ -80,45 +73,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Modo inválido" }, { status: 400 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY não configurada" },
+      { error: "OPENAI_API_KEY não configurada" },
       { status: 500 },
     );
   }
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o";
 
-  const isDataUrl = image.startsWith("data:");
-  const base64 = isDataUrl ? image.replace(/^data:[^;]+;base64,/, "") : image;
-  const mediaType = isDataUrl ? detectMediaType(image) : "image/png";
+  const imageUrl = image.startsWith("data:")
+    ? image
+    : `data:image/png;base64,${image}`;
 
   try {
-    const completion = await anthropic.messages.create({
+    const completion = await openai.chat.completions.create({
       model,
-      max_tokens: 1500,
       temperature: 0.1,
-      system: SYSTEM_PROMPT(mode),
+      max_tokens: 1500,
+      response_format: { type: "json_object" },
       messages: [
+        { role: "system", content: SYSTEM_PROMPT(mode) },
         {
           role: "user",
           content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: mediaType, data: base64 },
-            },
-            {
-              type: "text",
-              text: `Modo: ${mode}. Retorne APENAS o JSON, sem texto fora dele.`,
-            },
+            { type: "text", text: `Modo: ${mode}. Retorne APENAS o JSON, sem texto fora dele.` },
+            { type: "image_url", image_url: { url: imageUrl, detail: "high" } },
           ],
         },
       ],
     });
 
-    const textBlock = completion.content.find((c) => c.type === "text");
-    const raw = textBlock && textBlock.type === "text" ? textBlock.text : "";
+    const raw = completion.choices[0]?.message?.content ?? "";
     const cleaned = cleanJson(raw);
 
     let parsed: Record<string, unknown>;
