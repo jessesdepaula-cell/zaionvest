@@ -87,7 +87,7 @@ export default async function Mt5Page() {
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-zinc-400">
             <li>No MT5 abra <span className="num text-zinc-200">Arquivo → Abrir Pasta de Dados</span>.</li>
             <li>Cole o arquivo em <span className="num text-zinc-200">MQL5/Experts/</span>.</li>
-            <li>No MT5 abra <span className="num text-zinc-200">Ferramentas → Opções → Expert Advisors</span> e marque <span className="num text-zinc-200">Permitir WebRequest para os endereços</span>. Adicione: <span className="num text-emerald-300">https://trade-vision-ai.vercel.app</span></li>
+            <li>No MT5 abra <span className="num text-zinc-200">Ferramentas → Opções → Expert Advisors</span> e marque <span className="num text-zinc-200">Permitir WebRequest para os endereços</span>. Adicione: <span className="num text-emerald-300">https://tradevision-app.vercel.app</span></li>
             <li>Reinicie o MT5. No Navegador, arraste <span className="num text-zinc-200">TradeVisionBridge</span> para qualquer gráfico.</li>
             <li>Na janela do EA, cole seu <span className="num text-zinc-200">ApiToken</span> (botão copiar acima) e clique OK.</li>
             <li>Ative o botão <span className="num text-zinc-200">AutoTrading</span> na barra superior.</li>

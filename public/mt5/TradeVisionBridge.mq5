@@ -9,7 +9,7 @@
 
 #include <Trade\Trade.mqh>
 
-input string  ApiBaseUrl = "https://trade-vision-ai.vercel.app";
+input string  ApiBaseUrl = "https://tradevision-app.vercel.app";
 input string  ApiToken   = "";        // cole o token gerado em /dashboard/mt5
 input int     PollSeconds = 3;        // frequência de polling
 input double  RiskVolume  = 0.01;     // volume padrão se a ordem não definir
