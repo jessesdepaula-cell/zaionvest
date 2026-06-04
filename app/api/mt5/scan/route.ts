@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       tipoSetup: result.tipo_setup ?? null,
       checklistSmc: result.checklist_smc ? (result.checklist_smc as object) : undefined,
       status: result.hasSetup ? "PENDING" : "NO_SETUP",
-      candleData: candles.slice(-40) as object,
+      candleData: candles.slice(-80) as object,
     },
   });
 

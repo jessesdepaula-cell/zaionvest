@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Clock, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { SmcChecklist } from "./SmcChecklist";
+import { SignalChart, type ChartCandle } from "./SignalChart";
 
 export type SignalData = {
   id: string;
@@ -28,7 +29,7 @@ export type SignalData = {
   scannedAt: string;
   filledAt: string | null;
   closedAt: string | null;
-  candleData: { o: number; h: number; l: number; c: number }[] | null;
+  candleData: ChartCandle[] | null;
   tipoSetup: string | null;
   checklistSmc: Record<string, boolean> | null;
 };
@@ -78,7 +79,27 @@ export function SignalCard({ signal: s }: { signal: SignalData }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-[1fr_220px]">
+      {/* Gráfico de candles ao topo */}
+      {s.candleData && s.candleData.length > 0 && (
+        <div className="border-b border-white/5 p-4">
+          <SignalChart
+            candles={s.candleData}
+            symbol={s.symbol}
+            isBuy={!!isBuy}
+            entry={s.entryPrice}
+            stop={s.stopPrice}
+            target={target}
+            targets={[s.target1, s.target2, s.target3]}
+            recommendedTarget={s.recommendedTarget}
+            status={s.status}
+            exitPrice={s.exitPrice}
+            rMultiple={s.rMultiple}
+            scannedAt={s.scannedAt}
+          />
+        </div>
+      )}
+
+      <div className="p-4">
         <div className="space-y-3">
           {/* Sinal e probabilidade */}
           <div className="flex items-center justify-between gap-3">
@@ -178,16 +199,6 @@ export function SignalCard({ signal: s }: { signal: SignalData }) {
           )}
         </div>
 
-        {/* Sparkline */}
-        {s.candleData && s.candleData.length > 0 && (
-          <Sparkline
-            candles={s.candleData}
-            entry={s.entryPrice}
-            stop={s.stopPrice}
-            target={target}
-            isBuy={!!isBuy}
-          />
-        )}
       </div>
     </div>
   );
@@ -231,84 +242,6 @@ function PriceBox({
       </p>
       {extra && <p className="num mt-0.5 text-[10px] text-zinc-500">{extra}</p>}
     </div>
-  );
-}
-
-function Sparkline({
-  candles,
-  entry,
-  stop,
-  target,
-  isBuy,
-}: {
-  candles: { o: number; h: number; l: number; c: number }[];
-  entry: number | null;
-  stop: number | null;
-  target: number | null;
-  isBuy: boolean;
-}) {
-  if (!candles.length) return null;
-  const allVals = candles.flatMap((c) => [c.h, c.l]);
-  if (entry !== null) allVals.push(entry);
-  if (stop !== null) allVals.push(stop);
-  if (target !== null) allVals.push(target);
-  const min = Math.min(...allVals);
-  const max = Math.max(...allVals);
-  const W = 220;
-  const H = 140;
-  const padX = 4;
-  const padY = 8;
-  const yScale = (v: number) =>
-    padY + ((max - v) / Math.max(0.0001, max - min)) * (H - padY * 2);
-  const candleW = (W - padX * 2) / candles.length;
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="block h-[140px] w-full">
-      {[entry, stop, target].map((v, i) => {
-        if (v === null) return null;
-        const color = i === 0 ? "#10B981" : i === 1 ? "#F43F5E" : "#10B981";
-        return (
-          <g key={i}>
-            <line
-              x1={0}
-              y1={yScale(v)}
-              x2={W}
-              y2={yScale(v)}
-              stroke={color}
-              strokeWidth="0.7"
-              strokeDasharray="2 3"
-              opacity="0.7"
-            />
-          </g>
-        );
-      })}
-      {candles.map((c, i) => {
-        const x = padX + i * candleW + candleW / 2;
-        const isUp = c.c >= c.o;
-        const color = isUp ? "#10B981" : "#F43F5E";
-        return (
-          <g key={i}>
-            <line
-              x1={x}
-              y1={yScale(c.h)}
-              x2={x}
-              y2={yScale(c.l)}
-              stroke={color}
-              strokeWidth="0.7"
-              opacity="0.7"
-            />
-            <rect
-              x={x - candleW / 3}
-              y={yScale(Math.max(c.o, c.c))}
-              width={(candleW / 3) * 2}
-              height={Math.max(1, Math.abs(yScale(c.c) - yScale(c.o)))}
-              fill={color}
-              opacity="0.85"
-            />
-          </g>
-        );
-      })}
-    </svg>
   );
 }
 
