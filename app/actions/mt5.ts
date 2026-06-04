@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { getOrCreateUser } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
+import { seedWatchlist } from "./watchlist";
 
 function newToken(): string {
   return "tvai_" + randomBytes(24).toString("base64url");
@@ -13,9 +14,11 @@ export async function createMt5Account(formData: FormData) {
   const user = await getOrCreateUser();
   if (!user) throw new Error("Não autenticado");
   const label = String(formData.get("label") ?? "").trim() || "Conta MT5";
-  await prisma.mT5Account.create({
+  const account = await prisma.mT5Account.create({
     data: { userId: user.id, label, apiToken: newToken() },
   });
+  // semeia watchlist com EURUSD, USDJPY, GBPUSD, XAUUSD em SMC e Clássico
+  await seedWatchlist(account.id);
   revalidatePath("/dashboard/mt5");
 }
 

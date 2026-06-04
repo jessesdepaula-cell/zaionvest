@@ -13,7 +13,7 @@ model User {
   clerkId            String    @unique
   email              String    @unique
   name               String?
-  subscriptionStatus String    @default("inactive") // "active" | "inactive" | "trialing" | "past_due" | "canceled"
+  subscriptionStatus String    @default("inactive")
   stripeCustomerId   String?   @unique
   stripeSubId        String?   @unique
   currentPeriodEnd   DateTime?
@@ -28,9 +28,9 @@ model Analysis {
   id            String   @id @default(cuid())
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mode          String   // "CLASSICO" | "SMC"
+  mode          String
   imageUrl      String?  @db.Text
-  status        String   // "VALIDO" | "INVALIDO"
+  status        String
   asset         String?
   timeframe     String?
   resultJson    Json
@@ -44,20 +44,21 @@ model Trade {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   analysisId  String?
+  signalId    String?   @unique
 
   asset       String
   timeframe   String?
-  mode        String    // "CLASSICO" | "SMC"
-  direction   String    // "BUY" | "SELL"
+  mode        String
+  direction   String
 
   entryPrice  Float
   stopPrice   Float
   targetPrice Float?
 
   exitPrice   Float?
-  outcome     String    @default("OPEN") // "OPEN" | "WIN" | "LOSS" | "BREAKEVEN"
-  pnlAmount   Float?    // resultado financeiro em moeda
-  rMultiple   Float?    // resultado em R (reward/risk)
+  outcome     String    @default("OPEN")
+  pnlAmount   Float?
+  rMultiple   Float?
 
   openedAt    DateTime  @default(now())
   closedAt    DateTime?
@@ -71,40 +72,130 @@ model Trade {
 }
 
 model MT5Account {
-  id         String    @id @default(cuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  apiToken   String    @unique
-  label      String?
-  lastSeenAt DateTime?
-  createdAt  DateTime  @default(now())
-  orders     MT5Order[]
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiToken        String       @unique
+  label           String?
+
+  // Live account info (atualizado via heartbeat)
+  accountNumber   BigInt?
+  accountName     String?
+  accountServer   String?
+  accountCompany  String?
+  accountCurrency String?
+  leverage        Int?
+  balance         Float?
+  equity          Float?
+  margin          Float?
+  freeMargin      Float?
+  marginLevel     Float?
+
+  pingMs          Int?
+  connectedAt     DateTime?
+  lastSeenAt      DateTime?
+
+  createdAt       DateTime     @default(now())
+
+  orders          MT5Order[]
+  watchlist       Watchlist[]
+  signals         Signal[]
+  ticks           MarketTick[]
 
   @@index([userId])
 }
 
 model MT5Order {
-  id         String    @id @default(cuid())
+  id         String      @id @default(cuid())
   accountId  String
-  account    MT5Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-
+  account    MT5Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   symbol     String
-  side       String    // "BUY" | "SELL"
-  volume     Float     @default(0.01)
-  entryType  String    @default("MARKET") // "MARKET" | "LIMIT" | "STOP"
+  side       String
+  volume     Float       @default(0.01)
+  entryType  String      @default("MARKET")
   entryPrice Float?
   stopLoss   Float?
   takeProfit Float?
   comment    String?
-
-  status     String    @default("PENDING") // "PENDING" | "SENT" | "FILLED" | "REJECTED" | "EXPIRED"
+  status     String      @default("PENDING")
   mt5Ticket  BigInt?
   errorMsg   String?
-
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime    @default(now())
   pickedAt   DateTime?
   filledAt   DateTime?
 
   @@index([accountId, status])
   @@index([accountId, createdAt])
+}
+
+model Watchlist {
+  id          String      @id @default(cuid())
+  accountId   String
+  account     MT5Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol      String
+  timeframe   String      @default("M15")
+  mode        String      // "SMC" | "CLASSICO"
+  active      Boolean     @default(true)
+  lastScanAt  DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@unique([accountId, symbol, timeframe, mode])
+  @@index([accountId, active])
+}
+
+model Signal {
+  id                String     @id @default(cuid())
+  accountId         String
+  account           MT5Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  symbol            String
+  timeframe         String
+  mode              String
+
+  hasSetup          Boolean    @default(true)
+  direction         String?
+  probability       Int?
+  confidence        String?
+
+  entryPrice        Float?
+  entryZoneLow      Float?
+  entryZoneHigh     Float?
+  stopPrice         Float?
+  target1           Float?
+  target2           Float?
+  target3           Float?
+  recommendedTarget Int?
+  riskReward        String?
+
+  structure         String?    @db.Text
+  justification     String?    @db.Text
+
+  // Tracking
+  status            String     @default("PENDING") // PENDING | FILLED | WIN | LOSS | EXPIRED | NO_SETUP
+  filledAt          DateTime?
+  closedAt          DateTime?
+  exitPrice         Float?
+  rMultiple         Float?
+
+  // Auto-catalog
+  tradeCreated      Boolean    @default(false)
+
+  scannedAt         DateTime   @default(now())
+  candleData        Json?
+
+  @@index([accountId, scannedAt])
+  @@index([accountId, status])
+  @@index([accountId, symbol, timeframe])
+}
+
+model MarketTick {
+  accountId   String
+  account     MT5Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol      String
+  bid         Float
+  ask         Float
+  spread      Float
+  updatedAt   DateTime    @default(now())
+
+  @@id([accountId, symbol])
 }

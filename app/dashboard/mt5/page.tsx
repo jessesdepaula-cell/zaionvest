@@ -3,6 +3,8 @@ import { getOrCreateUser } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { createMt5Account } from "@/app/actions/mt5";
 import { Mt5AccountCard } from "@/components/dashboard/Mt5AccountCard";
+import { Mt5LiveAccount } from "@/components/dashboard/Mt5LiveAccount";
+import { WatchlistEditor } from "@/components/dashboard/WatchlistEditor";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +16,10 @@ export default async function Mt5Page() {
   const accounts = await prisma.mT5Account.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
+    include: {
+      ticks: true,
+      watchlist: { orderBy: { createdAt: "asc" } },
+    },
   });
 
   const accountIds = accounts.map((a) => a.id);
@@ -31,7 +37,7 @@ export default async function Mt5Page() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">MetaTrader 5</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Envie ordens da análise direto para sua conta MT5 via Expert Advisor.
+            Conexão com seu terminal, watchlist de scan e fila de ordens.
           </p>
         </div>
         <form action={createMt5Account}>
@@ -47,17 +53,19 @@ export default async function Mt5Page() {
       </div>
 
       {/* Como funciona */}
-      <section className="mb-8 grid gap-4 md:grid-cols-3">
-        <Step n={1} title="Crie uma conta">
-          Gera um token único pra sua conta MT5. Cada token = um terminal MT5.
-        </Step>
-        <Step n={2} title="Instale o EA">
-          Baixa o <span className="num text-zinc-200">TradeVisionBridge.mq5</span>, cola na pasta <span className="num">MQL5/Experts</span> e arrasta pro gráfico.
-        </Step>
-        <Step n={3} title="Envie ordens">
-          Na análise, clica em <span className="text-emerald-400">Enviar para MT5</span>. O EA executa em ≤3s.
-        </Step>
-      </section>
+      {accounts.length === 0 && (
+        <section className="mb-8 grid gap-4 md:grid-cols-3">
+          <Step n={1} title="Crie uma conta">
+            Gera um token único pra sua conta MT5. Cada token = um terminal MT5.
+          </Step>
+          <Step n={2} title="Instale o EA">
+            Baixa o <span className="num text-zinc-200">TradeVisionBridge.mq5</span>, cola na pasta <span className="num">MQL5/Experts</span> e arrasta pro gráfico.
+          </Step>
+          <Step n={3} title="Receba sinais">
+            O EA escaneia sua watchlist a cada 15 min. Sinais aparecem em <span className="text-emerald-400">/dashboard/sinais</span>.
+          </Step>
+        </section>
+      )}
 
       {/* Download EA */}
       <section className="mb-8">
@@ -69,7 +77,7 @@ export default async function Mt5Page() {
             <div>
               <p className="text-sm text-offwhite">TradeVisionBridge.mq5</p>
               <p className="num text-[11px] text-zinc-500">
-                Expert Advisor MQL5 · v1.0 · polling 3s
+                Expert Advisor MQL5 · v2.0 · Scanner + Bridge + Heartbeat
               </p>
             </div>
           </div>
@@ -88,10 +96,9 @@ export default async function Mt5Page() {
             <li>No MT5 abra <span className="num text-zinc-200">Arquivo → Abrir Pasta de Dados</span>.</li>
             <li>Cole o arquivo em <span className="num text-zinc-200">MQL5/Experts/</span>.</li>
             <li>No MT5 abra <span className="num text-zinc-200">Ferramentas → Opções → Expert Advisors</span> e marque <span className="num text-zinc-200">Permitir WebRequest para os endereços</span>. Adicione: <span className="num text-emerald-300">https://tradevision-app.vercel.app</span></li>
-            <li>Reinicie o MT5. No Navegador, arraste <span className="num text-zinc-200">TradeVisionBridge</span> para qualquer gráfico.</li>
-            <li>Na janela do EA, cole seu <span className="num text-zinc-200">ApiToken</span> (botão copiar acima) e clique OK.</li>
-            <li>Ative o botão <span className="num text-zinc-200">AutoTrading</span> na barra superior.</li>
-            <li>O selo "EA online" aparece no card quando a conexão estabiliza (até 30s).</li>
+            <li>Reinicie o MT5. No Navegador, arraste <span className="num text-zinc-200">TradeVisionBridge</span> para qualquer gráfico (ex: EURUSD M15).</li>
+            <li>Cole o <span className="num text-zinc-200">ApiToken</span> da sua conta e ative <span className="num text-zinc-200">AlgoTrading</span>.</li>
+            <li>Em até 10s o card abaixo passa pra <span className="text-emerald-400">Conectado</span> e os dados da conta aparecem.</li>
           </ol>
         </details>
       </section>
@@ -110,18 +117,33 @@ export default async function Mt5Page() {
           </div>
         </div>
       ) : (
-        <section className="mb-8 grid gap-3">
-          {accounts.map((a) => (
-            <Mt5AccountCard key={a.id} account={a} />
-          ))}
-        </section>
+        accounts.map((account) => (
+          <section key={account.id} className="mb-10 space-y-4">
+            {/* Live account */}
+            <Mt5LiveAccount account={account} ticks={account.ticks} />
+
+            {/* Token card */}
+            <Mt5AccountCard
+              account={{
+                id: account.id,
+                label: account.label,
+                apiToken: account.apiToken,
+                createdAt: account.createdAt,
+                lastSeenAt: account.lastSeenAt,
+              }}
+            />
+
+            {/* Watchlist */}
+            <WatchlistEditor accountId={account.id} items={account.watchlist} />
+          </section>
+        ))
       )}
 
       {/* Histórico de ordens */}
       {orders.length > 0 && (
-        <section>
+        <section className="mt-10">
           <h2 className="mb-3 text-[10px] uppercase tracking-widest text-zinc-500">
-            Últimas ordens enviadas
+            Últimas ordens enviadas (Bridge)
           </h2>
           <div className="space-y-2">
             {orders.map((o) => (
