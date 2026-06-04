@@ -20,6 +20,7 @@ model User {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   analyses           Analysis[]
+  trades             Trade[]
 }
 
 model Analysis {
@@ -35,4 +36,35 @@ model Analysis {
   createdAt     DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+model Trade {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisId  String?
+
+  asset       String
+  timeframe   String?
+  mode        String    // "CLASSICO" | "SMC"
+  direction   String    // "BUY" | "SELL"
+
+  entryPrice  Float
+  stopPrice   Float
+  targetPrice Float?
+
+  exitPrice   Float?
+  outcome     String    @default("OPEN") // "OPEN" | "WIN" | "LOSS" | "BREAKEVEN"
+  pnlAmount   Float?    // resultado financeiro em moeda
+  rMultiple   Float?    // resultado em R (reward/risk)
+
+  openedAt    DateTime  @default(now())
+  closedAt    DateTime?
+  notes       String?   @db.Text
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, openedAt])
+  @@index([userId, mode, outcome])
 }

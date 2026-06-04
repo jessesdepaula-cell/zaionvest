@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnnotatedChart, buildAnnotationData } from "./AnnotatedChart";
+import { TradeFormButton } from "./TradeForm";
 
 type Mode = "CLASSICO" | "SMC";
 
@@ -292,7 +293,7 @@ export function Analyzer() {
       </div>
 
       <div>
-        <ResultPanel result={result} loading={loading} />
+        <ResultPanel result={result} loading={loading} mode={mode} />
       </div>
     </div>
   );
@@ -360,9 +361,11 @@ function Checklist({
 function ResultPanel({
   result,
   loading,
+  mode,
 }: {
   result: Analysis | null;
   loading: boolean;
+  mode: Mode;
 }) {
   if (loading) {
     return (
@@ -563,6 +566,30 @@ function ResultPanel({
         <p className="mt-1 text-sm leading-relaxed text-zinc-200">
           {a.justificativa ?? "—"}
         </p>
+      </div>
+
+      {/* Registrar trade */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-emerald-400">
+            Catalogar
+          </p>
+          <p className="mt-0.5 text-sm text-offwhite">
+            Registre este setup no seu diário e acompanhe o resultado.
+          </p>
+        </div>
+        <TradeFormButton
+          label="Registrar como trade"
+          prefill={{
+            asset: v.ativo_identificado,
+            timeframe: v.timeframe_identificado,
+            mode,
+            direction: a.direcao?.startsWith("COMPRA") ? "BUY" : a.direcao?.startsWith("VENDA") ? "SELL" : "BUY",
+            entryPrice: a.entrada?.preco,
+            stopPrice: a.stop_loss?.preco,
+            targetPrice: alvos.find((al) => al.nivel === recomendado)?.preco ?? alvos[0]?.preco,
+          }}
+        />
       </div>
 
       <p className="text-center text-[10px] text-zinc-600">
