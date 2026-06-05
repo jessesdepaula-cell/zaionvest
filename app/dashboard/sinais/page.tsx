@@ -52,31 +52,25 @@ export default async function SinaisPage({
     take: 300,
   });
 
+  // Dedup base: 1 sinal por (símbolo, timeframe, modo) — o mais recente.
+  // Usado para a lista padrão e para os contadores das abas.
   const seen = new Set<string>();
   const deduped: typeof allRecent = [];
   for (const s of allRecent) {
-    // mantém sempre os ativos/fechados (WIN/LOSS/FILLED/PENDING) — só dedupa
-    // a fila de "sem setup" / EXPIRED para não poluir a tela
-    const isLiveOrClosed =
-      s.status === "FILLED" ||
-      s.status === "WIN" ||
-      s.status === "LOSS" ||
-      (s.status === "PENDING" && s.hasSetup);
-    if (isLiveOrClosed) {
-      deduped.push(s);
-      continue;
-    }
     const key = `${s.symbol}|${s.timeframe}|${s.mode}`;
     if (seen.has(key)) continue;
     seen.add(key);
     deduped.push(s);
   }
 
-  let visible = deduped;
-  if (statusFilter === "fechados")
-    visible = deduped.filter((s) => s.status === "WIN" || s.status === "LOSS");
+  // No filtro "Fechados" o usuário quer histórico completo de trades — NÃO dedupa.
+  // Nos demais filtros, mostra só o último sinal de cada par/modo.
+  const visible: typeof allRecent =
+    statusFilter === "fechados"
+      ? allRecent.filter((s) => s.status === "WIN" || s.status === "LOSS")
+      : deduped;
 
-  // KPIs usam allRecent (histórico real, não dedupado)
+  // KPIs somam o histórico real (allRecent), não a versão dedupada
   const stats = {
     pending: allRecent.filter((s) => s.status === "PENDING" && s.hasSetup).length,
     filled: allRecent.filter((s) => s.status === "FILLED").length,
@@ -84,7 +78,7 @@ export default async function SinaisPage({
     lost: allRecent.filter((s) => s.status === "LOSS").length,
     noSetup: allRecent.filter((s) => !s.hasSetup).length,
   };
-  const signals = deduped; // para os contadores das abas (1 por par/modo)
+  const signals = deduped; // contadores das abas refletem 1 por par/modo
   const totalClosed = stats.won + stats.lost;
   const winRate = totalClosed > 0 ? (stats.won / totalClosed) * 100 : 0;
 
