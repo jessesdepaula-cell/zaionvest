@@ -236,8 +236,7 @@ export function SignalCard({ signal: s, defaultExpanded }: { signal: SignalData;
             </div>
           )}
         </div>
-
-      </div>
+      </div>}
     </div>
   );
 }
