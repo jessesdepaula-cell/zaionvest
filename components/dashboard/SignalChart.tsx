@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, RotateCcw } from "lucide-react";
+import { Activity, RotateCcw, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ema, sma } from "@/lib/indicators";
+import { detectSmc, type SmcOverlay } from "@/lib/smcOverlay";
 
 export type ChartCandle = {
   t?: number; // unix seconds
@@ -30,9 +31,47 @@ const padT = 16;
 const padB = 28;
 const innerW = W - padL - padR;
 const innerH = H - padT - padB;
+const TZ = "America/Sao_Paulo";
+
+type TfKey = "M5" | "M15" | "M30" | "H1" | "H4" | "D1";
+const TF_MIN: Record<TfKey, number> = { M5: 5, M15: 15, M30: 30, H1: 60, H4: 240, D1: 1440 };
+const TF_OPTIONS: TfKey[] = ["M5", "M15", "M30", "H1", "H4", "D1"];
+
+function tfToKey(tf: string): TfKey {
+  if (TF_OPTIONS.includes(tf as TfKey)) return tf as TfKey;
+  return "M15";
+}
+
+/** Agrega candles para um timeframe superior (down-only). Up-aggregation a partir do base. */
+function aggregateCandles(base: ChartCandle[], baseTf: TfKey, targetTf: TfKey): ChartCandle[] {
+  if (TF_MIN[targetTf] <= TF_MIN[baseTf]) return base;
+  if (base.length === 0) return base;
+  const factor = TF_MIN[targetTf] / TF_MIN[baseTf];
+  if (!Number.isInteger(factor)) return base;
+  const out: ChartCandle[] = [];
+  // alinha pelo tempo do primeiro candle para garantir agrupamento consistente
+  const bucketSec = TF_MIN[targetTf] * 60;
+  let bucketStart = -1;
+  let cur: ChartCandle | null = null;
+  for (const c of base) {
+    if (c.t === undefined) continue;
+    const b = Math.floor(c.t / bucketSec) * bucketSec;
+    if (b !== bucketStart) {
+      if (cur) out.push(cur);
+      cur = { t: b, o: c.o, h: c.h, l: c.l, c: c.c };
+      bucketStart = b;
+    } else if (cur) {
+      cur.h = Math.max(cur.h, c.h);
+      cur.l = Math.min(cur.l, c.l);
+      cur.c = c.c;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
 
 export function SignalChart({
-  candles,
+  candles: rawCandles,
   symbol,
   isBuy,
   entry,
@@ -44,7 +83,9 @@ export function SignalChart({
   exitPrice,
   rMultiple,
   scannedAt,
+  timeframe = "M15",
   defaultShowMA = false,
+  defaultShowSmc = true,
 }: {
   candles: ChartCandle[];
   symbol: string;
@@ -58,22 +99,35 @@ export function SignalChart({
   exitPrice?: number | null;
   rMultiple?: number | null;
   scannedAt: string;
+  timeframe?: string;
   defaultShowMA?: boolean;
+  defaultShowSmc?: boolean;
 }) {
   const dec = useMemo(() => decimals(symbol), [symbol]);
-  // Mantém 50 velas visíveis por padrão para sempre haver espaço para
-  // arrastar para trás (pan horizontal revela velas mais antigas).
-  const initialVisible = Math.min(candles.length, 50);
+  const baseTf = useMemo(() => tfToKey(timeframe), [timeframe]);
+  const [tf, setTf] = useState<TfKey>(baseTf);
+
+  // candles ajustadas ao timeframe selecionado (apenas agregação para cima é possível)
+  const candles = useMemo(() => aggregateCandles(rawCandles, baseTf, tf), [rawCandles, baseTf, tf]);
+
+  // Mostra mais histórico por padrão (até 120 velas, ou tudo se < 120).
+  const initialVisible = Math.min(candles.length, 120);
   const [view, setView] = useState<ViewState>({
     visibleCount: initialVisible,
     offset: 0,
     yZoom: 1,
     yPan: 0,
   });
+
+  // ao trocar TF, reseta visualização
+  useEffect(() => {
+    setView({ visibleCount: Math.min(candles.length, 120), offset: 0, yZoom: 1, yPan: 0 });
+  }, [tf, candles.length]);
+
   const [showMA, setShowMA] = useState(defaultShowMA);
+  const [showSmc, setShowSmc] = useState(defaultShowSmc);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
 
-  // Médias móveis computadas sobre TODA a série
   const ma = useMemo(() => {
     const closes = candles.map((c) => c.c);
     return {
@@ -83,6 +137,9 @@ export function SignalChart({
       sma200: sma(closes, 200),
     };
   }, [candles]);
+
+  const smc: SmcOverlay = useMemo(() => detectSmc(candles), [candles]);
+
   const dragRef = useRef<{
     mode: DragMode;
     startX: number;
@@ -91,7 +148,6 @@ export function SignalChart({
   } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // visible slice
   const visible = useMemo(() => {
     const total = candles.length;
     if (total === 0) return [];
@@ -100,10 +156,8 @@ export function SignalChart({
     return candles.slice(total - vc - off, total - off);
   }, [candles, view.visibleCount, view.offset]);
 
-  // visible window indices (para clipar MAs)
   const visibleStart = candles.length - visible.length - view.offset;
 
-  // y range (auto-fit then scale by zoom + pan)
   const { yMin, yMax } = useMemo(() => {
     if (visible.length === 0) return { yMin: 0, yMax: 1 };
     const vals = visible.flatMap((c) => [c.h, c.l]);
@@ -113,7 +167,6 @@ export function SignalChart({
     targets?.forEach((v) => {
       if (typeof v === "number") vals.push(v);
     });
-    // inclui MAs visíveis no ajuste do eixo Y se visíveis
     if (showMA) {
       const visibleEndIdx = visibleStart + visible.length;
       [ma.ema9, ma.ema20, ma.ema50, ma.sma200].forEach((series) => {
@@ -139,7 +192,6 @@ export function SignalChart({
   const xOf = (i: number) => padL + i * candleW + candleW / 2;
   const yOf = (v: number) => padT + ((yMax - v) / range) * innerH;
 
-  // --- mouse / drag handlers ---
   function clientToSvg(clientX: number, clientY: number) {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -166,7 +218,6 @@ export function SignalChart({
     const dxPx = clientX - drag.startX;
     const dyPx = clientY - drag.startY;
     if (drag.mode === "pan") {
-      // pan horizontal (tempo) — arraste para a direita revela velas mais antigas
       const dxPct = dxPx / rect.width;
       const candleDelta = Math.round(dxPct * drag.startView.visibleCount);
       const maxOffset = Math.max(0, candles.length - drag.startView.visibleCount);
@@ -174,7 +225,6 @@ export function SignalChart({
         0,
         Math.min(maxOffset, drag.startView.offset + candleDelta),
       );
-      // pan vertical (preço) — arrastar para cima move o preço para cima
       const dyPct = dyPx / rect.height;
       const newPan = Math.max(-1.5, Math.min(1.5, drag.startView.yPan - dyPct));
       setView((v) => ({ ...v, offset: newOffset, yPan: newPan }));
@@ -194,7 +244,6 @@ export function SignalChart({
   }
 
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
-    // só botão primário (esquerdo do mouse) ou toque
     if (e.button !== 0 && e.pointerType === "mouse") return;
     e.preventDefault();
     const { x, y } = clientToSvg(e.clientX, e.clientY);
@@ -210,9 +259,7 @@ export function SignalChart({
     };
     try {
       (e.currentTarget as Element).setPointerCapture(e.pointerId);
-    } catch {
-      // alguns navegadores rejeitam — temos listeners globais abaixo
-    }
+    } catch {}
   }
 
   function onPointerMove(e: React.PointerEvent<SVGSVGElement>) {
@@ -228,32 +275,39 @@ export function SignalChart({
     } catch {}
   }
 
-  function onWheel(e: React.WheelEvent<SVGSVGElement>) {
-    e.preventDefault();
-    const { x, y } = clientToSvg(e.clientX, e.clientY);
-    const zone = detectZone(x, y);
-    if (zone === "yScale") {
-      const factor = e.deltaY > 0 ? 0.9 : 1.1;
-      setView((v) => ({ ...v, yZoom: Math.max(0.3, Math.min(5, v.yZoom * factor)) }));
-    } else {
-      // zoom X
-      const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
-      setView((v) => {
-        const newCount = Math.max(
-          15,
-          Math.min(candles.length, Math.round(v.visibleCount * factor)),
-        );
-        return { ...v, visibleCount: newCount };
-      });
-    }
-  }
-
   function reset() {
-    setView({ visibleCount: initialVisible, offset: 0, yZoom: 1, yPan: 0 });
+    setView({ visibleCount: Math.min(candles.length, 120), offset: 0, yZoom: 1, yPan: 0 });
   }
 
-  // Fallback global: continua aplicando o drag mesmo se o pointer sair
-  // da SVG durante o gesto e mesmo se setPointerCapture falhou.
+  // React seta onWheel passivo por padrão em alguns runtimes — registra manualmente
+  // como non-passive para conseguir preventDefault() e parar o scroll da página.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * W;
+      const y = ((e.clientY - rect.top) / rect.height) * H;
+      const zone = x > W - padR ? "yScale" : y > H - padB ? "xScale" : "plot";
+      if (zone === "yScale") {
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        setView((v) => ({ ...v, yZoom: Math.max(0.3, Math.min(5, v.yZoom * factor)) }));
+      } else {
+        const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+        setView((v) => {
+          const newCount = Math.max(
+            15,
+            Math.min(candles.length, Math.round(v.visibleCount * factor)),
+          );
+          return { ...v, visibleCount: newCount };
+        });
+      }
+    };
+    svg.addEventListener("wheel", handler, { passive: false });
+    return () => svg.removeEventListener("wheel", handler);
+  }, [candles.length]);
+
   useEffect(() => {
     function onMove(e: PointerEvent) {
       if (!dragRef.current) return;
@@ -270,11 +324,11 @@ export function SignalChart({
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candles.length]);
 
   const isZoomedOrPanned =
-    view.visibleCount !== initialVisible ||
+    view.visibleCount !== Math.min(candles.length, 120) ||
     view.offset !== 0 ||
     Math.abs(view.yZoom - 1) > 0.01 ||
     Math.abs(view.yPan) > 0.01;
@@ -287,10 +341,8 @@ export function SignalChart({
     );
   }
 
-  // Y ticks
   const yTicks = niceTicks(yMin, yMax, 5);
 
-  // X labels — 5 timestamps espaçados
   const xLabels: { x: number; label: string }[] = [];
   if (visible.length > 0 && visible[0].t) {
     const steps = Math.min(5, visible.length);
@@ -298,16 +350,11 @@ export function SignalChart({
       const idx = Math.floor((i * (visible.length - 1)) / Math.max(1, steps - 1));
       const c = visible[idx];
       if (c.t) {
-        const d = new Date(c.t * 1000);
-        xLabels.push({
-          x: xOf(idx),
-          label: `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
-        });
+        xLabels.push({ x: xOf(idx), label: fmtTimestampBR(c.t) });
       }
     }
   }
 
-  // fill/close markers
   const fillIdxFull = findFillIndex(candles, entry, isBuy);
   const closeIdxFull =
     fillIdxFull !== null && (status === "WIN" || status === "LOSS")
@@ -322,14 +369,12 @@ export function SignalChart({
       ? closeIdxFull - visibleStart
       : null;
 
-  // crosshair price at cursor
   const cursorPrice = cursor ? yMax - ((cursor.y - padT) / innerH) * range : null;
   const cursorIdx = cursor
     ? Math.max(0, Math.min(visible.length - 1, Math.floor((cursor.x - padL) / candleW)))
     : null;
   const cursorCandle = cursorIdx !== null ? visible[cursorIdx] : null;
 
-  // cursor style
   const cursorStyle = (() => {
     if (!cursor) return "default";
     const zone = detectZone(cursor.x, cursor.y);
@@ -338,6 +383,13 @@ export function SignalChart({
     if (zone === "xScale") return "ew-resize";
     return "grab";
   })();
+
+  // Mapeia um índice "full" da série para o índice "in-view", retornando null se fora.
+  function toView(idx: number): number | null {
+    if (idx < visibleStart) return null;
+    if (idx >= visibleStart + visible.length) return null;
+    return idx - visibleStart;
+  }
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.015]">
@@ -349,13 +401,47 @@ export function SignalChart({
           <LiveClocks symbol={symbol} />
         </span>
         <span className="flex items-center gap-2">
+          {/* Seletor de timeframe */}
+          <span className="hidden items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.03] p-0.5 sm:inline-flex">
+            {TF_OPTIONS.map((opt) => {
+              const disabled = TF_MIN[opt] < TF_MIN[baseTf];
+              return (
+                <button
+                  key={opt}
+                  onClick={() => !disabled && setTf(opt)}
+                  disabled={disabled}
+                  title={disabled ? `Sem dados para ${opt} (base é ${baseTf})` : `Mudar para ${opt}`}
+                  className={cn(
+                    "px-1.5 py-0.5 text-[9px] uppercase tracking-widest rounded",
+                    tf === opt
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : disabled
+                        ? "text-zinc-700 cursor-not-allowed"
+                        : "text-zinc-400 hover:text-zinc-200",
+                  )}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </span>
           <span className="hidden items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest sm:inline-flex">
             <span className="h-1 w-1 rounded-full bg-emerald-400" />
-            Não repinta · {new Date(scannedAt).toLocaleTimeString("pt-BR")}
+            {new Date(scannedAt).toLocaleTimeString("pt-BR", { timeZone: TZ })}
           </span>
-          <span className="hidden text-[9px] text-zinc-600 lg:inline">
-            Arraste · roda do mouse · arraste o eixo
-          </span>
+          <button
+            onClick={() => setShowSmc((v) => !v)}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] uppercase tracking-widest transition",
+              showSmc
+                ? "border-emerald-500/40 bg-emerald-500/[0.10] text-emerald-300"
+                : "border-white/10 bg-white/[0.04] text-zinc-400 hover:text-zinc-200",
+            )}
+            title="Mostrar overlays SMC (FVG, OB, BOS, OTE, liquidez)"
+          >
+            <Layers className="h-3 w-3" />
+            SMC
+          </button>
           <button
             onClick={() => setShowMA((v) => !v)}
             className={cn(
@@ -391,10 +477,8 @@ export function SignalChart({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={() => setCursor(null)}
-        onWheel={onWheel}
         onDoubleClick={reset}
       >
-        {/* Grade horizontal */}
         {yTicks.map((v) => (
           <g key={v}>
             <line
@@ -417,23 +501,125 @@ export function SignalChart({
           </g>
         ))}
 
-        {/* Zonas de interação visualizadas (sutil) */}
-        <rect
-          x={W - padR}
-          y={padT}
-          width={padR}
-          height={innerH}
-          fill="rgba(255,255,255,0.005)"
-        />
-        <rect
-          x={padL}
-          y={H - padB}
-          width={innerW}
-          height={padB}
-          fill="rgba(255,255,255,0.005)"
-        />
+        <rect x={W - padR} y={padT} width={padR} height={innerH} fill="rgba(255,255,255,0.005)" />
+        <rect x={padL} y={H - padB} width={innerW} height={padB} fill="rgba(255,255,255,0.005)" />
 
-        {/* Linhas entrada/stop/alvos */}
+        {/* ====== OVERLAYS SMC (atrás das velas) ====== */}
+        {showSmc && (
+          <g pointerEvents="none">
+            {/* OTE zone */}
+            {smc.ote && (() => {
+              const yTop = yOf(smc.ote.top);
+              const yBot = yOf(smc.ote.bottom);
+              const x1 = padL;
+              const x2 = W - padR;
+              const fill = smc.ote.direction === "bullish" ? "rgba(16,185,129,0.07)" : "rgba(244,63,94,0.07)";
+              const stroke = smc.ote.direction === "bullish" ? "rgba(16,185,129,0.35)" : "rgba(244,63,94,0.35)";
+              return (
+                <g>
+                  <rect x={x1} y={Math.min(yTop, yBot)} width={x2 - x1} height={Math.abs(yBot - yTop)} fill={fill} stroke={stroke} strokeDasharray="3 3" />
+                  <text x={x1 + 4} y={Math.min(yTop, yBot) + 9} fontSize="8" fill={stroke} fontFamily="JetBrains Mono, monospace">
+                    OTE 61.8–78.6
+                  </text>
+                </g>
+              );
+            })()}
+
+            {/* FVGs */}
+            {smc.fvgs.map((f, i) => {
+              const sIdx = toView(f.startIdx);
+              const eIdx = toView(f.endIdx);
+              if (sIdx === null && eIdx === null) return null;
+              const x1 = xOf(sIdx ?? 0) - candleW / 2;
+              const x2 = xOf(eIdx ?? visible.length - 1) + candleW / 2;
+              const fill = f.direction === "bullish" ? "rgba(16,185,129,0.10)" : "rgba(244,63,94,0.10)";
+              const stroke = f.direction === "bullish" ? "rgba(16,185,129,0.45)" : "rgba(244,63,94,0.45)";
+              const yT = yOf(f.top);
+              const yB = yOf(f.bottom);
+              return (
+                <g key={`fvg-${i}`}>
+                  <rect x={x1} y={Math.min(yT, yB)} width={Math.max(2, x2 - x1)} height={Math.abs(yB - yT)} fill={fill} stroke={stroke} />
+                  <text x={x1 + 2} y={Math.min(yT, yB) - 2} fontSize="7" fill={stroke} fontFamily="JetBrains Mono, monospace">
+                    FVG
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Order Blocks */}
+            {smc.obs.map((ob, i) => {
+              const idx = toView(ob.idx);
+              if (idx === null) return null;
+              const x1 = xOf(idx) - candleW / 2;
+              const x2 = W - padR;
+              const fill = ob.direction === "bullish" ? "rgba(59,130,246,0.10)" : "rgba(168,85,247,0.10)";
+              const stroke = ob.direction === "bullish" ? "rgba(59,130,246,0.55)" : "rgba(168,85,247,0.55)";
+              const yT = yOf(ob.top);
+              const yB = yOf(ob.bottom);
+              return (
+                <g key={`ob-${i}`}>
+                  <rect x={x1} y={Math.min(yT, yB)} width={x2 - x1} height={Math.abs(yB - yT)} fill={fill} stroke={stroke} strokeDasharray="2 2" />
+                  <text x={x1 + 2} y={Math.min(yT, yB) - 2} fontSize="7" fill={stroke} fontFamily="JetBrains Mono, monospace">
+                    OB {ob.direction === "bullish" ? "↑" : "↓"}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Liquidity (SSL/BSL) */}
+            {smc.liquidity.map((lq, i) => {
+              const from = toView(lq.fromIdx);
+              const x1 = xOf(from ?? 0);
+              const x2 = W - padR;
+              const color = lq.kind === "BSL" ? "rgba(244,63,94,0.6)" : "rgba(16,185,129,0.6)";
+              const y = yOf(lq.price);
+              return (
+                <g key={`lq-${i}`}>
+                  <line x1={x1} y1={y} x2={x2} y2={y} stroke={color} strokeWidth="1" strokeDasharray="6 3" />
+                  <text x={x2 - 28} y={y - 2} fontSize="8" fill={color} fontFamily="JetBrains Mono, monospace">
+                    {lq.kind}{lq.equalTouches > 1 ? `×${lq.equalTouches}` : ""}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* BOS / ChoCh */}
+            {smc.breaks.map((br, i) => {
+              const idx = toView(br.idx);
+              if (idx === null) return null;
+              const x = xOf(idx);
+              const y = yOf(br.level);
+              const color = br.kind === "ChoCh" ? "#F59E0B" : "#A78BFA";
+              return (
+                <g key={`br-${i}`}>
+                  <line x1={x - 30} y1={y} x2={x + 8} y2={y} stroke={color} strokeWidth="1" />
+                  <text x={x + 10} y={y + 3} fontSize="8" fill={color} fontFamily="JetBrains Mono, monospace">
+                    {br.kind} {br.direction === "up" ? "↑" : "↓"}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Swings (pequenos marcadores) */}
+            {smc.swings.slice(-30).map((sw, i) => {
+              const idx = toView(sw.idx);
+              if (idx === null) return null;
+              const x = xOf(idx);
+              const y = yOf(sw.price);
+              const color = sw.kind === "high" ? "rgba(244,63,94,0.7)" : "rgba(16,185,129,0.7)";
+              const dy = sw.kind === "high" ? -6 : 6;
+              return (
+                <g key={`sw-${i}`}>
+                  <circle cx={x} cy={y} r="1.5" fill={color} />
+                  <text x={x} y={y + dy} fontSize="7" textAnchor="middle" fill={color} fontFamily="JetBrains Mono, monospace">
+                    {sw.kind === "high" ? "H" : "L"}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
         {entry !== null && (
           <PriceLine y={yOf(entry)} price={entry} label="ENTRADA" color="#10B981" dec={dec} solid />
         )}
@@ -479,7 +665,6 @@ export function SignalChart({
           />
         )}
 
-        {/* Médias móveis (atrás das velas) */}
         {showMA && (
           <g pointerEvents="none">
             {(["sma200", "ema50", "ema20", "ema9"] as const).map((key) => {
@@ -503,7 +688,6 @@ export function SignalChart({
           </g>
         )}
 
-        {/* Velas */}
         {visible.map((c, i) => {
           const cx = xOf(i);
           const isUp = c.c >= c.o;
@@ -523,7 +707,6 @@ export function SignalChart({
           );
         })}
 
-        {/* Marcador FILL */}
         {fillIdxInView !== null && entry !== null && (
           <g>
             <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="6" fill="#0A0A0A" stroke="#10B981" strokeWidth="2" />
@@ -531,7 +714,6 @@ export function SignalChart({
           </g>
         )}
 
-        {/* Marcador FECHAMENTO */}
         {closeIdxInView !== null && typeof exitPrice === "number" && (
           <g>
             <circle
@@ -555,12 +737,10 @@ export function SignalChart({
           </g>
         )}
 
-        {/* Crosshair */}
         {cursor && (
           <g pointerEvents="none">
             <line x1={cursor.x} y1={padT} x2={cursor.x} y2={H - padB} stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="2 3" />
             <line x1={padL} y1={cursor.y} x2={W - padR} y2={cursor.y} stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="2 3" />
-            {/* preço no eixo Y */}
             {cursorPrice !== null && (
               <g>
                 <rect x={W - padR + 4} y={cursor.y - 9} width="72" height="18" rx="3" fill="#0A0A0A" stroke="rgba(255,255,255,0.3)" />
@@ -576,7 +756,6 @@ export function SignalChart({
                 </text>
               </g>
             )}
-            {/* time no eixo X */}
             {cursorCandle?.t && (
               <g>
                 <rect x={cursor.x - 52} y={H - padB + 2} width="104" height="18" rx="3" fill="#0A0A0A" stroke="rgba(255,255,255,0.3)" />
@@ -588,14 +767,13 @@ export function SignalChart({
                   fill="#F5F5F7"
                   fontFamily="JetBrains Mono, monospace"
                 >
-                  {fmtTimestamp(cursorCandle.t)}
+                  {fmtTimestampBR(cursorCandle.t)}
                 </text>
               </g>
             )}
           </g>
         )}
 
-        {/* X labels */}
         {xLabels.map((l, i) => (
           <text
             key={i}
@@ -610,7 +788,6 @@ export function SignalChart({
           </text>
         ))}
 
-        {/* Badge de status no canto */}
         {(status === "WIN" || status === "LOSS") && (
           <g pointerEvents="none">
             <rect
@@ -662,7 +839,6 @@ export function SignalChart({
           </g>
         )}
 
-        {/* Legenda das MAs */}
         {showMA && (
           <g pointerEvents="none">
             {(() => {
@@ -818,34 +994,32 @@ function decimals(symbol: string): number {
   return 5;
 }
 
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-function fmtTimestamp(t: number): string {
+function fmtTimestampBR(t: number): string {
   const d = new Date(t * 1000);
-  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: TZ,
+  }).format(d);
 }
 
 function marketTzFor(symbol: string): { tz: string; label: string } {
   const s = symbol.toUpperCase();
-  // metais e energia → Nova York (COMEX/NYMEX)
   if (s.includes("XAU") || s.includes("GOLD") || s.includes("XAG") || s.includes("SILVER") || s.includes("WTI") || s.includes("USOIL") || s.includes("BRENT")) {
     return { tz: "America/New_York", label: "NY" };
   }
-  // pares JPY → Tóquio
   if (s.endsWith("JPY") || s.endsWith("JPYXX") || s.endsWith("JPYM") || s.includes("JPY")) {
     return { tz: "Asia/Tokyo", label: "Tóquio" };
   }
-  // GBP → Londres
   if (s.startsWith("GBP") || s.includes("GBP")) {
     return { tz: "Europe/London", label: "Londres" };
   }
-  // EUR → Frankfurt (CET)
   if (s.startsWith("EUR") || s.includes("EUR")) {
     return { tz: "Europe/Berlin", label: "Frankfurt" };
   }
-  // default forex → Nova York (sessão líquida principal)
   return { tz: "America/New_York", label: "NY" };
 }
 
@@ -869,7 +1043,7 @@ function LiveClocks({ symbol }: { symbol: string }) {
       <span className="text-zinc-600">·</span>
       <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest">
         <span className="text-zinc-500">BR</span>
-        <span className="num text-zinc-200">{fmt("America/Sao_Paulo")}</span>
+        <span className="num text-zinc-200">{fmt(TZ)}</span>
       </span>
       <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest">
         <span className="text-zinc-500">{market.label}</span>

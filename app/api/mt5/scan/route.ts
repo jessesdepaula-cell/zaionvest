@@ -91,7 +91,8 @@ export async function POST(req: Request) {
           ? (result.checklist_classico as object)
           : undefined,
       status: result.hasSetup ? "PENDING" : "NO_SETUP",
-      candleData: candles.slice(-250) as object,
+      // Armazena janela maior para permitir pan/zoom no gráfico do dashboard.
+      candleData: candles.slice(-500) as object,
     },
   });
 

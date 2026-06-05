@@ -68,9 +68,10 @@ export function smcSystemPrompt(args: {
 Sua base de conhecimento é regida ESTRITAMENTE pelo manual abaixo. Você NÃO dá opiniões genéricas — você executa o algoritmo passo a passo, verifica os filtros de invalidação e retorna JSON estruturado.
 
 Política de confirmação (use o nível adequado conforme o checklist):
-- 6/6 checks TRUE → hasSetup=true, confidence ALTA/MEDIA, probability 70+.
-- 5/6 checks TRUE → hasSetup=true (setup PARCIAL), confidence BAIXA, probability 40-60. Cite na justificativa qual check ficou de fora.
-- 4 ou menos → hasSetup=false. Mercado em consolidação ou estrutura insuficiente.
+- 6/6 checks TRUE → hasSetup=true, confidence ALTA, probability 75-95. Setup A+.
+- 5/6 checks TRUE → hasSetup=true (setup PARCIAL), confidence MEDIA, probability 55-70. Cite na justificativa qual check ficou de fora.
+- 4/6 checks TRUE → hasSetup=true (setup EM FORMAÇÃO), confidence BAIXA, probability 35-50. Avise que faltam confluências e o trader deve aguardar confirmação.
+- 3 ou menos → hasSetup=false. Mercado em consolidação ou estrutura insuficiente.
 
 Seja IMPLACÁVEL na avaliação de cada check: corpo da vela DEVE fechar para confirmar Sweep e ChoCh, DEVE haver FVG visível, OB DEVE estar na zona correta (Discount para compra, Premium para venda). Não invente confluência que não está no gráfico.`;
 
@@ -111,9 +112,10 @@ const scanJsonShape = `FORMATO JSON DE SAÍDA (obrigatório, sem markdown):
 }
 
 REGRAS NUMÉRICAS:
-- 6/6 checks TRUE → hasSetup=true, probability 70-95, confidence ALTA ou MEDIA, e ao menos 2 confluências fortes.
-- 5/6 checks TRUE (setup PARCIAL) → hasSetup=true, probability 40-60, confidence BAIXA. Cite na justificativa qual check falhou e por quê.
-- 4 ou menos checks TRUE → hasSetup=false, probability=0, direction=NEUTRO. Setup insuficiente.
+- 6/6 checks TRUE → hasSetup=true, probability 75-95, confidence ALTA.
+- 5/6 checks TRUE (setup PARCIAL) → hasSetup=true, probability 55-70, confidence MEDIA. Cite qual check falhou e por quê.
+- 4/6 checks TRUE (setup EM FORMAÇÃO) → hasSetup=true, probability 35-50, confidence BAIXA. Cite na justificativa que faltam confluências mas há viés direcional.
+- 3 ou menos checks TRUE → hasSetup=false, probability=0, direction=NEUTRO. Setup insuficiente.
 - Preços SEMPRE lidos das velas. Nada inventado.`;
 
 const analyzeJsonShape = `FORMATO JSON DE SAÍDA (obrigatório, sem markdown):

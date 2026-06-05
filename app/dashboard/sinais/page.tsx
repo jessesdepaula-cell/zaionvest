@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { SignalCard, type SignalData } from "@/components/dashboard/SignalCard";
 import { ModeAccuracyMeter } from "@/components/dashboard/ModeAccuracyMeter";
 import { SignalNotifications } from "@/components/dashboard/SignalNotifications";
+import { ResetSignalsButton } from "@/components/dashboard/ResetSignalsButton";
 import { getModeStats } from "@/lib/modeStats";
 import { AutoRefresh } from "./AutoRefresh";
 import { cn } from "@/lib/utils";
@@ -104,11 +105,13 @@ export default async function SinaisPage({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <FilterChip param="status" value="" label="Todos" active={!statusFilter} />
           <FilterChip param="status" value="pendentes" label="Pendentes" active={statusFilter === "pendentes"} />
           <FilterChip param="status" value="abertos" label="Em execução" active={statusFilter === "abertos"} />
           <FilterChip param="status" value="fechados" label="Fechados" active={statusFilter === "fechados"} />
+          <span className="ml-2 hidden h-4 w-px bg-white/10 sm:inline-block" />
+          <ResetSignalsButton />
         </div>
       </div>
 

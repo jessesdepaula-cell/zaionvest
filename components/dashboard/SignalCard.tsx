@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Clock, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { SmcChecklist } from "./SmcChecklist";
@@ -49,10 +49,29 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
   const statusMeta = statusBadge(s.status);
   const target = pickTarget(s);
 
-  // Default: expandido para sinais ativos (PENDING/FILLED), colapsado para fechados
-  const initialExpanded =
+  // Default: expandido para sinais ativos (PENDING/FILLED), colapsado para fechados.
+  // Persistimos a escolha do usuário em localStorage por par|tf|modo para que o
+  // auto-refresh (router.refresh a cada 30s) e novos sinais entrando no mesmo
+  // par NÃO fechem o card. Só recolhe se o usuário clicar.
+  const storageKey = `tv:expanded:${s.symbol}|${s.timeframe}|${s.mode}`;
+  const defaultInitial =
     defaultExpanded ?? (s.status === "PENDING" || s.status === "FILLED");
-  const [expanded, setExpanded] = useState(initialExpanded);
+  const [expanded, setExpanded] = useState<boolean>(defaultInitial);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved === "1") setExpanded(true);
+    else if (saved === "0") setExpanded(false);
+  }, [storageKey]);
+  function toggleExpanded() {
+    setExpanded((v) => {
+      const next = !v;
+      try {
+        window.localStorage.setItem(storageKey, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
 
   return (
     <div
@@ -67,7 +86,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
       {/* Header (clicável para expandir/colapsar) */}
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={toggleExpanded}
         className="flex w-full flex-wrap items-center justify-between gap-2 border-b border-white/5 px-4 py-3 text-left hover:bg-white/[0.02]"
       >
         <div className="flex items-center gap-2">
@@ -139,6 +158,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             exitPrice={s.exitPrice}
             rMultiple={s.rMultiple}
             scannedAt={s.scannedAt}
+            timeframe={s.timeframe}
           />
         </div>
       )}
@@ -347,6 +367,7 @@ function NoSetupRow({ signal: s }: { signal: SignalData }) {
             exitPrice={null}
             rMultiple={null}
             scannedAt={s.scannedAt}
+            timeframe={s.timeframe}
           />
           {s.justification && (
             <p className="mt-3 text-xs leading-relaxed text-zinc-400">
