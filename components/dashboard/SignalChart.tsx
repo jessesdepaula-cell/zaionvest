@@ -155,6 +155,7 @@ export function SignalChart({
   }
 
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    e.preventDefault();
     const { x, y } = clientToSvg(e.clientX, e.clientY);
     const zone = detectZone(x, y);
     let mode: DragMode = "pan";
@@ -166,7 +167,11 @@ export function SignalChart({
       startY: e.clientY,
       startView: { ...view },
     };
-    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    try {
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    } catch {
+      // alguns navegadores/elementos podem rejeitar — drag continua via listeners
+    }
   }
 
   function onPointerMove(e: React.PointerEvent<SVGSVGElement>) {
@@ -179,6 +184,7 @@ export function SignalChart({
     const dxPx = e.clientX - drag.startX;
     const dyPx = e.clientY - drag.startY;
     if (drag.mode === "pan") {
+      // pan horizontal (tempo) — arraste para a direita revela velas mais antigas
       const dxPct = dxPx / rect.width;
       const candleDelta = Math.round(dxPct * drag.startView.visibleCount);
       const maxOffset = Math.max(0, candles.length - drag.startView.visibleCount);
@@ -186,7 +192,10 @@ export function SignalChart({
         0,
         Math.min(maxOffset, drag.startView.offset + candleDelta),
       );
-      setView((v) => ({ ...v, offset: newOffset }));
+      // pan vertical (preço) — arrastar para cima move o preço para cima
+      const dyPct = dyPx / rect.height;
+      const newPan = Math.max(-1.5, Math.min(1.5, drag.startView.yPan - dyPct));
+      setView((v) => ({ ...v, offset: newOffset, yPan: newPan }));
     } else if (drag.mode === "zoomY") {
       const dyPct = dyPx / rect.height;
       const newZoom = Math.max(0.3, Math.min(5, drag.startView.yZoom * (1 - dyPct * 2)));

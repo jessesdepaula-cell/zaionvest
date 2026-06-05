@@ -66,7 +66,7 @@ export default async function SinaisPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      <AutoRefresh intervalMs={10000} />
+      <AutoRefresh intervalMs={30000} />
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -75,7 +75,7 @@ export default async function SinaisPage({
             <h1 className="text-2xl font-semibold tracking-tight">Sinais ao vivo</h1>
             <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/[0.06] px-2 py-0.5 text-[10px] uppercase tracking-widest text-emerald-300">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              Auto-refresh 10s
+              Auto-refresh 30s
             </span>
           </div>
           <p className="mt-1 text-sm text-zinc-400">

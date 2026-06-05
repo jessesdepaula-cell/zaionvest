@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { scanWithAI, type Candle } from "@/lib/aiScan";
+import { evaluateOpenSignalsAgainstCandles } from "@/lib/signalTracker";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,6 +26,16 @@ export async function POST(req: Request) {
 
   if (!symbol || candles.length < 20) {
     return NextResponse.json({ error: "dados insuficientes" }, { status: 400 });
+  }
+
+  // Antes da IA: avalia sinais já abertos do mesmo símbolo contra as novas velas
+  // (garante que stops/alvos atingidos entre scans sejam fechados mesmo se o
+  // heartbeat não estiver entregando ticks em tempo real).
+  let tracked = { filled: 0, won: 0, lost: 0 };
+  try {
+    tracked = await evaluateOpenSignalsAgainstCandles(account.id, symbol, candles);
+  } catch {
+    // não interrompe o scan se o tracker falhar
   }
 
   // chama IA
@@ -99,5 +110,6 @@ export async function POST(req: Request) {
     entry: signal.entryPrice,
     stop: signal.stopPrice,
     target: signal.target1,
+    tracked,
   });
 }
