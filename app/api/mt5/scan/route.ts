@@ -43,11 +43,15 @@ export async function POST(req: Request) {
 
   // chama IA com contexto HTF
   let result;
+  let aiError: string | null = null;
   try {
     result = await scanWithAI({ symbol, timeframe, mode, candles, htfCandles });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "erro IA";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    aiError = e instanceof Error ? e.message : "erro IA";
+    result = {
+      hasSetup: false,
+      justification: `⚠️ Gráfico atualizado do MT5, mas a análise da IA falhou: ${aiError}. Verifique seus créditos na OpenAI.`
+    };
   }
 
   // sanitize numbers
