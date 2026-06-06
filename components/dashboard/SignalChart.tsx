@@ -23,6 +23,25 @@ type ViewState = {
 
 type DragMode = "pan" | "zoomY" | "zoomX" | null;
 
+type TzMode = "BROKER" | "BRT" | "EST" | "GMT" | "UTC";
+
+function formatTimestamp(t: number, mode: TzMode, symbol: string): string {
+  const d = new Date(t * 1000);
+  let timeZone = "UTC";
+  if (mode === "BRT") timeZone = "America/Sao_Paulo";
+  else if (mode === "EST") timeZone = "America/New_York";
+  else if (mode === "GMT") timeZone = "Europe/London";
+  
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone,
+  }).format(d);
+}
+
 const W = 1000;
 const H = 360;
 const padL = 12;
@@ -106,6 +125,7 @@ export function SignalChart({
   const dec = useMemo(() => decimals(symbol), [symbol]);
   const baseTf = useMemo(() => tfToKey(timeframe), [timeframe]);
   const [tf, setTf] = useState<TfKey>(baseTf);
+  const [tzMode, setTzMode] = useState<TzMode>("BRT");
 
   // candles ajustadas ao timeframe selecionado (apenas agregação para cima é possível)
   const candles = useMemo(() => aggregateCandles(rawCandles, baseTf, tf), [rawCandles, baseTf, tf]);
@@ -159,11 +179,11 @@ export function SignalChart({
     const total = candles.length;
     if (total === 0) return [];
     const vc = Math.max(10, Math.min(total, view.visibleCount));
-    const off = Math.max(0, Math.min(total - vc, view.offset));
+    const off = Math.max(0, Math.min(total - vc, Math.round(view.offset)));
     return candles.slice(total - vc - off, total - off);
   }, [candles, view.visibleCount, view.offset]);
 
-  const visibleStart = candles.length - visible.length - view.offset;
+  const visibleStart = candles.length - visible.length - Math.round(view.offset);
 
   const { yMin, yMax } = useMemo(() => {
     if (visible.length === 0) return { yMin: 0, yMax: 1 };
@@ -226,14 +246,14 @@ export function SignalChart({
     const dyPx = clientY - drag.startY;
     if (drag.mode === "pan") {
       const dxPct = dxPx / rect.width;
-      const candleDelta = Math.round(dxPct * drag.startView.visibleCount);
+      const candleDelta = dxPct * drag.startView.visibleCount;
       const maxOffset = Math.max(0, candles.length - drag.startView.visibleCount);
       const newOffset = Math.max(
         0,
         Math.min(maxOffset, drag.startView.offset + candleDelta),
       );
       const dyPct = dyPx / rect.height;
-      const newPan = Math.max(-1.5, Math.min(1.5, drag.startView.yPan - dyPct));
+      const newPan = Math.max(-1.5, Math.min(1.5, drag.startView.yPan + dyPct));
       setView((v) => ({ ...v, offset: newOffset, yPan: newPan }));
     } else if (drag.mode === "zoomY") {
       const dyPct = dyPx / rect.height;
@@ -361,7 +381,7 @@ export function SignalChart({
       const idx = Math.floor((i * (visible.length - 1)) / Math.max(1, steps - 1));
       const c = visible[idx];
       if (c.t) {
-        xLabels.push({ x: xOf(idx), label: fmtTimestampBR(c.t) });
+        xLabels.push({ x: xOf(idx), label: formatTimestamp(c.t, tzMode, symbol) });
       }
     }
   }
@@ -439,6 +459,76 @@ export function SignalChart({
               })}
             </span>
           </span>
+          {/* Seletor de Timezone */}
+          <select
+            value={tzMode}
+            onChange={(e) => setTzMode(e.target.value as TzMode)}
+            className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-300 outline-none hover:bg-white/[0.08]"
+          >
+            <option value="BROKER" className="bg-[#0a0a0a] text-zinc-300">BROKER (MT5)</option>
+            <option value="BRT" className="bg-[#0a0a0a] text-zinc-300">BRASIL (GMT-3)</option>
+            <option value="EST" className="bg-[#0a0a0a] text-zinc-300">NY (GMT-4)</option>
+            <option value="GMT" className="bg-[#0a0a0a] text-zinc-300">LONDRES (GMT+1)</option>
+            <option value="UTC" className="bg-[#0a0a0a] text-zinc-300">UTC (GMT+0)</option>
+          </select>
+
+          {/* Navegação Manual */}
+          <span className="inline-flex items-center rounded-md border border-white/10 bg-white/[0.03] p-0.5 gap-0.5">
+            <button
+              onClick={() => {
+                setView((v) => {
+                  const shift = Math.max(1, Math.round(v.visibleCount * 0.15));
+                  const maxOffset = Math.max(0, candles.length - v.visibleCount);
+                  return { ...v, offset: Math.min(maxOffset, v.offset + shift) };
+                });
+              }}
+              className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-white/[0.08]"
+              title="Voltar no tempo (Esquerda)"
+            >
+              &larr;
+            </button>
+            <button
+              onClick={() => {
+                setView((v) => {
+                  const shift = Math.max(1, Math.round(v.visibleCount * 0.15));
+                  return { ...v, offset: Math.max(0, v.offset - shift) };
+                });
+              }}
+              className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-white/[0.08]"
+              title="Avançar no tempo (Direita)"
+            >
+              &rarr;
+            </button>
+          </span>
+
+          {/* Zoom Manual */}
+          <span className="inline-flex items-center rounded-md border border-white/10 bg-white/[0.03] p-0.5 gap-0.5">
+            <button
+              onClick={() => {
+                setView((v) => {
+                  const newCount = Math.max(15, Math.round(v.visibleCount * 0.8));
+                  return { ...v, visibleCount: newCount };
+                });
+              }}
+              className="rounded px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-white/[0.08]"
+              title="Aumentar Zoom (+)"
+            >
+              +
+            </button>
+            <button
+              onClick={() => {
+                setView((v) => {
+                  const newCount = Math.min(candles.length, Math.round(v.visibleCount * 1.25));
+                  return { ...v, visibleCount: newCount };
+                });
+              }}
+              className="rounded px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-white/[0.08]"
+              title="Diminuir Zoom (-)"
+            >
+              -
+            </button>
+          </span>
+
           <span className="hidden items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest sm:inline-flex">
             <span className="h-1 w-1 rounded-full bg-emerald-400" />
             {new Date(scannedAt).toLocaleTimeString("pt-BR", { timeZone: TZ })}
@@ -788,7 +878,7 @@ export function SignalChart({
                   fill="#F5F5F7"
                   fontFamily="JetBrains Mono, monospace"
                 >
-                  {fmtTimestampBR(cursorCandle.t)}
+                  {formatTimestamp(cursorCandle.t, tzMode, symbol)}
                 </text>
               </g>
             )}

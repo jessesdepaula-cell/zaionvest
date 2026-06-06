@@ -92,7 +92,7 @@ export async function POST(req: Request) {
           : undefined,
       status: result.hasSetup ? "PENDING" : "NO_SETUP",
       // Armazena janela maior para permitir pan/zoom no gráfico do dashboard.
-      candleData: candles.slice(-500) as object,
+      candleData: candles.slice(-3000) as object,
     },
   });
 

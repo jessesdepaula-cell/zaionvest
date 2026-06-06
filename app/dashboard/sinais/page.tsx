@@ -201,7 +201,7 @@ export default async function SinaisPage({
         <div className="space-y-3">
           {visible.map((s) => (
             <SignalCard
-              key={s.id}
+              key={statusFilter === "fechados" ? s.id : `${s.symbol}|${s.timeframe}|${s.mode}`}
               signal={
                 {
                   id: s.id,

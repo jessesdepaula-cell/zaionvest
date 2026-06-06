@@ -312,13 +312,32 @@ function PriceBox({
 }
 
 function NoSetupRow({ signal: s }: { signal: SignalData }) {
-  const [expanded, setExpanded] = useState(false);
   const hasChart = !!s.candleData && s.candleData.length > 0;
+  const storageKey = `tv:expanded:${s.symbol}|${s.timeframe}|${s.mode}`;
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved === "1") setExpanded(true);
+    else if (saved === "0") setExpanded(false);
+  }, [storageKey]);
+
+  function toggleExpanded() {
+    setExpanded((v) => {
+      const next = !v;
+      try {
+        window.localStorage.setItem(storageKey, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
+
   return (
     <div className="overflow-hidden rounded-md border border-white/5 bg-white/[0.015]">
       <button
         type="button"
-        onClick={() => hasChart && setExpanded((v) => !v)}
+        onClick={() => hasChart && toggleExpanded()}
         disabled={!hasChart}
         className={cn(
           "flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-xs",
