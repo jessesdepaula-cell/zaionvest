@@ -175,15 +175,22 @@ export function SignalChart({
   } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const visible = useMemo(() => {
+  const { visible, visibleStart } = useMemo(() => {
     const total = candles.length;
-    if (total === 0) return [];
+    if (total === 0) return { visible: [], visibleStart: 0 };
     const vc = Math.max(10, Math.min(total, view.visibleCount));
-    const off = Math.max(0, Math.min(total - vc, Math.round(view.offset)));
-    return candles.slice(total - vc - off, total - off);
+    const off = Math.round(view.offset);
+    if (off < 0) {
+      const activeCount = Math.max(5, vc - Math.abs(off));
+      const start = Math.max(0, total - activeCount);
+      return { visible: candles.slice(start, total), visibleStart: start };
+    } else {
+      const clampedOff = Math.max(0, Math.min(total - vc, off));
+      const start = Math.max(0, total - vc - clampedOff);
+      const end = total - clampedOff;
+      return { visible: candles.slice(start, end), visibleStart: start };
+    }
   }, [candles, view.visibleCount, view.offset]);
-
-  const visibleStart = candles.length - visible.length - Math.round(view.offset);
 
   const { yMin, yMax } = useMemo(() => {
     if (visible.length === 0) return { yMin: 0, yMax: 1 };
@@ -215,7 +222,7 @@ export function SignalChart({
   }, [visible, entry, stop, exitPrice, targets, view.yZoom, view.yPan, showMA, ma, visibleStart]);
 
   const range = Math.max(0.0000001, yMax - yMin);
-  const candleW = innerW / Math.max(1, visible.length);
+  const candleW = innerW / Math.max(1, view.visibleCount);
   const xOf = (i: number) => padL + i * candleW + candleW / 2;
   const yOf = (v: number) => padT + ((yMax - v) / range) * innerH;
 
@@ -248,8 +255,9 @@ export function SignalChart({
       const dxPct = dxPx / rect.width;
       const candleDelta = dxPct * drag.startView.visibleCount;
       const maxOffset = Math.max(0, candles.length - drag.startView.visibleCount);
+      const minOffset = -drag.startView.visibleCount + 10;
       const newOffset = Math.max(
-        0,
+        minOffset,
         Math.min(maxOffset, drag.startView.offset + candleDelta),
       );
       const dyPct = dyPx / rect.height;
@@ -491,7 +499,8 @@ export function SignalChart({
               onClick={() => {
                 setView((v) => {
                   const shift = Math.max(1, Math.round(v.visibleCount * 0.15));
-                  return { ...v, offset: Math.max(0, v.offset - shift) };
+                  const minOffset = -v.visibleCount + 10;
+                  return { ...v, offset: Math.max(minOffset, v.offset - shift) };
                 });
               }}
               className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-white/[0.08]"
