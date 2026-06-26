@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Check, Sparkles, AlertCircle } from "lucide-react";
 
-export default function BillingPage({
+export default async function BillingPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; checkout?: string }>;
