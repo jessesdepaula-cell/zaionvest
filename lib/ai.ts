@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
-export function getAIClient() {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+export function getAIClient(userKeys?: { geminiApiKey?: string | null; openaiApiKey?: string | null }) {
+  const geminiApiKey = userKeys?.geminiApiKey || process.env.GEMINI_API_KEY;
   
   if (geminiApiKey) {
     return {
@@ -14,11 +14,13 @@ export function getAIClient() {
     };
   }
 
+  const openaiApiKey = userKeys?.openaiApiKey || process.env.OPENAI_API_KEY || "";
   return {
     openai: new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY ?? "",
+      apiKey: openaiApiKey,
     }),
     model: process.env.OPENAI_MODEL ?? "gpt-4o",
     isGemini: false,
   };
 }
+

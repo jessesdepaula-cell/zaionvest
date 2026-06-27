@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { Activity, CreditCard, Database, Eye, Mail, Shield, User } from "lucide-react";
+import { Activity, CreditCard, Database, Eye, Mail, Shield, User, Key } from "lucide-react";
 import { getOrCreateUser } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import {
   DeleteAccountButton,
   ExportButton,
 } from "@/components/dashboard/SettingsActions";
+import { APIKeysForm } from "@/components/dashboard/APIKeysForm";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,13 @@ export default async function ConfiguracoesPage() {
             />
             <Field label="ID interno" value={user.id} mono />
           </div>
+        </Section>
+
+        <Section icon={<Key className="h-3.5 w-3.5" />} title="Configuração de IA (Chaves de API)">
+          <APIKeysForm
+            initialGeminiKey={user.geminiApiKey ?? ""}
+            initialOpenAIKey={user.openaiApiKey ?? ""}
+          />
         </Section>
 
         <Section

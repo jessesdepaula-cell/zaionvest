@@ -71,6 +71,30 @@ async function runAudit() {
       console.log(`   └─ Assertividade Clássica: ${((classicoWins / classicoTotal) * 100).toFixed(2)}% (${classicoWins}/${classicoTotal})`);
     }
 
+    // 5. Verificação do Status do Site (Frontend)
+    console.log("✔ Verificando status dos links do projeto:");
+    const urls = [
+      "https://jessedepaula.com.br",
+      "https://trade-vision-ai-zaionvest-7062s-projects.vercel.app"
+    ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const html = await res.text();
+          if (html.includes("Trade Vision") && html.includes("Análise institucional")) {
+            console.log(`   └─ ${url} - ONLINE e CORRETO (OK)`);
+          } else {
+            console.log(`   └─ ${url} - ONLINE mas CONTEÚDO INCORRETO/ANTIGO (FALHA)`);
+          }
+        } else {
+          console.log(`   └─ ${url} - OFFLINE (Status ${res.status}) (FALHA)`);
+        }
+      } catch (err: any) {
+        console.log(`   └─ ${url} - INDISPONÍVEL (${err.message}) (FALHA)`);
+      }
+    }
+
   } catch (error) {
     console.error("❌ ERRO DURANTE A AUDITORIA:", error);
   } finally {
@@ -80,3 +104,4 @@ async function runAudit() {
 }
 
 runAudit();
+

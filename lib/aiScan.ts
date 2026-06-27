@@ -139,11 +139,12 @@ export async function scanWithAI(input: {
   mode: "SMC" | "CLASSICO";
   candles: Candle[];
   htfCandles?: Candle[];
+  userKeys?: { geminiApiKey?: string | null; openaiApiKey?: string | null };
 }): Promise<ScanResult> {
-  if (!process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-    throw new Error("Chave de API (OPENAI_API_KEY ou GEMINI_API_KEY) ausente");
+  if (!process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY && !input.userKeys?.geminiApiKey && !input.userKeys?.openaiApiKey) {
+    throw new Error("Chave de API (GEMINI_API_KEY ou chave nas Configurações) ausente");
   }
-  const { openai, model: defaultModel, isGemini } = getAIClient();
+  const { openai, model: defaultModel, isGemini } = getAIClient(input.userKeys);
   const model = isGemini ? defaultModel : pickModel(input.mode);
 
   // Reduzir tamanho dos dados enviados para a IA para evitar estourar limites de tokens (TPM)

@@ -119,6 +119,12 @@ export async function scanWatchlistItem(
     };
   }
 
+  // Carrega as chaves de API do usuário do banco
+  const userKeys = await prisma.user.findUnique({
+    where: { id: input.userId },
+    select: { geminiApiKey: true, openaiApiKey: true },
+  });
+
   // IA
   let result;
   let aiError: string | null = null;
@@ -129,6 +135,7 @@ export async function scanWatchlistItem(
       mode: input.mode,
       candles,
       htfCandles,
+      userKeys: userKeys ?? undefined,
     });
   } catch (e) {
     aiError = e instanceof Error ? e.message : "erro IA";

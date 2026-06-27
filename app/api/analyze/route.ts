@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { openai, model } = getAIClient();
+  const { openai, model } = getAIClient(sub.user);
 
   const imageUrl = image.startsWith("data:")
     ? image

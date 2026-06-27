@@ -17,6 +17,8 @@ model User {
   stripeCustomerId   String?   @unique
   stripeSubId        String?   @unique
   currentPeriodEnd   DateTime?
+  geminiApiKey       String?   @db.Text
+  openaiApiKey       String?   @db.Text
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   analyses           Analysis[]
