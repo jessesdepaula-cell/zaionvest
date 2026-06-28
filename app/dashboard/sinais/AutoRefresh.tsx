@@ -63,7 +63,8 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
           }
         }
 
-        lastScanRef.current = Date.now();
+        const nowTime = Date.now();
+        localStorage.setItem("tv:lastScanTime", nowTime.toString());
       } catch (err) {
         console.error("Erro no fluxo do scanner automático:", err);
       } finally {
@@ -73,8 +74,11 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
 
     // Dispara o primeiro scan na montagem do componente
     // (apenas se já passou mais de 15 min desde o último scan registrado)
+    const storedLastScan = localStorage.getItem("tv:lastScanTime");
+    const lastScanTime = storedLastScan ? parseInt(storedLastScan, 10) : 0;
     const now = Date.now();
-    if (now - lastScanRef.current > SCAN_INTERVAL) {
+
+    if (now - lastScanTime > SCAN_INTERVAL) {
       triggerScan();
     }
 

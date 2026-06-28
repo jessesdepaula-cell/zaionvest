@@ -68,6 +68,9 @@ export function WatchlistEditor({
         }
       }
       
+      // Salva a hora do scan no localStorage para evitar que o AutoRefresh tente rodar logo em seguida
+      localStorage.setItem("tv:lastScanTime", Date.now().toString());
+
       startTransition(() => {
         window.location.reload();
       });
