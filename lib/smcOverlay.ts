@@ -68,10 +68,13 @@ export function detectSmc(candles: Candle[]): SmcOverlay {
 
   const swings = detectSwings(candles, SWING_LOOKBACK);
   const fvgs = detectFvg(candles);
-  const breaks = detectStructureBreaks(candles, swings);
-  const obs = detectOrderBlocks(candles, breaks, fvgs);
+  const allBreaks = detectStructureBreaks(candles, swings);
+  const obs = detectOrderBlocks(candles, allBreaks, fvgs);
   const liquidity = detectLiquidity(candles, swings);
   const ote = detectOte(candles, swings);
+
+  // Mantém apenas os 4 breaks mais recentes para plotagem limpa no gráfico
+  const breaks = allBreaks.slice(-4);
 
   return { swings, fvgs, obs, breaks, liquidity, ote };
 }
@@ -147,8 +150,7 @@ function detectStructureBreaks(
       lastDir = "down";
     }
   }
-  // mantém apenas os 4 mais recentes
-  return breaks.slice(-4);
+  return breaks;
 }
 
 function lastSwingBefore(
@@ -170,29 +172,12 @@ function detectOrderBlocks(
   fvgs: Fvg[],
 ): OrderBlock[] {
   const obs: OrderBlock[] = [];
-  // média de corpo das últimas 20 velas (para validar displacement)
+  
   for (const br of breaks) {
-    const startWindow = Math.max(0, br.idx - 20);
-    const bodies = candles
-      .slice(startWindow, br.idx)
-      .map((c) => Math.abs(c.c - c.o));
-    const avgBody = bodies.reduce((s, v) => s + v, 0) / Math.max(1, bodies.length);
-    // verifica displacement na vela do break
-    const brCandle = candles[br.idx];
-    if (Math.abs(brCandle.c - brCandle.o) < avgBody * MIN_BODY_FACTOR) continue;
-    // FVG associado (em até 2 velas em volta)
-    const hasFvg = fvgs.some(
-      (f) =>
-        Math.abs(f.endIdx - br.idx) <= 2 &&
-        ((br.direction === "up" && f.direction === "bullish") ||
-          (br.direction === "down" && f.direction === "bearish")),
-    );
-    if (!hasFvg) continue;
-
-    // OB = última vela bearish (se break up) ou bullish (se break down) ANTES do displacement
+    // 1. Identificar a última vela oposta (bearish para alta, bullish para baixa) nos últimos 10 candles antes do break
     const wantBearish = br.direction === "up";
     let obIdx = -1;
-    for (let j = br.idx - 1; j >= Math.max(0, br.idx - 6); j--) {
+    for (let j = br.idx - 1; j >= Math.max(0, br.idx - 10); j--) {
       const c = candles[j];
       const isBearish = c.c < c.o;
       if (wantBearish === isBearish) {
@@ -202,13 +187,40 @@ function detectOrderBlocks(
     }
     if (obIdx < 0) continue;
     const c = candles[obIdx];
-    obs.push({
-      idx: obIdx,
-      top: Math.max(c.o, c.c, c.h),
-      bottom: Math.min(c.o, c.c, c.l),
-      direction: br.direction === "up" ? "bullish" : "bearish",
-    });
+    const top = Math.max(c.o, c.c, c.h);
+    const bottom = Math.min(c.o, c.c, c.l);
+
+    // 2. Verificar se o OB foi mitigado (preço fechou abaixo do bottom para compras, ou acima do top para vendas)
+    let mitigated = false;
+    for (let k = br.idx; k < candles.length; k++) {
+      const test = candles[k];
+      if (br.direction === "up") {
+        if (test.c < bottom) {
+          mitigated = true;
+          break;
+        }
+      } else {
+        if (test.c > top) {
+          mitigated = true;
+          break;
+        }
+      }
+    }
+
+    if (!mitigated) {
+      // Evita duplicar o mesmo candle como OB
+      if (!obs.some((o) => o.idx === obIdx)) {
+        obs.push({
+          idx: obIdx,
+          top,
+          bottom,
+          direction: br.direction === "up" ? "bullish" : "bearish",
+        });
+      }
+    }
   }
+
+  // Retorna os 3 OBs ativos (não mitigados) mais recentes
   return obs.slice(-3);
 }
 
