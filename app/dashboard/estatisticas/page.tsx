@@ -7,6 +7,7 @@ import { PeriodFilter } from "@/components/dashboard/PeriodFilter";
 import { PerformanceHeatmap, type TradePoint } from "@/components/dashboard/PerformanceHeatmap";
 import { ModeAccuracyMeter } from "@/components/dashboard/ModeAccuracyMeter";
 import { getModeStats } from "@/lib/modeStats";
+import { SignalHistoryTable, type SignalHistoryItem } from "@/components/dashboard/SignalHistoryTable";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,49 @@ export default async function EstatisticasPage({
       closedAt: true,
     },
   });
+
+  // Histórico de sinais da IA (apenas com setup detectado)
+  const signalWhere = {
+    userId: user.id,
+    hasSetup: true,
+    ...(since ? { scannedAt: { gte: since } } : {}),
+  };
+  const signalHistory = await prisma.signal.findMany({
+    where: signalWhere,
+    orderBy: { scannedAt: "desc" },
+    take: 300,
+    select: {
+      id: true,
+      symbol: true,
+      timeframe: true,
+      mode: true,
+      direction: true,
+      entryPrice: true,
+      stopPrice: true,
+      target1: true,
+      riskReward: true,
+      rMultiple: true,
+      status: true,
+      tipoSetup: true,
+      scannedAt: true,
+    },
+  });
+
+  const signalHistoryItems: SignalHistoryItem[] = signalHistory.map((s) => ({
+    id: s.id,
+    symbol: s.symbol,
+    timeframe: s.timeframe,
+    mode: s.mode,
+    direction: s.direction,
+    entryPrice: s.entryPrice,
+    stopPrice: s.stopPrice,
+    target1: s.target1,
+    riskReward: s.riskReward,
+    rMultiple: s.rMultiple,
+    status: s.status,
+    tipoSetup: s.tipoSetup,
+    scannedAt: s.scannedAt.toISOString(),
+  }));
 
   const overall = calcStats(all);
   const smc = calcStats(all.filter((t) => t.mode === "SMC"));
@@ -186,6 +230,24 @@ export default async function EstatisticasPage({
           para começar a medir.
         </div>
       )}
+
+      {/* ─── HISTÓRICO DE SINAIS DA IA ─── */}
+      <section className="mt-10">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-[10px] uppercase tracking-widest text-zinc-500">Histórico de sinais com setup</h2>
+            <p className="mt-0.5 text-[11px] text-zinc-600">Sinais gerados pela IA com plano de trade (Entrada / Stop / Alvo)</p>
+          </div>
+        </div>
+        {signalHistoryItems.length === 0 ? (
+          <div className="glass rounded-xl p-8 text-center text-sm text-zinc-500">
+            Nenhum sinal com setup detectado no período selecionado.
+            <p className="mt-1 text-xs text-zinc-600">Os sinais aparecem aqui após a IA identificar uma confluência válida na sua watchlist.</p>
+          </div>
+        ) : (
+          <SignalHistoryTable signals={signalHistoryItems} />
+        )}
+      </section>
     </div>
   );
 }
