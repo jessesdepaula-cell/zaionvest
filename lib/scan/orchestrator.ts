@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { scanWithAI, type Candle } from "@/lib/aiScan";
+import { generateSmcSignal } from "@/lib/smcSignal";
 import { evaluateOpenSignalsAgainstCandles } from "@/lib/signalTracker";
 import { sendSignalEmail } from "@/lib/email";
 import { getCandles } from "@/lib/market/router";
@@ -125,24 +126,42 @@ export async function scanWatchlistItem(
     select: { geminiApiKey: true, openaiApiKey: true },
   });
 
-  // IA
+  // Geração do sinal.
+  // SMC -> motor DETERMINÍSTICO (calcula a estrutura em código; grátis, reproduzível,
+  //        funciona mesmo sem chave de IA). A IA fica só como narradora opcional.
+  // CLASSICO -> ainda via IA (motor determinístico do clássico é próximo passo).
   let result;
   let aiError: string | null = null;
-  try {
-    result = await scanWithAI({
+
+  if (input.mode === "SMC") {
+    const det = generateSmcSignal({
       symbol: spec.symbol,
       timeframe: tf,
-      mode: input.mode,
       candles,
       htfCandles,
-      userKeys: userKeys ?? undefined,
     });
-  } catch (e) {
-    aiError = e instanceof Error ? e.message : "erro IA";
-    result = {
-      hasSetup: false,
-      justification: `⚠️ Candles atualizados, mas a análise da IA falhou: ${aiError}.`,
-    };
+    result = det.result;
+    console.log(
+      `[scan] SMC determinístico ${spec.symbol}/${tf}: hasSetup=${result.hasSetup} ` +
+        `checks=${det.meta.checksTrue}/6 bias=${det.meta.htfBias} dist=${det.meta.distanceToEntryPct?.toFixed(2) ?? "-"}% (${det.meta.reason})`,
+    );
+  } else {
+    try {
+      result = await scanWithAI({
+        symbol: spec.symbol,
+        timeframe: tf,
+        mode: input.mode,
+        candles,
+        htfCandles,
+        userKeys: userKeys ?? undefined,
+      });
+    } catch (e) {
+      aiError = e instanceof Error ? e.message : "erro IA";
+      result = {
+        hasSetup: false,
+        justification: `⚠️ Candles atualizados, mas a análise da IA falhou: ${aiError}.`,
+      };
+    }
   }
 
   const num = (v: unknown): number | null =>
