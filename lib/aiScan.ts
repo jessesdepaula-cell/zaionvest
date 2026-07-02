@@ -165,6 +165,12 @@ ${candlesToText(slicedCandles)}${htfSection}
 
 Há um SETUP CLARO operacional AGORA? Use o contexto HTF para validar o viés. Retorne o JSON conforme especificado.`;
 
+  // IMPORTANTE: gemini-2.5-flash é um modelo de RACIOCÍNIO. Os tokens de "thinking"
+  // são descontados do max_tokens ANTES do JSON final. Com um teto baixo (1200), o
+  // pensamento consome o orçamento e o JSON sai TRUNCADO -> JSON.parse falha -> o app
+  // descartava o setup silenciosamente. Damos folga generosa para caber pensamento + JSON.
+  const MAX_TOKENS = 8000;
+
   let completion;
   let attempts = 0;
   while (attempts < 3) {
@@ -172,13 +178,22 @@ Há um SETUP CLARO operacional AGORA? Use o contexto HTF para validar o viés. R
       completion = await openai.chat.completions.create({
         model,
         temperature: 0.1,
-        max_tokens: 1200,
+        max_tokens: MAX_TOKENS,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt(input.mode) },
           { role: "user", content: userText },
         ],
       });
+      const finish = completion.choices[0]?.finish_reason;
+      // Se o modelo cortou por limite de tokens, o JSON está incompleto: tenta de novo.
+      if (finish === "length" && attempts < 2) {
+        console.warn(
+          `[IA Scan] Resposta truncada (finish_reason=length) em ${input.symbol}/${input.mode}. Retentando (${attempts + 1}/3)...`,
+        );
+        attempts++;
+        continue;
+      }
       break;
     } catch (e) {
       attempts++;
@@ -186,8 +201,8 @@ Há um SETUP CLARO operacional AGORA? Use o contexto HTF para validar o viés. R
       if (attempts >= 3) {
         throw new Error(`[IA Scan] Limite de tentativas excedido. Erro original: ${errMessage}`);
       }
-      if (errMessage.includes("429") || errMessage.includes("Rate limit") || errMessage.includes("rate_limit")) {
-        console.warn(`[IA Scan] Limite de taxa da OpenAI atingido. Aguardando 10s para tentar novamente (tentativa ${attempts}/3)...`);
+      if (errMessage.includes("429") || errMessage.includes("Rate limit") || errMessage.includes("rate_limit") || errMessage.includes("RESOURCE_EXHAUSTED")) {
+        console.warn(`[IA Scan] Limite de taxa da IA atingido. Aguardando 10s para tentar novamente (tentativa ${attempts}/3)...`);
         await new Promise((resolve) => setTimeout(resolve, 10000));
       } else {
         throw e;
@@ -195,11 +210,38 @@ Há um SETUP CLARO operacional AGORA? Use o contexto HTF para validar o viés. R
     }
   }
 
-  const raw = completion?.choices[0]?.message?.content ?? "{}";
+  const raw = completion?.choices[0]?.message?.content ?? "";
+  const finish = completion?.choices[0]?.finish_reason;
+  const jsonText = extractJson(raw);
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(jsonText);
     return parsed as ScanResult;
   } catch {
-    return { hasSetup: false };
+    // NÃO engolir mais o erro em silêncio: registra o bruto e lança, para o orchestrator
+    // gravar a falha na justificativa (fica visível no painel em vez de "sem setup" fantasma).
+    console.error(
+      `[IA Scan] JSON inválido de ${input.symbol}/${input.mode} (finish_reason=${finish}). ` +
+        `Início: ${raw.slice(0, 160)} | Fim: ${raw.slice(-120)}`,
+    );
+    throw new Error(
+      `A IA retornou resposta inválida (finish_reason=${finish}). ` +
+        (finish === "length"
+          ? "Resposta truncada pelo limite de tokens do modelo."
+          : "Não foi possível interpretar o JSON."),
+    );
   }
+}
+
+/** Extrai o objeto JSON da resposta da IA, tolerando cercas markdown (```json) e texto ao redor. */
+function extractJson(raw: string): string {
+  let s = raw.trim();
+  if (s.startsWith("```")) {
+    s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  }
+  const first = s.indexOf("{");
+  const last = s.lastIndexOf("}");
+  if (first !== -1 && last !== -1 && last > first) {
+    s = s.slice(first, last + 1);
+  }
+  return s;
 }
