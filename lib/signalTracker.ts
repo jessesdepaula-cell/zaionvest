@@ -107,10 +107,11 @@ export async function evaluateOpenSignalsAgainstCandles(
         }
       }
 
-      // 2. FILLED -> Monitoramento PROGRESSIVO dos alvos (TP1 -> TP2 -> TP3) e stop.
-      // O trade só encerra como WIN no TP3 (alvo final) ou no retorno ao stop após
-      // ter garantido ao menos o TP1 (parcial). tpLevel registra o maior alvo
-      // atingido — é o que alimenta as estatísticas "quantos bateram TP1/TP2/TP3".
+      // 2. FILLED -> Monitoramento PROGRESSIVO dos alvos (TP1 -> TP2 -> TP3) e stop,
+      // com PROTEÇÃO DINÂMICA: alvo conquistado vira piso. Depois do TP1 a proteção
+      // sobe para a entrada (breakeven); depois do TP2, para o próprio TP2 — se o
+      // preço passar do TP2 e voltar, a operação FECHA COMO GANHO no TP2 em vez de
+      // ficar pendurada esperando o TP3 com o lucro evaporando.
       if (status === "FILLED" && !isDetectionCandle) {
         const hitTarget = (p: number) => (isBuy ? c.h >= p : c.l <= p);
         const hitStop = stop !== null && (isBuy ? c.l <= stop : c.h >= stop);
@@ -124,6 +125,7 @@ export async function evaluateOpenSignalsAgainstCandles(
         }
 
         // Avança pelos alvos atingidos nesta vela (pode pular mais de um)
+        const levelBefore = tpLevel;
         while (tpLevel < targets.length && hitTarget(targets[tpLevel])) {
           tpLevel++;
           if (tpLevel === 1) {
@@ -132,6 +134,7 @@ export async function evaluateOpenSignalsAgainstCandles(
             exitPrice = targets[0]; // Parcial garantida no Alvo 1
           }
         }
+        const advancedThisCandle = tpLevel > levelBefore;
 
         // Alvo final (TP3, ou o último disponível) atingido: WIN completo
         if (targets.length > 0 && tpLevel >= targets.length) {
@@ -141,12 +144,21 @@ export async function evaluateOpenSignalsAgainstCandles(
           break;
         }
 
-        // Já garantiu parcial e voltou ao stop: encerra como WIN (parcial preservada)
-        if (tpLevel >= 1 && hitStop) {
-          outcome = "WIN";
-          exitPrice = stop;
-          closeAt = candleTime;
-          break;
+        // Proteção dinâmica: nível conquistado vira piso de saída.
+        // tpLevel 1 -> proteção na ENTRADA (breakeven); tpLevel 2 -> proteção no TP2.
+        // Não avalia na MESMA vela em que o nível foi conquistado (a ordem dos
+        // movimentos dentro da vela é desconhecida — benefício da dúvida ao trade).
+        if (tpLevel >= 1 && !advancedThisCandle) {
+          const protection =
+            tpLevel >= 2 ? targets[1] : (s.entryPrice ?? stop);
+          const hitProtection =
+            protection !== null && (isBuy ? c.l <= protection : c.h >= protection);
+          if (hitProtection) {
+            outcome = "WIN"; // parcial/alvo garantido preserva o ganho
+            exitPrice = protection;
+            closeAt = candleTime;
+            break;
+          }
         }
       }
     }

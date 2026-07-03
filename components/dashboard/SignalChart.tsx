@@ -931,7 +931,9 @@ export function SignalChart({
               />
             )}
 
-        {typeof exitPrice === "number" && (
+        {/* Linha de saída SÓ quando a operação está concluída — com o trade aberto,
+            exitPrice pode conter a parcial do TP1 e mostrava "SAÍDA ✗" indevida. */}
+        {typeof exitPrice === "number" && (status === "WIN" || status === "LOSS") && (
           <PriceLine
             y={yOf(exitPrice)}
             price={exitPrice}
