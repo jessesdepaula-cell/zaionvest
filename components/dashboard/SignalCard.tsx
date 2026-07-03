@@ -180,9 +180,12 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
       </button>
  
       {!expanded && null}
- 
-      {/* Gráfico de candles ao topo */}
-      {expanded && candles && candles.length > 0 && (
+
+      {/* Gráfico de candles ao topo — SOMENTE para sinais ativos.
+          Sinal concluído (Ganho/Perda/Expirado) NÃO plota mais E/SL/TPs:
+          as marcações saem da tela e o gráfico do par fica liberado para a
+          próxima detecção (visível no Radar / no próximo sinal ativo). */}
+      {expanded && !isClosedSignal && candles && candles.length > 0 && (
         <div className="border-b border-white/5 p-4">
           <SignalChart
             candles={candles}
@@ -201,6 +204,12 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             defaultShowMA={s.mode === "CLASSICO"}
             defaultShowSmc={s.mode === "SMC"}
           />
+        </div>
+      )}
+      {expanded && isClosedSignal && (
+        <div className="border-b border-white/5 px-4 py-2.5 text-[11px] text-zinc-500">
+          Sinal concluído — as marcações de entrada, stop e alvos foram removidas do
+          gráfico. O par voltou ao radar, liberado para a próxima oportunidade.
         </div>
       )}
 
