@@ -1,4 +1,5 @@
 import { type ModeStats } from "@/lib/modeStats";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -69,8 +70,14 @@ function PerformanceCard({
           <p className="text-[10px] uppercase tracking-widest text-zinc-500">Desempenho</p>
           <p className={cn("mt-0.5 text-lg font-semibold tracking-tight", accentClass)}>{label}</p>
         </div>
-        <span className={cn("rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", v.cls)}>
-          {v.label}
+        <span className="inline-flex items-center gap-1.5">
+          <span className={cn("rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", v.cls)}>
+            {v.label}
+          </span>
+          <InfoTip
+            align="right"
+            text="Veredito direto do operacional: GANHADOR quando há mais trades fechados no lucro do que no prejuízo; PERDEDOR no inverso. Sinais expirados (sem execução possível) não entram na conta — só resultado real."
+          />
         </span>
       </div>
 
@@ -82,8 +89,9 @@ function PerformanceCard({
       </div>
 
       {/* Alvos atingidos */}
-      <p className="mt-4 mb-1.5 text-[9px] uppercase tracking-widest text-zinc-500 font-medium">
+      <p className="mt-4 mb-1.5 flex items-center gap-1 text-[9px] uppercase tracking-widest text-zinc-500 font-medium">
         Alvos atingidos (pelo menos)
+        <InfoTip text="Cada trade tem 3 alvos: TP1 (conservador), TP2 (principal) e TP3 (extensão). Aqui você vê quantos trades chegaram a cada nível — se muitos batem TP1 mas poucos chegam ao TP3, o alvo mais eficiente da estratégia é o mais curto. Contagem cumulativa: quem bateu TP3 também conta em TP1 e TP2." />
       </p>
       <div className="grid grid-cols-3 gap-2">
         <BigStat label="Bateram TP1" value={stats.tp1} tone={stats.tp1 > 0 ? "win" : undefined} />

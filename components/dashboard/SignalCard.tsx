@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { ChevronDown, ChevronRight, Clock, Target, TrendingDown, TrendingUp, Radio, AlertCircle } from "lucide-react";
 import { SmcChecklist } from "./SmcChecklist";
 import { ClassicoChecklist } from "./ClassicoChecklist";
@@ -172,6 +173,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
           <span className={cn("rounded-md border px-2 py-0.5 text-[9px] uppercase tracking-widest", statusMeta.cls)}>
             {statusMeta.label}
           </span>
+          {statusMeta.hint && <InfoTip text={statusMeta.hint} align="right" />}
           <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500">
             <Clock className="h-3 w-3" />
             {timeAgo(s.scannedAt)}
@@ -248,7 +250,13 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             <div className="text-right">
               {s.probability !== null && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-zinc-500">Probabilidade</p>
+                  <p className="flex items-center justify-end gap-1 text-[10px] uppercase tracking-widest text-zinc-500">
+                    Probabilidade
+                    <InfoTip
+                      align="right"
+                      text="Calculada pelas confluências técnicas confirmadas no checklist (regras do método, não opinião): 6/6 = ~82% (sinal forte), 5/6 = ~66% (moderado), 4/6 = ~48% (em formação — exige mais cautela e confirmação)."
+                    />
+                  </p>
                   <p className={cn("num text-2xl font-bold mt-0.5", meta.text)}>{s.probability}%</p>
                 </div>
               )}
@@ -354,7 +362,10 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             {/* R:R geral */}
             {s.riskReward && (
               <div className="mt-3 flex items-center justify-between rounded-md border border-white/5 bg-white/[0.02] px-3 py-2">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-500">R:R geral declarado pela IA</p>
+                <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-zinc-500">
+                  Risco : Retorno
+                  <InfoTip text="Quanto se ganha em relação ao que se arrisca. 1:2 significa: se o stop custa R$100, o alvo paga R$200. Calculado da entrada ao Alvo 1 — os alvos 2 e 3 pagam múltiplos maiores." />
+                </p>
                 <p className="num text-sm font-semibold text-zinc-200">{s.riskReward}</p>
               </div>
             )}
@@ -473,7 +484,10 @@ function SignalTimeline({ signal: s }: { signal: SignalData }) {
 
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5">
-      <p className="mb-2 text-[10px] uppercase tracking-widest text-zinc-500">Ciclo do sinal</p>
+      <p className="mb-2 flex items-center gap-1 text-[10px] uppercase tracking-widest text-zinc-500">
+        Ciclo do sinal
+        <InfoTip text="A linha do tempo prova a antecipação: o sinal é DETECTADO antes de o preço chegar; a ENTRADA executa quando o preço toca o nível programado; o RESULTADO fecha no alvo ou no stop. Cada etapa registra o horário real." />
+      </p>
       <div className="space-y-1.5">
         {steps.map((st, i) => (
           <div key={i} className="flex items-start gap-2">
@@ -787,17 +801,41 @@ function directionMeta(d: string | null) {
 function statusBadge(status: string) {
   switch (status) {
     case "PENDING":
-      return { label: "Aguardando", cls: "border-white/10 bg-white/[0.03] text-zinc-300" };
+      return {
+        label: "Aguardando",
+        cls: "border-white/10 bg-white/[0.03] text-zinc-300",
+        hint: "O sinal foi detectado ANTES de o preço chegar à entrada. É agora que você posiciona a ordem no preço indicado. Quando o preço tocar, o status muda para 'Em execução'.",
+      };
     case "FILLED":
-      return { label: "Em execução", cls: "border-amber-500/30 bg-amber-500/[0.08] text-amber-300" };
+      return {
+        label: "Em execução",
+        cls: "border-amber-500/30 bg-amber-500/[0.08] text-amber-300",
+        hint: "O preço tocou a entrada programada e o trade está aberto. O sistema monitora automaticamente os alvos (TP1/TP2/TP3) e o stop.",
+      };
     case "WIN":
-      return { label: "Ganho", cls: "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300" };
+      return {
+        label: "Ganho",
+        cls: "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300",
+        hint: "O trade atingiu alvo. O valor em R mostra o lucro em múltiplos do risco: +2R significa que o lucro foi o dobro do que se arriscou no stop.",
+      };
     case "LOSS":
-      return { label: "Perda", cls: "border-rose-500/30 bg-rose-500/[0.08] text-rose-300" };
+      return {
+        label: "Perda",
+        cls: "border-rose-500/30 bg-rose-500/[0.08] text-rose-300",
+        hint: "O preço atingiu o stop antes dos alvos. Perdas fazem parte de qualquer operacional — o stop limita a perda a 1R (o risco planejado).",
+      };
     case "EXPIRED":
-      return { label: "Expirado", cls: "border-white/10 bg-white/[0.03] text-zinc-400" };
+      return {
+        label: "Expirado",
+        cls: "border-white/10 bg-white/[0.03] text-zinc-400",
+        hint: "O preço fugiu sem nunca tocar a entrada programada (o movimento aconteceu sem chance real de execução) ou o sinal passou 48h sem executar. NÃO conta como ganho nem como perda — isso mantém a estatística honesta.",
+      };
     default:
-      return { label: status, cls: "border-white/10 bg-white/[0.03] text-zinc-400" };
+      return {
+        label: status,
+        cls: "border-white/10 bg-white/[0.03] text-zinc-400",
+        hint: undefined as string | undefined,
+      };
   }
 }
 
