@@ -191,6 +191,16 @@ export function generateClassicoSignal(input: {
     return noSetup(`R:R do Alvo 1 (${rr.toFixed(2)}) abaixo do mínimo. Sem trade.`, trend, checksTrue);
   }
 
+  // Sanidade do plano: o preço atual NÃO pode já ter passado do Alvo 1
+  // (plano sem espaço de lucro nasceria morto e geraria alertas inúteis).
+  if (isLong ? price >= t1 : price <= t1) {
+    return noSetup(
+      `Preço atual (${price}) já está além do Alvo 1 (${t1}). Plano sem espaço — aguardando novo contexto.`,
+      trend,
+      checksTrue,
+    );
+  }
+
   const probability = checksTrue >= 6 ? 82 : checksTrue === 5 ? 66 : 48;
   const confidence: "ALTA" | "MEDIA" | "BAIXA" =
     checksTrue >= 6 ? "ALTA" : checksTrue === 5 ? "MEDIA" : "BAIXA";

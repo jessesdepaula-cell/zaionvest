@@ -220,6 +220,16 @@ export function generateSmcSignal(input: {
     return noSetup(`R:R do Alvo 1 (${rr.toFixed(2)}) abaixo do mínimo. Sem trade.`, htfBias);
   }
 
+  // Sanidade do plano: o preço atual NÃO pode já ter passado do Alvo 1.
+  // Comprar com alvo atrás do preço é um plano sem espaço de lucro — o sinal
+  // nasceria morto (expiraria de imediato) e dispararia alertas inúteis.
+  if (isLong ? price >= t1 : price <= t1) {
+    return noSetup(
+      `Preço atual (${price}) já está além do Alvo 1 (${t1}). Plano sem espaço — aguardando novo contexto.`,
+      htfBias,
+    );
+  }
+
   const probability =
     checksTrue >= 6 ? 82 : checksTrue === 5 ? 66 : 48;
   const confidence: "ALTA" | "MEDIA" | "BAIXA" =

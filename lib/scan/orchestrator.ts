@@ -198,6 +198,35 @@ export async function scanWatchlistItem(
     }
   }
 
+  // Anti-respawn: se um sinal GÊMEO (mesma entrada ±0.1%) deste par/modo acabou
+  // de EXPIRAR (últimas 2h), não recria — evita o loop "cria → expira → recria"
+  // que dispara e-mails repetidos do mesmo plano já invalidado pelo mercado.
+  if (hasSetup) {
+    const entryNew = num(result.entryPrice);
+    if (entryNew !== null) {
+      const recentExpired = await prisma.signal.findFirst({
+        where: {
+          userId: input.userId,
+          symbol: spec.symbol,
+          timeframe: tf,
+          mode: input.mode,
+          status: "EXPIRED",
+          closedAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+        },
+        orderBy: { closedAt: "desc" },
+        select: { entryPrice: true },
+      });
+      if (
+        recentExpired?.entryPrice != null &&
+        Math.abs(entryNew - recentExpired.entryPrice) / entryNew < 0.001
+      ) {
+        hasSetup = false;
+        rrValidationMessage =
+          "Plano idêntico expirou há pouco — aguardando novo contexto de mercado.";
+      }
+    }
+  }
+
   const signal = await prisma.signal.create({
     data: {
       userId: input.userId,

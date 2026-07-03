@@ -81,6 +81,13 @@ export async function evaluateOpenSignalsAgainstCandles(
     for (const c of relevant) {
       const candleTime = new Date(c.t * 1000);
 
+      // A vela que JÁ ESTAVA ABERTA no momento da detecção contém movimento
+      // ANTERIOR ao nascimento do sinal. Nela só é permitido EXECUTAR a entrada
+      // (toque é ação presente); expirar ou bater alvo/stop com high/low dessa
+      // vela seria julgar o sinal por preço do passado — era isso que expirava
+      // sinais segundos após a criação (e disparava e-mails em loop).
+      const isDetectionCandle = c.t <= scannedSec;
+
       // 1. PENDING -> FILLED
       if (status === "PENDING" && s.entryPrice !== null) {
         if (c.l <= s.entryPrice && c.h >= s.entryPrice) {
@@ -90,6 +97,7 @@ export async function evaluateOpenSignalsAgainstCandles(
           // Trem perdido: o preço atingiu o Alvo 1 SEM nunca ter tocado a entrada.
           // O movimento aconteceu sem execução — expira para não ficar "Aguardando"
           // para sempre nem bloquear novos sinais deste ativo.
+          !isDetectionCandle &&
           t1 !== null &&
           (isBuy ? c.h >= t1 && c.l > s.entryPrice : c.l <= t1 && c.h < s.entryPrice)
         ) {
@@ -103,7 +111,7 @@ export async function evaluateOpenSignalsAgainstCandles(
       // O trade só encerra como WIN no TP3 (alvo final) ou no retorno ao stop após
       // ter garantido ao menos o TP1 (parcial). tpLevel registra o maior alvo
       // atingido — é o que alimenta as estatísticas "quantos bateram TP1/TP2/TP3".
-      if (status === "FILLED") {
+      if (status === "FILLED" && !isDetectionCandle) {
         const hitTarget = (p: number) => (isBuy ? c.h >= p : c.l <= p);
         const hitStop = stop !== null && (isBuy ? c.l <= stop : c.h >= stop);
 
