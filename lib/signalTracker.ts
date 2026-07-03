@@ -71,6 +71,12 @@ export async function evaluateOpenSignalsAgainstCandles(
     const t1 = s.target1;
     const t2 = s.target2 ?? s.target1;
     const stop = s.stopPrice;
+    // Alvos válidos em ordem (TP1 -> TP2 -> TP3) para monitoramento progressivo
+    const targets = [s.target1, s.target2, s.target3].filter(
+      (x): x is number => x !== null,
+    );
+    // Nível de alvo já atingido (persistido em maxTargetHit; legado usa partialHit)
+    let tpLevel = s.maxTargetHit ?? (partialHit ? 1 : 0);
 
     for (const c of relevant) {
       const candleTime = new Date(c.t * 1000);
@@ -93,80 +99,46 @@ export async function evaluateOpenSignalsAgainstCandles(
         }
       }
 
-      // 2. FILLED -> Monitoramento de Alvos e Stop
+      // 2. FILLED -> Monitoramento PROGRESSIVO dos alvos (TP1 -> TP2 -> TP3) e stop.
+      // O trade só encerra como WIN no TP3 (alvo final) ou no retorno ao stop após
+      // ter garantido ao menos o TP1 (parcial). tpLevel registra o maior alvo
+      // atingido — é o que alimenta as estatísticas "quantos bateram TP1/TP2/TP3".
       if (status === "FILLED") {
-        if (isBuy) {
-          if (!partialHit) {
-            // Ainda não bateu no Alvo 1
-            if (stop !== null && c.l <= stop) {
-              outcome = "LOSS";
-              exitPrice = stop;
-              closeAt = candleTime;
-              break;
-            }
-            if (t1 !== null && c.h >= t1) {
-              partialHit = true;
-              partialHitAt = candleTime;
-              exitPrice = t1; // Parcial garantida no Alvo 1
-              // Verifica se na mesma vela atinge o Alvo 2
-              if (t2 !== null && c.h >= t2) {
-                outcome = "WIN";
-                exitPrice = t2;
-                closeAt = candleTime;
-                break;
-              }
-            }
-          } else {
-            // Já bateu no Alvo 1 (monitora apenas Alvo 2 e Stop Loss)
-            if (t2 !== null && c.h >= t2) {
-              outcome = "WIN";
-              exitPrice = t2;
-              closeAt = candleTime;
-              break;
-            }
-            if (stop !== null && c.l <= stop) {
-              outcome = "WIN"; // Permanece WIN porque tocou Alvo 1
-              exitPrice = stop;
-              closeAt = candleTime;
-              break;
-            }
+        const hitTarget = (p: number) => (isBuy ? c.h >= p : c.l <= p);
+        const hitStop = stop !== null && (isBuy ? c.l <= stop : c.h >= stop);
+
+        // Sem nenhum alvo garantido: stop primeiro (convenção conservadora)
+        if (tpLevel === 0 && hitStop) {
+          outcome = "LOSS";
+          exitPrice = stop;
+          closeAt = candleTime;
+          break;
+        }
+
+        // Avança pelos alvos atingidos nesta vela (pode pular mais de um)
+        while (tpLevel < targets.length && hitTarget(targets[tpLevel])) {
+          tpLevel++;
+          if (tpLevel === 1) {
+            partialHit = true;
+            partialHitAt = candleTime;
+            exitPrice = targets[0]; // Parcial garantida no Alvo 1
           }
-        } else if (isSell) {
-          if (!partialHit) {
-            // Ainda não bateu no Alvo 1
-            if (stop !== null && c.h >= stop) {
-              outcome = "LOSS";
-              exitPrice = stop;
-              closeAt = candleTime;
-              break;
-            }
-            if (t1 !== null && c.l <= t1) {
-              partialHit = true;
-              partialHitAt = candleTime;
-              exitPrice = t1; // Parcial garantida no Alvo 1
-              // Verifica se na mesma vela atinge o Alvo 2
-              if (t2 !== null && c.l <= t2) {
-                outcome = "WIN";
-                exitPrice = t2;
-                closeAt = candleTime;
-                break;
-              }
-            }
-          } else {
-            // Já bateu no Alvo 1 (monitora apenas Alvo 2 e Stop Loss)
-            if (t2 !== null && c.l <= t2) {
-              outcome = "WIN";
-              exitPrice = t2;
-              closeAt = candleTime;
-              break;
-            }
-            if (stop !== null && c.h >= stop) {
-              outcome = "WIN"; // Permanece WIN porque tocou Alvo 1
-              exitPrice = stop;
-              closeAt = candleTime;
-              break;
-            }
-          }
+        }
+
+        // Alvo final (TP3, ou o último disponível) atingido: WIN completo
+        if (targets.length > 0 && tpLevel >= targets.length) {
+          outcome = "WIN";
+          exitPrice = targets[targets.length - 1];
+          closeAt = candleTime;
+          break;
+        }
+
+        // Já garantiu parcial e voltou ao stop: encerra como WIN (parcial preservada)
+        if (tpLevel >= 1 && hitStop) {
+          outcome = "WIN";
+          exitPrice = stop;
+          closeAt = candleTime;
+          break;
         }
       }
     }
@@ -237,10 +209,19 @@ export async function evaluateOpenSignalsAgainstCandles(
           rMultiple: r,
           status: "FILLED",
           filledAt: filledAt ?? s.filledAt ?? new Date(),
+          maxTargetHit: tpLevel > 0 ? tpLevel : 1,
         },
       });
 
       won++;
+    }
+
+    // 4b. Progresso de alvo sem encerramento (ex.: bateu TP2 e segue rumo ao TP3):
+    // persiste o maior alvo atingido para as estatísticas de TP1/TP2/TP3.
+    if (!outcome && tpLevel > (s.maxTargetHit ?? 0) && s.tradeCreated) {
+      await prisma.signal
+        .update({ where: { id: s.id }, data: { maxTargetHit: tpLevel } })
+        .catch(() => null);
     }
 
     // 5. Persistência do Encerramento Final (tocar no Alvo 2 ou no Stop Loss)
@@ -261,6 +242,7 @@ export async function evaluateOpenSignalsAgainstCandles(
           exitPrice,
           rMultiple: r,
           tradeCreated: true,
+          maxTargetHit: tpLevel > 0 ? tpLevel : null,
         },
       });
 

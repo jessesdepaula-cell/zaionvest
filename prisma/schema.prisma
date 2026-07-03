@@ -126,6 +126,7 @@ model Signal {
   closedAt          DateTime?
   exitPrice         Float?
   rMultiple         Float?
+  maxTargetHit      Int?     // maior alvo atingido: 1, 2 ou 3 (null = nenhum)
 
   tradeCreated      Boolean  @default(false)
 
