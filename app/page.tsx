@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TrackRecordSection } from "@/components/landing/TrackRecordSection";
 import {
   ArrowRight,
   Check,
@@ -12,6 +13,9 @@ import {
   X,
   MessageCircle,
 } from "lucide-react";
+
+// ISR: o track record real vem do banco; revalida a cada 5 minutos.
+export const revalidate = 300;
 
 export const metadata = {
   title: "Trade Vision AI — Sinais SMC e Price Action com IA | 3 Dias Grátis",
@@ -330,19 +334,10 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-wrap justify-center gap-8 text-center">
-          {[
-            { value: "21+", label: "Sinais analisados" },
-            { value: "100%", label: "Taxa de acerto (auditada)" },
-            { value: "10+", label: "Ativos monitorados" },
-          ].map((stat, i) => (
-            <div key={i}>
-              <p className="text-3xl font-extrabold text-emerald-400">{stat.value}</p>
-              <p className="mt-1 text-xs text-zinc-500">{stat.label}</p>
-            </div>
-          ))}
-        </div>
       </section>
+
+      {/* ─── TRACK RECORD REAL (dados do banco, sem números editados) ─── */}
+      <TrackRecordSection />
 
       {/* ─── PREÇO ─── */}
       <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-white/5 text-center">

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 /**
  * AutoRefresh:
- * 1. Atualiza os dados da página (router.refresh) a cada 30s
- * 2. Dispara um scan individualizado de cada ativo da watchlist (POST /api/scan/run)
- *    a cada 15 minutos enquanto o usuário está com a aba aberta. Isso evita
- *    timeouts de 10s da Vercel Hobby e conflitos de limite de taxa (429).
+ * 1. A cada 30s: reavalia sinais abertos (/api/signals/track) e atualiza a página.
+ * 2. Dispara scan individualizado de cada ativo da watchlist (POST /api/scan/run)
+ *    enquanto a aba está aberta — SMC a cada 5 min (determinístico, sem custo),
+ *    CLÁSSICO a cada 15 min (usa IA; respeita limites de taxa).
  */
 export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
   const router = useRouter();
@@ -31,11 +31,15 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
     trackAndRefresh();
     const refreshId = setInterval(trackAndRefresh, intervalMs);
 
-    // Scan automático a cada 15 minutos
-    const SCAN_INTERVAL = 15 * 60 * 1000; // 15 min
+    // Intervalos de scan POR MODO:
+    // - SMC: motor determinístico (sem custo de IA) → escaneia a cada 5 min,
+    //   detectando o Order Block bem antes de o preço chegar (antecipação real).
+    // - CLÁSSICO: ainda usa IA → mantém 15 min para respeitar limites de taxa.
+    const SCAN_INTERVAL_SMC = 5 * 60 * 1000;
+    const SCAN_INTERVAL_CLASSICO = 15 * 60 * 1000;
 
-    async function triggerScan() {
-      if (isScanningRef.current) return;
+    async function triggerScan(modes: Array<"SMC" | "CLASSICO">) {
+      if (isScanningRef.current || modes.length === 0) return;
       isScanningRef.current = true;
 
       try {
@@ -47,16 +51,18 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
         });
 
         if (!listRes.ok) throw new Error("Falha ao listar watchlist");
-        const { items } = (await listRes.json()) as { items: Array<{ id: string; symbol: string }> };
+        const { items } = (await listRes.json()) as {
+          items: Array<{ id: string; symbol: string; mode: string }>;
+        };
 
-        if (!items || items.length === 0) {
-          isScanningRef.current = false;
-          return;
-        }
+        const due = (items ?? []).filter((it) =>
+          modes.includes((it.mode === "SMC" ? "SMC" : "CLASSICO") as "SMC" | "CLASSICO"),
+        );
+        if (due.length === 0) return;
 
         // 2. Escanear cada item individualmente em sequência com intervalo de 1s
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
+        for (let i = 0; i < due.length; i++) {
+          const item = due[i];
           try {
             await fetch("/api/scan/run", {
               method: "POST",
@@ -70,13 +76,13 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
           }
 
           // Aguarda 1 segundo antes de disparar o próximo ativo para respeitar limites de taxa (RPM)
-          if (i < items.length - 1) {
+          if (i < due.length - 1) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
 
-        const nowTime = Date.now();
-        localStorage.setItem("tv:lastScanTime", nowTime.toString());
+        const nowTime = Date.now().toString();
+        for (const m of modes) localStorage.setItem(`tv:lastScanTime:${m}`, nowTime);
       } catch (err) {
         console.error("Erro no fluxo do scanner automático:", err);
       } finally {
@@ -84,18 +90,19 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
       }
     }
 
-    // Dispara o primeiro scan na montagem do componente
-    // (apenas se já passou mais de 15 min desde o último scan registrado)
-    const storedLastScan = localStorage.getItem("tv:lastScanTime");
-    const lastScanTime = storedLastScan ? parseInt(storedLastScan, 10) : 0;
-    const now = Date.now();
-
-    if (now - lastScanTime > SCAN_INTERVAL) {
-      triggerScan();
+    function dueModes(): Array<"SMC" | "CLASSICO"> {
+      const now = Date.now();
+      const out: Array<"SMC" | "CLASSICO"> = [];
+      const lastSmc = parseInt(localStorage.getItem("tv:lastScanTime:SMC") ?? "0", 10);
+      const lastCla = parseInt(localStorage.getItem("tv:lastScanTime:CLASSICO") ?? "0", 10);
+      if (now - lastSmc > SCAN_INTERVAL_SMC) out.push("SMC");
+      if (now - lastCla > SCAN_INTERVAL_CLASSICO) out.push("CLASSICO");
+      return out;
     }
 
-    // Scan recorrente a cada 15 min
-    const scanId = setInterval(triggerScan, SCAN_INTERVAL);
+    // Primeiro disparo na montagem (só os modos vencidos) + verificação a cada 60s
+    triggerScan(dueModes());
+    const scanId = setInterval(() => triggerScan(dueModes()), 60 * 1000);
 
     return () => {
       clearInterval(refreshId);
