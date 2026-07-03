@@ -16,8 +16,20 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
   const isScanningRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Refresh de dados da página a cada 30s para atualizar o timer de candles e novos dados
-    const refreshId = setInterval(() => router.refresh(), intervalMs);
+    // A cada 30s: (1) avalia os sinais abertos contra as velas mais recentes
+    // (entrada tocada? alvo/stop atingido?) e (2) atualiza os dados da página.
+    // Assim o status Aguardando → Em execução → Ganho/Perda acompanha o mercado
+    // em quase tempo real, sem esperar o próximo scan de 15 minutos.
+    async function trackAndRefresh() {
+      try {
+        await fetch("/api/signals/track", { method: "POST" });
+      } catch {
+        // silencioso: tracking é best-effort; o refresh acontece mesmo assim
+      }
+      router.refresh();
+    }
+    trackAndRefresh();
+    const refreshId = setInterval(trackAndRefresh, intervalMs);
 
     // Scan automático a cada 15 minutos
     const SCAN_INTERVAL = 15 * 60 * 1000; // 15 min

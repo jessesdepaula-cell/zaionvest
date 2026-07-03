@@ -244,6 +244,9 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             </div>
           </div>
 
+          {/* ── LINHA DO TEMPO DO SINAL (prova de antecipação) ── */}
+          <SignalTimeline signal={s} />
+
           {/* Barra de probabilidade */}
           {s.probability !== null && (
             <div className="h-1 w-full overflow-hidden rounded-full bg-white/5">
@@ -400,6 +403,96 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Linha do tempo do ciclo do sinal: Detectado → Entrada → Resultado.
+ * Deixa explícito que o sinal foi criado ANTES do preço tocar a entrada
+ * (antecipação), e em que momento cada etapa aconteceu.
+ */
+function SignalTimeline({ signal: s }: { signal: SignalData }) {
+  const fmt = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+  const detected = fmt(s.scannedAt);
+  const filled = fmt(s.filledAt);
+  const closed = fmt(s.closedAt);
+  const isPending = s.status === "PENDING";
+  const isFilled = s.status === "FILLED";
+  const isClosed = s.status === "WIN" || s.status === "LOSS";
+
+  const steps: Array<{ label: string; detail: string; state: "done" | "active" | "todo"; tone?: "win" | "loss" }> = [
+    {
+      label: "Sinal detectado",
+      detail: `${detected} — plano criado ANTES da entrada`,
+      state: "done",
+    },
+    {
+      label: isPending ? "Aguardando entrada" : "Entrada executada",
+      detail: isPending
+        ? `ordem Limit em ${s.entryPrice !== null ? s.entryPrice.toFixed(decimals(s.symbol)) : "—"} · o preço ainda não chegou — é AGORA que você posiciona a ordem`
+        : filled
+          ? `preço tocou a entrada em ${filled}`
+          : "preço tocou a entrada",
+      state: isPending ? "active" : "done",
+    },
+    {
+      label: isClosed ? (s.status === "WIN" ? "Resultado: GANHO" : "Resultado: PERDA") : "Resultado",
+      detail: isClosed
+        ? `${closed ?? ""}${s.exitPrice !== null ? ` · saída ${s.exitPrice.toFixed(decimals(s.symbol))}` : ""}`
+        : isFilled
+          ? "em execução — monitorando alvos e stop"
+          : "—",
+      state: isClosed ? "done" : isFilled ? "active" : "todo",
+      tone: s.status === "WIN" ? "win" : s.status === "LOSS" ? "loss" : undefined,
+    },
+  ];
+
+  return (
+    <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5">
+      <p className="mb-2 text-[10px] uppercase tracking-widest text-zinc-500">Ciclo do sinal</p>
+      <div className="space-y-1.5">
+        {steps.map((st, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <span
+              className={cn(
+                "mt-1 flex h-2 w-2 shrink-0 rounded-full",
+                st.state === "done" && !st.tone && "bg-emerald-400",
+                st.tone === "win" && "bg-emerald-400",
+                st.tone === "loss" && "bg-rose-400",
+                st.state === "active" && "relative bg-amber-400",
+                st.state === "todo" && "bg-zinc-700",
+              )}
+            >
+              {st.state === "active" && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "text-[11px] font-semibold leading-tight",
+                  st.state === "todo" ? "text-zinc-600" : "text-zinc-200",
+                  st.tone === "win" && "text-emerald-300",
+                  st.tone === "loss" && "text-rose-300",
+                )}
+              >
+                {st.label}
+              </p>
+              <p className="num text-[10px] leading-snug text-zinc-500">{st.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
