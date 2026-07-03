@@ -105,9 +105,37 @@ export default async function SinaisPage({
     }
   }
 
+  const isClosed = (st: string) => st === "WIN" || st === "LOSS" || st === "EXPIRED";
+  const isActiveSignal = (s: (typeof allRecent)[number]) =>
+    s.hasSetup && (s.status === "PENDING" || s.status === "FILLED");
+
+  // ── GESTÃO DE CICLO DE VIDA NA TELA ──
+  // Ativos: ocupam o palco com gráfico. Concluídos: saem da frente e viram
+  // histórico compacto. O par cujo último sinal fechou volta ao radar,
+  // liberado para a próxima oportunidade.
+  const activeSignals = deduped.filter(isActiveSignal);
+  const monitoring = deduped
+    .filter((s) => !isActiveSignal(s))
+    .map((s) =>
+      s.hasSetup && isClosed(s.status)
+        ? ({
+            ...s,
+            id: `freed-${s.id}`,
+            hasSetup: false,
+            status: "NO_SETUP",
+            direction: null,
+            justification: `Último sinal deste par foi concluído (${
+              s.status === "WIN" ? "ganho" : s.status === "LOSS" ? "perda" : "expirado"
+            }). Gráfico liberado — monitorando a próxima oportunidade.`,
+            candleData: null,
+          } as (typeof allRecent)[number])
+        : s,
+    );
+  const recentClosed = allRecent.filter((s) => s.hasSetup && isClosed(s.status)).slice(0, 8);
+
   const visible: typeof allRecent =
     statusFilter === "fechados"
-      ? allRecent.filter((s) => s.status === "WIN" || s.status === "LOSS")
+      ? allRecent.filter((s) => s.hasSetup && isClosed(s.status))
       : deduped;
 
   const stats = {
@@ -142,7 +170,7 @@ export default async function SinaisPage({
             </span>
           </div>
           <p className="mt-1 text-sm text-zinc-400">
-            Setups identificados pela IA a cada 15 minutos, a partir de candles puxados direto do mercado.
+            Setups identificados a cada 5 minutos, a partir de candles puxados direto do mercado.
           </p>
         </div>
 
@@ -223,56 +251,159 @@ export default async function SinaisPage({
           </a>{" "}
           para começar a receber sinais automáticos.
         </div>
-      ) : visible.length === 0 ? (
-        <div className="glass grid min-h-[200px] place-items-center rounded-xl p-8 text-center text-sm text-zinc-400">
-          <div>
-            <Radar className="mx-auto h-5 w-5 text-zinc-600" />
-            <p className="mt-3">Nenhum sinal no filtro selecionado ainda.</p>
-            <p className="mt-1 text-xs text-zinc-500">
-              O scan roda a cada 15 minutos. Aguarde…
-            </p>
+      ) : statusFilter ? (
+        // Filtro explícito: lista simples do recorte pedido
+        visible.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div className="space-y-3">
+            {visible.map((s) => (
+              <SignalCard key={s.id} signal={toSignalData(s)} />
+            ))}
           </div>
-        </div>
+        )
       ) : (
-        <div className="space-y-3">
-          {visible.map((s) => (
-            <SignalCard
-              key={statusFilter === "fechados" ? s.id : `${s.symbol}|${s.timeframe}|${s.mode}`}
-              signal={
-                {
-                  id: s.id,
-                  symbol: s.symbol,
-                  timeframe: s.timeframe,
-                  mode: s.mode,
-                  hasSetup: s.hasSetup,
-                  direction: s.direction,
-                  probability: s.probability,
-                  confidence: s.confidence,
-                  entryPrice: s.entryPrice,
-                  stopPrice: s.stopPrice,
-                  target1: s.target1,
-                  target2: s.target2,
-                  target3: s.target3,
-                  recommendedTarget: s.recommendedTarget,
-                  riskReward: s.riskReward,
-                  structure: s.structure,
-                  justification: s.justification,
-                  status: s.status,
-                  exitPrice: s.exitPrice,
-                  rMultiple: s.rMultiple,
-                  scannedAt: s.scannedAt.toISOString(),
-                  filledAt: s.filledAt?.toISOString() ?? null,
-                  closedAt: s.closedAt?.toISOString() ?? null,
-                  candleData: (s.candleData as SignalData["candleData"]) ?? null,
-                  tipoSetup: s.tipoSetup,
-                  checklistSmc: (s.checklistSmc as Record<string, boolean> | null) ?? null,
-                  checklistClassico: (s.checklistClassico as Record<string, boolean> | null) ?? null,
-                } satisfies SignalData
-              }
+        // ── PALCO: gestão de ciclo de vida na tela ──
+        <div className="space-y-8">
+          <section>
+            <SectionHeading
+              label={`Sinais ativos (${activeSignals.length})`}
+              hint="Somente sinais aguardando entrada ou em execução ficam com gráfico na tela."
             />
-          ))}
+            {activeSignals.length === 0 ? (
+              <div className="glass grid min-h-[120px] place-items-center rounded-xl p-6 text-center text-sm text-zinc-400">
+                <div>
+                  <Radar className="mx-auto h-5 w-5 text-zinc-600" />
+                  <p className="mt-2">Nenhum sinal ativo agora — o radar está varrendo os pares abaixo.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeSignals.map((s) => (
+                  <SignalCard key={`${s.symbol}|${s.timeframe}|${s.mode}`} signal={toSignalData(s)} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {monitoring.length > 0 && (
+            <section>
+              <SectionHeading
+                label={`Radar — monitorando ${monitoring.length} ${monitoring.length === 1 ? "par" : "pares"}`}
+                hint="Pares sem sinal ativo. Quando um setup for detectado, ele sobe para a área de sinais ativos."
+              />
+              <div className="space-y-2">
+                {monitoring.map((s) => (
+                  <SignalCard key={s.id} signal={toSignalData(s)} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {recentClosed.length > 0 && (
+            <section>
+              <SectionHeading
+                label="Concluídos recentes"
+                hint="Sinais finalizados saem do palco e ficam aqui de forma compacta. Histórico completo em Estatísticas."
+              />
+              <div className="space-y-2">
+                {recentClosed.map((s) => (
+                  <SignalCard key={s.id} signal={toSignalData(s)} />
+                ))}
+              </div>
+              <p className="mt-2 text-right text-[11px]">
+                <a
+                  href="/dashboard/estatisticas"
+                  className="text-emerald-400 underline-offset-2 hover:underline"
+                >
+                  Ver histórico completo →
+                </a>
+              </p>
+            </section>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function toSignalData(s: {
+  id: string;
+  symbol: string;
+  timeframe: string;
+  mode: string;
+  hasSetup: boolean;
+  direction: string | null;
+  probability: number | null;
+  confidence: string | null;
+  entryPrice: number | null;
+  stopPrice: number | null;
+  target1: number | null;
+  target2: number | null;
+  target3: number | null;
+  recommendedTarget: number | null;
+  riskReward: string | null;
+  structure: string | null;
+  justification: string | null;
+  status: string;
+  exitPrice: number | null;
+  rMultiple: number | null;
+  scannedAt: Date;
+  filledAt: Date | null;
+  closedAt: Date | null;
+  candleData: unknown;
+  tipoSetup: string | null;
+  checklistSmc: unknown;
+  checklistClassico: unknown;
+}): SignalData {
+  return {
+    id: s.id,
+    symbol: s.symbol,
+    timeframe: s.timeframe,
+    mode: s.mode,
+    hasSetup: s.hasSetup,
+    direction: s.direction,
+    probability: s.probability,
+    confidence: s.confidence,
+    entryPrice: s.entryPrice,
+    stopPrice: s.stopPrice,
+    target1: s.target1,
+    target2: s.target2,
+    target3: s.target3,
+    recommendedTarget: s.recommendedTarget,
+    riskReward: s.riskReward,
+    structure: s.structure,
+    justification: s.justification,
+    status: s.status,
+    exitPrice: s.exitPrice,
+    rMultiple: s.rMultiple,
+    scannedAt: s.scannedAt.toISOString(),
+    filledAt: s.filledAt?.toISOString() ?? null,
+    closedAt: s.closedAt?.toISOString() ?? null,
+    candleData: (s.candleData as SignalData["candleData"]) ?? null,
+    tipoSetup: s.tipoSetup,
+    checklistSmc: (s.checklistSmc as Record<string, boolean> | null) ?? null,
+    checklistClassico: (s.checklistClassico as Record<string, boolean> | null) ?? null,
+  };
+}
+
+function SectionHeading({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="mb-3">
+      <h2 className="text-[10px] uppercase tracking-widest text-zinc-400">{label}</h2>
+      {hint && <p className="mt-0.5 text-[11px] text-zinc-600">{hint}</p>}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="glass grid min-h-[200px] place-items-center rounded-xl p-8 text-center text-sm text-zinc-400">
+      <div>
+        <Radar className="mx-auto h-5 w-5 text-zinc-600" />
+        <p className="mt-3">Nenhum sinal no filtro selecionado ainda.</p>
+        <p className="mt-1 text-xs text-zinc-500">O scan roda a cada 5 minutos. Aguarde…</p>
+      </div>
     </div>
   );
 }

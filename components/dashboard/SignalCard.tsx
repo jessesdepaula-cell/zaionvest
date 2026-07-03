@@ -87,7 +87,12 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
   // Persistimos a escolha do usuário em localStorage por par|tf|modo para que o
   // auto-refresh (router.refresh a cada 30s) e novos sinais entrando no mesmo
   // par NÃO fechem o card. Só recolhe se o usuário clicar.
-  const storageKey = `tv:expanded:${s.symbol}|${s.timeframe}|${s.mode}`;
+  // Sinais CONCLUÍDOS (WIN/LOSS/EXPIRED) usam chave própria por id: eles saem
+  // do palco e NÃO devem herdar o "expandido" do par de quando estavam ativos.
+  const isClosedSignal = s.status === "WIN" || s.status === "LOSS" || s.status === "EXPIRED";
+  const storageKey = isClosedSignal
+    ? `tv:expanded:closed:${s.id}`
+    : `tv:expanded:${s.symbol}|${s.timeframe}|${s.mode}`;
   const defaultInitial =
     defaultExpanded ?? (s.status === "PENDING" || s.status === "FILLED");
   const [expanded, setExpanded] = useState<boolean>(defaultInitial);
