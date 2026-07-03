@@ -31,12 +31,10 @@ export function AutoRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
     trackAndRefresh();
     const refreshId = setInterval(trackAndRefresh, intervalMs);
 
-    // Intervalos de scan POR MODO:
-    // - SMC: motor determinístico (sem custo de IA) → escaneia a cada 5 min,
-    //   detectando o Order Block bem antes de o preço chegar (antecipação real).
-    // - CLÁSSICO: ainda usa IA → mantém 15 min para respeitar limites de taxa.
+    // Ambos os modos usam motor determinístico (sem custo de IA) → 5 min,
+    // detectando o POI bem antes de o preço chegar (antecipação real).
     const SCAN_INTERVAL_SMC = 5 * 60 * 1000;
-    const SCAN_INTERVAL_CLASSICO = 15 * 60 * 1000;
+    const SCAN_INTERVAL_CLASSICO = 5 * 60 * 1000;
 
     async function triggerScan(modes: Array<"SMC" | "CLASSICO">) {
       if (isScanningRef.current || modes.length === 0) return;

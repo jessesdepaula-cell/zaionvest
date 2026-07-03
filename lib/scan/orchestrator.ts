@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { scanWithAI, type Candle } from "@/lib/aiScan";
+import type { Candle } from "@/lib/aiScan";
 import { generateSmcSignal } from "@/lib/smcSignal";
+import { generateClassicoSignal } from "@/lib/classicoSignal";
 import { narrateSignal } from "@/lib/narrator";
 import { evaluateOpenSignalsAgainstCandles } from "@/lib/signalTracker";
 import { sendSignalEmail } from "@/lib/email";
@@ -127,12 +128,10 @@ export async function scanWatchlistItem(
     select: { geminiApiKey: true, openaiApiKey: true },
   });
 
-  // Geração do sinal.
-  // SMC -> motor DETERMINÍSTICO (calcula a estrutura em código; grátis, reproduzível,
-  //        funciona mesmo sem chave de IA). A IA fica só como narradora opcional.
-  // CLASSICO -> ainda via IA (motor determinístico do clássico é próximo passo).
+  // Geração do sinal — ambos os modos usam motor DETERMINÍSTICO (estrutura
+  // calculada em código: grátis, reproduzível, sem depender de chave de IA).
+  // A IA entra apenas como narradora opcional do plano já pronto.
   let result;
-  let aiError: string | null = null;
 
   if (input.mode === "SMC") {
     const det = generateSmcSignal({
@@ -146,35 +145,31 @@ export async function scanWatchlistItem(
       `[scan] SMC determinístico ${spec.symbol}/${tf}: hasSetup=${result.hasSetup} ` +
         `checks=${det.meta.checksTrue}/6 bias=${det.meta.htfBias} dist=${det.meta.distanceToEntryPct?.toFixed(2) ?? "-"}% (${det.meta.reason})`,
     );
-    // Narração opcional pela IA (grátis/barata). Best-effort: se falhar ou não
-    // houver chave, mantém a justificativa gerada pelo código. Nunca bloqueia o sinal.
-    if (result.hasSetup) {
-      const narrated = await narrateSignal({
-        symbol: spec.symbol,
-        timeframe: tf,
-        mode: "SMC",
-        result,
-        userKeys: userKeys ?? undefined,
-      });
-      if (narrated) result.justification = narrated;
-    }
   } else {
-    try {
-      result = await scanWithAI({
-        symbol: spec.symbol,
-        timeframe: tf,
-        mode: input.mode,
-        candles,
-        htfCandles,
-        userKeys: userKeys ?? undefined,
-      });
-    } catch (e) {
-      aiError = e instanceof Error ? e.message : "erro IA";
-      result = {
-        hasSetup: false,
-        justification: `⚠️ Candles atualizados, mas a análise da IA falhou: ${aiError}.`,
-      };
-    }
+    const det = generateClassicoSignal({
+      symbol: spec.symbol,
+      timeframe: tf,
+      candles,
+      htfCandles,
+    });
+    result = det.result;
+    console.log(
+      `[scan] CLASSICO determinístico ${spec.symbol}/${tf}: hasSetup=${result.hasSetup} ` +
+        `checks=${det.meta.checksTrue}/6 trend=${det.meta.trend} dist=${det.meta.distanceToEntryPct?.toFixed(2) ?? "-"}% (${det.meta.reason})`,
+    );
+  }
+
+  // Narração opcional pela IA (grátis/barata). Best-effort: se falhar ou não
+  // houver chave, mantém a justificativa gerada pelo código. Nunca bloqueia o sinal.
+  if (result.hasSetup) {
+    const narrated = await narrateSignal({
+      symbol: spec.symbol,
+      timeframe: tf,
+      mode: input.mode,
+      result,
+      userKeys: userKeys ?? undefined,
+    });
+    if (narrated) result.justification = narrated;
   }
 
   const num = (v: unknown): number | null =>

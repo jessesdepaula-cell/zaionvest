@@ -30,7 +30,7 @@ export type SmcSignalOutput = {
 };
 
 /** Tamanho aproximado de um "pip" para o buffer do stop, inferido do preço. */
-function pipSize(price: number): number {
+export function pipSize(price: number): number {
   if (price >= 1000) return 1;        // BTC
   if (price >= 100) return 0.01;      // JPY, XAU (~2000)
   if (price >= 10) return 0.01;
@@ -38,7 +38,7 @@ function pipSize(price: number): number {
 }
 
 /** ATR simples (média do True Range) das últimas `period` velas. */
-function atr(candles: Candle[], period = 14): number {
+export function atr(candles: Candle[], period = 14): number {
   if (candles.length < 2) return 0;
   const trs: number[] = [];
   for (let i = 1; i < candles.length; i++) {
@@ -66,7 +66,7 @@ function computeHtfBias(htf: Candle[]): "up" | "down" | "lateral" {
   return "lateral";
 }
 
-function round(v: number, price: number): number {
+export function round(v: number, price: number): number {
   const decimals = price >= 100 ? 2 : price >= 1 ? 4 : 5;
   return Number(v.toFixed(decimals));
 }
@@ -114,13 +114,31 @@ export function generateSmcSignal(input: {
     return { ob, dir: isLong ? "LONG" : "SHORT", entry, stopStructural, distPct };
   });
 
+  // A ENTRADA TEM QUE ESTAR NO FUTURO: se o preço JÁ retestou a borda do OB
+  // depois da formação (em qualquer vela fechada anterior à atual), a
+  // oportunidade passou — criar sinal agora seria "sinal pós-fato" que nunca
+  // executa e fica "Aguardando" para sempre. Só aceitamos OB virgem de reteste
+  // (toque apenas na vela ATUAL em formação ainda vale: é a entrada acontecendo).
+  const lastIdx = candles.length - 1;
+  const notYetRetested = (c: Cand): boolean => {
+    const from = Math.min(c.ob.idx + 3, lastIdx); // pula o displacement colado ao OB
+    for (let i = from; i < lastIdx; i++) {
+      const k = candles[i];
+      if (c.dir === "LONG" ? k.l <= c.entry : k.h >= c.entry) return false;
+    }
+    return true;
+  };
+
   // Só interessa OB do qual o preço está se APROXIMANDO (não atravessou de vez):
-  // distância <= 1.2% do preço. E, se possível, alinhado ao viés HTF.
+  // distância <= 1.2% do preço, ainda não retestado. E, se possível, alinhado ao viés HTF.
   const near = cands
-    .filter((c) => c.distPct <= 1.2)
+    .filter((c) => c.distPct <= 1.2 && notYetRetested(c))
     .sort((x, y) => x.distPct - y.distPct);
   if (near.length === 0) {
-    return noSetup(`Order Block existe mas o preço está longe (>1.2%). Aguardando aproximação.`, htfBias);
+    return noSetup(
+      `Sem POI operável: Order Blocks distantes (>1.2%) ou já retestados (entrada ficou no passado).`,
+      htfBias,
+    );
   }
   // Prioriza OB a favor do viés HTF; se nenhum, pega o mais próximo.
   const chosen =

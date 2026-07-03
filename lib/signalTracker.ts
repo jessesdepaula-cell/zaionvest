@@ -2,6 +2,19 @@ import { prisma } from "@/lib/prisma";
 
 type Candle = { t: number; o: number; h: number; l: number; c: number };
 
+/** Duração de uma vela em segundos, por timeframe. */
+const TF_SECONDS: Record<string, number> = {
+  M5: 300,
+  M15: 900,
+  M30: 1800,
+  H1: 3600,
+  H4: 14400,
+  D1: 86400,
+};
+
+/** PENDING sem execução por mais de 48h expira (não bloqueia novos scans). */
+const PENDING_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+
 /**
  * Fallback de fechamento por velas: para cada sinal aberto (PENDING ou FILLED)
  * do mesmo símbolo, varre as candles fornecidas e:
@@ -37,11 +50,15 @@ export async function evaluateOpenSignalsAgainstCandles(
     const isSell = s.direction === "VENDA_FORTE" || s.direction === "VENDA_FRACA";
     if (!isBuy && !isSell) continue;
 
-    let status: "PENDING" | "FILLED" | "WIN" | "LOSS" = s.status as any;
+    let status: "PENDING" | "FILLED" | "WIN" | "LOSS" | "EXPIRED" = s.status as any;
     let filledAt: Date | null = s.filledAt;
     const scannedSec = Math.floor(new Date(s.scannedAt).getTime() / 1000);
+    const tfSec = TF_SECONDS[s.timeframe] ?? 900;
 
-    const relevant = candles.filter((c) => c.t >= scannedSec);
+    // Inclui a vela EM FORMAÇÃO no momento da detecção (abriu antes, fecha depois):
+    // é nela que a entrada costuma ser tocada logo após o sinal nascer. Filtrar
+    // por t >= scannedAt descartava essa vela e o sinal nunca virava FILLED.
+    const relevant = candles.filter((c) => c.t + tfSec > scannedSec);
     if (relevant.length === 0) continue;
 
     let partialHit = s.tradeCreated || s.exitPrice !== null;
@@ -63,6 +80,16 @@ export async function evaluateOpenSignalsAgainstCandles(
         if (c.l <= s.entryPrice && c.h >= s.entryPrice) {
           status = "FILLED";
           filledAt = candleTime;
+        } else if (
+          // Trem perdido: o preço atingiu o Alvo 1 SEM nunca ter tocado a entrada.
+          // O movimento aconteceu sem execução — expira para não ficar "Aguardando"
+          // para sempre nem bloquear novos sinais deste ativo.
+          t1 !== null &&
+          (isBuy ? c.h >= t1 && c.l > s.entryPrice : c.l <= t1 && c.h < s.entryPrice)
+        ) {
+          status = "EXPIRED";
+          closeAt = candleTime;
+          break;
         }
       }
 
@@ -142,6 +169,26 @@ export async function evaluateOpenSignalsAgainstCandles(
           }
         }
       }
+    }
+
+    // 2b. Expiração: trem perdido (TP1 sem toque na entrada) ou PENDING velho demais
+    const tooOld =
+      status === "PENDING" &&
+      Date.now() - new Date(s.scannedAt).getTime() > PENDING_MAX_AGE_MS;
+    if (status === "EXPIRED" || tooOld) {
+      await prisma.signal.update({
+        where: { id: s.id },
+        data: {
+          status: "EXPIRED",
+          closedAt: closeAt ?? new Date(),
+          justification: `${s.justification ?? ""} [Expirado: ${
+            tooOld
+              ? "entrada não foi tocada em 48h"
+              : "o preço atingiu o Alvo 1 sem retornar à zona de entrada"
+          }]`.trim(),
+        },
+      });
+      continue;
     }
 
     // 3. Persistência de Transição para FILLED
