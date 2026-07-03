@@ -987,10 +987,30 @@ export function SignalChart({
           );
         })}
 
+        {/* Bolinha de execução: o preço TOCOU a entrada programada neste candle */}
         {fillIdxInView !== null && entry !== null && (
           <g>
-            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="6" fill="#0A0A0A" stroke="#10B981" strokeWidth="2" />
-            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="2.5" fill="#10B981" />
+            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="7" fill="#0A0A0A" stroke="#10B981" strokeWidth="2" />
+            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="3" fill="#10B981" />
+            <rect
+              x={xOf(fillIdxInView) + 10}
+              y={yOf(entry) - 9}
+              width="74"
+              height="16"
+              rx="3"
+              fill="rgba(16,185,129,0.15)"
+              stroke="rgba(16,185,129,0.5)"
+            />
+            <text
+              x={xOf(fillIdxInView) + 16}
+              y={yOf(entry) + 3}
+              fontSize="9"
+              fontWeight="700"
+              fill="#34D399"
+              fontFamily="JetBrains Mono, monospace"
+            >
+              ENTRADA ✓
+            </text>
           </g>
         )}
 
