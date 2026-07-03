@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Candle } from "@/lib/aiScan";
 import { generateSmcSignal } from "@/lib/smcSignal";
-import { generateClassicoSignal } from "@/lib/classicoSignal";
+import { generateGorilaSignal } from "@/lib/gorilaSignal";
 import { narrateSignal } from "@/lib/narrator";
 import { evaluateOpenSignalsAgainstCandles } from "@/lib/signalTracker";
 import { sendSignalEmail } from "@/lib/email";
@@ -146,7 +146,9 @@ export async function scanWatchlistItem(
         `checks=${det.meta.checksTrue}/6 bias=${det.meta.htfBias} dist=${det.meta.distanceToEntryPct?.toFixed(2) ?? "-"}% (${det.meta.reason})`,
     );
   } else {
-    const det = generateClassicoSignal({
+    // Modo CLÁSSICO agora roda o MÉTODO DO GORILA (price action + médias):
+    // gatilhos PC/9.2/9.1 com contexto de alinhamento, proximidade e hierarquia.
+    const det = generateGorilaSignal({
       symbol: spec.symbol,
       timeframe: tf,
       candles,
@@ -154,8 +156,8 @@ export async function scanWatchlistItem(
     });
     result = det.result;
     console.log(
-      `[scan] CLASSICO determinístico ${spec.symbol}/${tf}: hasSetup=${result.hasSetup} ` +
-        `checks=${det.meta.checksTrue}/6 trend=${det.meta.trend} dist=${det.meta.distanceToEntryPct?.toFixed(2) ?? "-"}% (${det.meta.reason})`,
+      `[scan] GORILA (modo Clássico) ${spec.symbol}/${tf}: hasSetup=${result.hasSetup} ` +
+        `setup=${det.meta.setup ?? "-"} checks=${det.meta.checksTrue}/6 trend=${det.meta.trend} dist=${det.meta.distanceToEntryPct?.toFixed(2) ?? "-"}% (${det.meta.reason})`,
     );
   }
 
