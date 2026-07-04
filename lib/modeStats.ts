@@ -90,10 +90,11 @@ export async function getModeStats(
     },
   });
 
-  function statusToOutcome(s: string): "WIN" | "LOSS" | "BREAKEVEN" | "OPEN" {
+  function statusToOutcome(s: string): "WIN" | "LOSS" | "BREAKEVEN" | "OPEN" | "EXPIRED" {
     if (s === "WIN") return "WIN";
     if (s === "LOSS") return "LOSS";
     if (s === "PENDING" || s === "FILLED") return "OPEN";
+    if (s === "EXPIRED") return "EXPIRED";
     return "BREAKEVEN";
   }
 
@@ -113,7 +114,7 @@ export async function getModeStats(
     const total = wins + losses + breakeven;
     const denom = wins + losses;
     const winRate = denom > 0 ? (wins / denom) * 100 : 0;
-    const closed = subset.filter((t) => t.outcome !== "OPEN");
+    const closed = subset.filter((t) => t.outcome !== "OPEN" && t.outcome !== "EXPIRED");
     const rTotal = closed.reduce((s, t) => s + (t.rMultiple ?? 0), 0);
     const avgR = total > 0 ? rTotal / total : 0;
     const winsR = closed

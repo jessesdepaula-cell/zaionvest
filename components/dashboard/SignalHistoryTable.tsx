@@ -109,7 +109,7 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
           ))}
         </div>
         <div className="flex rounded-lg border border-white/10 overflow-hidden text-[10px]">
-          {(["ALL", "WIN", "LOSS", "PENDING", "EXPIRED"] as const).map((s) => (
+          {(["ALL", "WIN", "LOSS", "PENDING", "FILLED", "EXPIRED"] as const).map((s) => (
             <button
               key={s}
               onClick={() => { setStatusFilter(s); setPage(0); }}
