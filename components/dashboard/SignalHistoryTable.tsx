@@ -84,9 +84,6 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
         <span className="text-rose-400 font-semibold">
           {losses} Losses
         </span>
-        <span className="text-zinc-300">
-          Win Rate: <span className={cn("font-semibold", denom > 0 ? (parseFloat(winRate as string) >= 50 ? "text-emerald-400" : "text-rose-400") : "text-zinc-500")}>{winRate}{denom > 0 ? "%" : ""}</span>
-        </span>
         <span className="text-zinc-600">({filtered.length} sinais com setup)</span>
       </div>
 

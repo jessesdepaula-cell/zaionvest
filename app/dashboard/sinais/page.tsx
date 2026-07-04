@@ -231,16 +231,11 @@ export default async function SinaisPage({
         />
       </section>
 
-      <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Pendentes" value={stats.pending} tone="amber" />
         <Kpi label="Em execução" value={stats.filled} tone="amber" />
         <Kpi label="Ganhos" value={stats.won} tone="emerald" />
         <Kpi label="Perdas" value={stats.lost} tone="rose" />
-        <Kpi
-          label="Win rate"
-          value={totalClosed > 0 ? `${winRate.toFixed(0)}%` : "—"}
-          tone={winRate >= 50 ? "emerald" : "rose"}
-        />
       </section>
 
       {watchlistCount === 0 ? (

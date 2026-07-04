@@ -183,9 +183,8 @@ export default async function EstatisticasPage({
 
       <section className="mb-8">
         <h2 className="mb-3 text-[10px] uppercase tracking-widest text-zinc-500">Visão geral</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <KpiCard label="Trades fechados" value={overall.total.toString()} icon={<Activity className="h-3.5 w-3.5" />} />
-          <KpiCard label="Taxa de acerto" value={`${overall.winRate.toFixed(1)}%`} tone={overall.winRate >= 50 ? "emerald" : "rose"} />
           <KpiCard label="R acumulado" value={`${overall.totalR >= 0 ? "+" : ""}${overall.totalR.toFixed(2)}R`} tone={overall.totalR >= 0 ? "emerald" : "rose"} />
           <KpiCard label="P&L total" value={formatPnl(overall.pnlSum)} tone={overall.pnlSum >= 0 ? "emerald" : "rose"} />
         </div>
@@ -302,9 +301,8 @@ function ModeCard({ mode, stats }: { mode: Mode; stats: Stats }) {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/5 pt-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
         <Mini label="Trades" value={stats.total.toString()} />
-        <Mini label="Win rate" value={`${stats.winRate.toFixed(0)}%`} tone={stats.winRate >= 50 ? "emerald" : stats.total > 0 ? "rose" : "default"} />
         <Mini label="Média R" value={`${stats.avgR >= 0 ? "+" : ""}${stats.avgR.toFixed(2)}`} tone={stats.avgR >= 0 ? "emerald" : "rose"} />
       </div>
 

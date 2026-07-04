@@ -131,12 +131,7 @@ export function PerformanceHeatmap({ trades }: { trades: TradePoint[] }) {
             Trades:{" "}
             <span className="num text-zinc-200">{hover.trades}</span>
           </span>
-          <span className="text-zinc-500">
-            Win rate:{" "}
-            <span className="num text-zinc-200">
-              {((hover.wins / hover.trades) * 100).toFixed(0)}%
-            </span>
-          </span>
+
           <span className="text-zinc-500">
             R:{" "}
             <span

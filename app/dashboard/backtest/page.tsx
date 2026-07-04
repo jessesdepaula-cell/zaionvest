@@ -115,7 +115,7 @@ export default async function BacktestPage({
       </div>
 
       {/* KPIs */}
-      <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Kpi
           label="Scans"
           value={stats.totalScans}
@@ -124,11 +124,6 @@ export default async function BacktestPage({
         <Kpi
           label="Setups detectados"
           value={`${stats.detectedSetups} (${stats.setupRate.toFixed(0)}%)`}
-        />
-        <Kpi
-          label="Win rate"
-          value={`${stats.winRate.toFixed(1)}%`}
-          tone={stats.winRate >= 50 ? "emerald" : "rose"}
         />
         <Kpi
           label="R acumulado"
