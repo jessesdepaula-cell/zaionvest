@@ -105,7 +105,8 @@ export default async function SinaisPage({
     }
   }
 
-  const isClosed = (st: string) => st === "WIN" || st === "LOSS" || st === "EXPIRED";
+  const isFinished = (st: string) => st === "WIN" || st === "LOSS" || st === "EXPIRED";
+  const isClosedTrade = (st: string) => st === "WIN" || st === "LOSS";
   const isActiveSignal = (s: (typeof allRecent)[number]) =>
     s.hasSetup && (s.status === "PENDING" || s.status === "FILLED");
 
@@ -117,7 +118,7 @@ export default async function SinaisPage({
   const monitoring = deduped
     .filter((s) => !isActiveSignal(s))
     .map((s) =>
-      s.hasSetup && isClosed(s.status)
+      s.hasSetup && isFinished(s.status)
         ? ({
             ...s,
             id: `freed-${s.id}`,
@@ -131,11 +132,11 @@ export default async function SinaisPage({
           } as (typeof allRecent)[number])
         : s,
     );
-  const recentClosed = allRecent.filter((s) => s.hasSetup && isClosed(s.status)).slice(0, 8);
+  const recentClosed = allRecent.filter((s) => s.hasSetup && isClosedTrade(s.status)).slice(0, 8);
 
   const visible: typeof allRecent =
     statusFilter === "fechados"
-      ? allRecent.filter((s) => s.hasSetup && isClosed(s.status))
+      ? allRecent.filter((s) => s.hasSetup && isClosedTrade(s.status))
       : deduped;
 
   const stats = {

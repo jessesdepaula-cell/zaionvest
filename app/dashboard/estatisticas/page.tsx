@@ -100,6 +100,7 @@ export default async function EstatisticasPage({
   const signalWhere = {
     userId: user.id,
     hasSetup: true,
+    status: { not: "EXPIRED" },
     ...(since ? { scannedAt: { gte: since } } : {}),
   };
   const signalHistory = await prisma.signal.findMany({
