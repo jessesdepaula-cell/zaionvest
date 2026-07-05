@@ -8,6 +8,17 @@ export type SubscriptionStatus =
   | "past_due"
   | "canceled";
 
+/**
+ * E-mail do dono do sistema (Jessé). Só ele pode executar ações destrutivas
+ * como zerar o histórico. Configurável via OWNER_EMAIL; cai no padrão conhecido.
+ */
+const OWNER_EMAIL = (process.env.OWNER_EMAIL ?? "jessesdepaula@gmail.com").toLowerCase();
+
+/** True se o usuário é o dono do sistema (não um assinante comum). */
+export function isOwner(user: { email?: string | null } | null): boolean {
+  return !!user?.email && user.email.toLowerCase() === OWNER_EMAIL;
+}
+
 export async function getOrCreateUser() {
   const { userId } = await auth();
   if (!userId) return null;

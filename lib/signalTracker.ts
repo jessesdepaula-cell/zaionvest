@@ -12,8 +12,23 @@ const TF_SECONDS: Record<string, number> = {
   D1: 86400,
 };
 
-/** PENDING sem execução por mais de 48h expira (não bloqueia novos scans). */
-const PENDING_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+/**
+ * Um PENDING cuja entrada nunca foi tocada expira após um número limitado de
+ * velas do PRÓPRIO timeframe — assim setups intradiários (ex.: BTC M15) não
+ * ficam "Aguardando" por dias bloqueando novos sinais do ativo, enquanto
+ * timeframes altos ganham mais tempo. Piso e teto evitam matar setups válidos
+ * cedo demais (TF baixo) ou segurá-los tempo demais (TF alto).
+ */
+const PENDING_MAX_CANDLES = 12;
+const PENDING_MIN_AGE_MS = 2 * 60 * 60 * 1000; // nunca antes de 2h
+const PENDING_MAX_AGE_MS = 48 * 60 * 60 * 1000; // nunca depois de 48h
+
+function pendingMaxAgeMs(tfSec: number): number {
+  return Math.min(
+    PENDING_MAX_AGE_MS,
+    Math.max(PENDING_MIN_AGE_MS, tfSec * 1000 * PENDING_MAX_CANDLES),
+  );
+}
 
 /**
  * Fallback de fechamento por velas: para cada sinal aberto (PENDING ou FILLED)
@@ -166,7 +181,7 @@ export async function evaluateOpenSignalsAgainstCandles(
     // 2b. Expiração: trem perdido (TP1 sem toque na entrada) ou PENDING velho demais
     const tooOld =
       status === "PENDING" &&
-      Date.now() - new Date(s.scannedAt).getTime() > PENDING_MAX_AGE_MS;
+      Date.now() - new Date(s.scannedAt).getTime() > pendingMaxAgeMs(tfSec);
     if (status === "EXPIRED" || tooOld) {
       await prisma.signal.update({
         where: { id: s.id },
@@ -175,7 +190,7 @@ export async function evaluateOpenSignalsAgainstCandles(
           closedAt: closeAt ?? new Date(),
           justification: `${s.justification ?? ""} [Expirado: ${
             tooOld
-              ? "entrada não foi tocada em 48h"
+              ? "entrada não foi tocada dentro da janela do setup"
               : "o preço atingiu o Alvo 1 sem retornar à zona de entrada"
           }]`.trim(),
         },

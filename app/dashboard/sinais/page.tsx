@@ -1,5 +1,5 @@
 import { Radar } from "lucide-react";
-import { getOrCreateUser } from "@/lib/subscription";
+import { getOrCreateUser, isOwner } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { SignalCard, type SignalData } from "@/components/dashboard/SignalCard";
 import { ModeAccuracyMeter } from "@/components/dashboard/ModeAccuracyMeter";
@@ -18,6 +18,7 @@ export default async function SinaisPage({
 }) {
   const user = await getOrCreateUser();
   if (!user) return null;
+  const owner = isOwner(user);
 
   const params = await searchParams;
   const modoFilter = params?.modo;
@@ -180,8 +181,12 @@ export default async function SinaisPage({
           <FilterChip param="status" value="pendentes" label="Pendentes" active={statusFilter === "pendentes"} />
           <FilterChip param="status" value="abertos" label="Em execução" active={statusFilter === "abertos"} />
           <FilterChip param="status" value="fechados" label="Fechados" active={statusFilter === "fechados"} />
-          <span className="ml-2 hidden h-4 w-px bg-white/10 sm:inline-block" />
-          <ResetSignalsButton />
+          {owner && (
+            <>
+              <span className="ml-2 hidden h-4 w-px bg-white/10 sm:inline-block" />
+              <ResetSignalsButton />
+            </>
+          )}
         </div>
       </div>
 
