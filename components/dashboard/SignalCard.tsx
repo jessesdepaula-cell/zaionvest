@@ -52,6 +52,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
 
   // Estado local de velas para suportar atualização em tempo real
   const [candles, setCandles] = useState<ChartCandle[] | null>(s.candleData);
+  const [hasFetchedClosed, setHasFetchedClosed] = useState(false);
 
   // Default: expandido para sinais ativos (PENDING/FILLED), colapsado para fechados.
   // Persistimos a escolha do usuário em localStorage por par|tf|modo para que o
@@ -85,10 +86,10 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
   useEffect(() => {
     let active = true;
 
-    // Se o sinal está fechado (WIN/LOSS/EXPIRED) e o card não está expandido, ou se já temos velas carregadas,
+    // Se o sinal está fechado (WIN/LOSS/EXPIRED) e o card não está expandido, ou se já buscamos os dados atualizados dele,
     // não precisamos fazer uma nova requisição para economizar chamadas.
     const isClosed = s.status === "WIN" || s.status === "LOSS" || s.status === "EXPIRED";
-    if (isClosed && (!expanded || candles)) return;
+    if (isClosed && (!expanded || hasFetchedClosed)) return;
 
     async function loadCandles() {
       try {
@@ -99,6 +100,9 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
         const data = await r.json();
         if (active && Array.isArray(data.candles)) {
           setCandles(data.candles);
+          if (isClosed) {
+            setHasFetchedClosed(true);
+          }
         }
       } catch (err) {
         console.error("Erro ao carregar candles:", err);
@@ -116,7 +120,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
       active = false;
       clearInterval(interval);
     };
-  }, [s.symbol, s.timeframe, s.status, expanded, candles]);
+  }, [s.symbol, s.timeframe, s.status, expanded, hasFetchedClosed]);
 
   return (
     <div
