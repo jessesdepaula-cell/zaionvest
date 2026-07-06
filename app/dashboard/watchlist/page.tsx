@@ -1,5 +1,6 @@
+import { notFound } from "next/navigation";
 import { Eye } from "lucide-react";
-import { getOrCreateUser } from "@/lib/subscription";
+import { getOrCreateUser, isOwner } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { WatchlistEditor } from "@/components/dashboard/WatchlistEditor";
 import { SUPPORTED_SYMBOLS } from "@/lib/market/symbols";
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic";
 export default async function WatchlistPage() {
   const user = await getOrCreateUser();
   if (!user) return null;
+  // Watchlist MESTRA: só o dono gerencia os pares que geram os sinais globais.
+  // Assinante comum não tem acesso (nem pela URL direta).
+  if (!isOwner(user)) notFound();
 
   const existing = await prisma.watchlist.count({ where: { userId: user.id } });
   if (existing === 0) {

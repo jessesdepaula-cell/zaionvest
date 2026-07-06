@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SignOutButton, UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { Crosshair, LogOut } from "lucide-react";
-import { requireActiveSubscription } from "@/lib/subscription";
+import { requireActiveSubscription, isOwner } from "@/lib/subscription";
 import { redirect } from "next/navigation";
 import { SidebarNav } from "@/components/dashboard/Sidebar";
 
@@ -17,7 +17,11 @@ export default async function DashboardLayout({
 }) {
   const sub = await requireActiveSubscription();
 
-  if (!sub.ok) {
+  // O dono nunca é barrado pela checagem de assinatura (precisa acessar o admin
+  // e o painel mesmo com status inativo).
+  const subUser = ("user" in sub ? sub.user : null) ?? null;
+  const owner = isOwner(subUser);
+  if (!sub.ok && !owner) {
     if (sub.reason === "unauthenticated") redirect("/sign-in");
     if (sub.reason === "inactive") redirect("/billing");
   }
@@ -47,7 +51,7 @@ export default async function DashboardLayout({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav />
+          <SidebarNav owner={owner} />
         </div>
 
         <div className="border-t border-white/5 px-3 py-3">
@@ -98,7 +102,7 @@ export default async function DashboardLayout({
           </div>
         </div>
         <div className="border-t border-white/5">
-          <SidebarNav />
+          <SidebarNav owner={owner} />
         </div>
       </header>
 

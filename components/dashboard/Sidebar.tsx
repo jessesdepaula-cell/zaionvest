@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Crosshair, Radar, Settings } from "lucide-react";
+import { BarChart3, Crosshair, Eye, Radar, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -12,11 +12,20 @@ const NAV = [
   { href: "/dashboard/configuracoes", icon: Settings, label: "Configurações" },
 ];
 
-export function SidebarNav() {
+// Itens exclusivos do administrador (dono): gestão de assinantes e a watchlist
+// mestra (define os pares escaneados que geram os sinais globais). Assinantes
+// comuns não veem nenhum dos dois.
+const ADMIN_NAV = [
+  { href: "/dashboard/admin", icon: Users, label: "Assinantes" },
+  { href: "/dashboard/watchlist", icon: Eye, label: "Watchlist (mestra)" },
+];
+
+export function SidebarNav({ owner = false }: { owner?: boolean }) {
   const pathname = usePathname();
+  const items = owner ? [...NAV, ...ADMIN_NAV] : NAV;
   return (
     <nav className="flex flex-col gap-1 p-3">
-      {NAV.map((item) => {
+      {items.map((item) => {
         const isActive =
           item.href === "/dashboard"
             ? pathname === "/dashboard"

@@ -1,5 +1,5 @@
 import { Radar } from "lucide-react";
-import { getOrCreateUser, isOwner } from "@/lib/subscription";
+import { getOrCreateUser, isOwner, getSignalSourceUserId } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { SignalCard, type SignalData } from "@/components/dashboard/SignalCard";
 import { ModeAccuracyMeter } from "@/components/dashboard/ModeAccuracyMeter";
@@ -21,13 +21,17 @@ export default async function SinaisPage({
   if (!user) return null;
   const owner = isOwner(user);
 
+  // Sinais GLOBAIS: todo assinante lê os sinais da conta mestra (dono). O scan
+  // roda só nela; o dashboard de qualquer assinante mostra os mesmos sinais.
+  const sourceId = (await getSignalSourceUserId()) ?? user.id;
+
   const params = await searchParams;
   const modoFilter = params?.modo;
   const statusFilter = params?.status;
   const periodo = params?.periodo ?? "all";
   const since = periodToDate(periodo);
 
-  const where: any = { userId: user.id };
+  const where: any = { userId: sourceId };
 
   if (modoFilter === "smc") where.mode = "SMC";
   if (modoFilter === "classico") where.mode = "CLASSICO";
@@ -61,7 +65,7 @@ export default async function SinaisPage({
 
   if (statusFilter !== "fechados") {
     const watchlist = await prisma.watchlist.findMany({
-      where: { userId: user.id, active: true },
+      where: { userId: sourceId, active: true },
     });
     let filteredWatchlist = watchlist;
     if (modoFilter === "smc") {
@@ -81,7 +85,7 @@ export default async function SinaisPage({
       if (!hasSignal) {
         deduped.push({
           id: `mock-${w.id}`,
-          userId: user.id,
+          userId: sourceId,
           symbol: w.symbol,
           timeframe: w.timeframe,
           mode: w.mode,
@@ -163,7 +167,7 @@ export default async function SinaisPage({
   // empurrados pelos milhares de logs "NO_SETUP" do cron job.
   const closedSignalsFromDb = await prisma.signal.findMany({
     where: {
-      userId: user.id,
+      userId: sourceId,
       hasSetup: true,
       status: { in: ["WIN", "LOSS"] },
       mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
@@ -184,7 +188,7 @@ export default async function SinaisPage({
   const countGroups = await prisma.signal.groupBy({
     by: ["status"],
     where: {
-      userId: user.id,
+      userId: sourceId,
       hasSetup: true,
       mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
       ...(since ? { scannedAt: { gte: since } } : {}),
@@ -210,10 +214,10 @@ export default async function SinaisPage({
   const totalClosed = stats.won + stats.lost;
   const winRate = totalClosed > 0 ? (stats.won / totalClosed) * 100 : 0;
 
-  const modeStats = await getModeStats(user.id, since);
+  const modeStats = await getModeStats(sourceId, since);
 
   const watchlistCount = await prisma.watchlist.count({
-    where: { userId: user.id, active: true },
+    where: { userId: sourceId, active: true },
   });
 
   return (

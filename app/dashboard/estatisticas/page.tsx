@@ -1,5 +1,5 @@
 import { Activity, Crosshair, TrendingDown, TrendingUp } from "lucide-react";
-import { getOrCreateUser } from "@/lib/subscription";
+import { getOrCreateUser, getSignalSourceUserId } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { EquityCurve, type EquityPoint } from "@/components/dashboard/EquityCurve";
@@ -22,21 +22,22 @@ type Stats = {
   winRate: number;
   totalR: number;
   avgR: number;
-  pnlSum: number;
 };
 
-function calcStats(trades: { outcome: string; rMultiple: number | null; pnlAmount: number | null }[]): Stats {
+function calcStats(trades: { outcome: string; rMultiple: number | null }[]): Stats {
   const closed = trades.filter((t) => t.outcome !== "OPEN");
   const wins = closed.filter((t) => t.outcome === "WIN").length;
   const losses = closed.filter((t) => t.outcome === "LOSS").length;
   const breakeven = closed.filter((t) => t.outcome === "BREAKEVEN").length;
   const open = trades.filter((t) => t.outcome === "OPEN").length;
   const total = closed.length;
-  const winRate = total > 0 ? (wins / total) * 100 : 0;
+  // Taxa de acerto = ganhos / (ganhos + perdas), excluindo empates — MESMA
+  // definição do medidor por modo, para os números baterem na página inteira.
+  const decided = wins + losses;
+  const winRate = decided > 0 ? (wins / decided) * 100 : 0;
   const totalR = closed.reduce((s, t) => s + (t.rMultiple ?? 0), 0);
   const avgR = total > 0 ? totalR / total : 0;
-  const pnlSum = closed.reduce((s, t) => s + (t.pnlAmount ?? 0), 0);
-  return { total, wins, losses, breakeven, open, winRate, totalR, avgR, pnlSum };
+  return { total, wins, losses, breakeven, open, winRate, totalR, avgR };
 }
 
 function buildSeries(
@@ -73,8 +74,12 @@ export default async function EstatisticasPage({
   const periodo = params?.periodo ?? "all";
   const since = periodToDate(periodo);
 
+  // Estatísticas GLOBAIS: leem a performance da conta mestra (mesma fonte dos
+  // sinais). Assim os números batem para todos os assinantes.
+  const sourceId = (await getSignalSourceUserId()) ?? user.id;
+
   const where = {
-    userId: user.id,
+    userId: sourceId,
     ...(since ? { OR: [{ closedAt: { gte: since } }, { openedAt: { gte: since } }] } : {}),
   };
 
@@ -84,14 +89,13 @@ export default async function EstatisticasPage({
       mode: true,
       outcome: true,
       rMultiple: true,
-      pnlAmount: true,
       closedAt: true,
     },
   });
 
   // Histórico de sinais da IA (apenas com setup detectado)
   const signalWhere = {
-    userId: user.id,
+    userId: sourceId,
     hasSetup: true,
     status: { not: "EXPIRED" },
     ...(since ? { scannedAt: { gte: since } } : {}),
@@ -141,7 +145,7 @@ export default async function EstatisticasPage({
   const seriesSmc = buildSeries(all.filter((t) => t.mode === "SMC"));
   const seriesClassico = buildSeries(all.filter((t) => t.mode === "CLASSICO"));
 
-  const modeStats = await getModeStats(user.id, since);
+  const modeStats = await getModeStats(sourceId, since);
 
   const heatmapTrades: TradePoint[] = all
     .filter((t) => t.closedAt && t.rMultiple !== null && t.outcome !== "OPEN")
@@ -180,7 +184,7 @@ export default async function EstatisticasPage({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <KpiCard label="Trades fechados" value={overall.total.toString()} icon={<Activity className="h-3.5 w-3.5" />} />
           <KpiCard label="R acumulado" value={`${overall.totalR >= 0 ? "+" : ""}${overall.totalR.toFixed(2)}R`} tone={overall.totalR >= 0 ? "emerald" : "rose"} />
-          <KpiCard label="P&L total" value={formatPnl(overall.pnlSum)} tone={overall.pnlSum >= 0 ? "emerald" : "rose"} />
+          <KpiCard label="Taxa de acerto" value={overall.wins + overall.losses > 0 ? `${overall.winRate.toFixed(0)}%` : "—"} tone="emerald" />
         </div>
       </section>
 
@@ -216,11 +220,8 @@ export default async function EstatisticasPage({
 
       {overall.total === 0 && (
         <div className="glass rounded-xl p-8 text-center text-sm text-zinc-400">
-          Sem trades fechados no período selecionado. Catalogue suas operações no{" "}
-          <a href="/dashboard/diario" className="text-emerald-400 underline-offset-2 hover:underline">
-            Diário
-          </a>{" "}
-          para começar a medir.
+          Sem trades fechados no período selecionado. Assim que os sinais forem
+          concluídos, a performance aparece aqui.
         </div>
       )}
 
@@ -307,7 +308,10 @@ function ModeCard({ mode, stats }: { mode: Mode; stats: Stats }) {
       </div>
 
       <div className="mt-4 border-t border-white/5 pt-3 text-xs text-zinc-400">
-        P&L: <span className={cn("num", stats.pnlSum > 0 ? "text-emerald-400" : stats.pnlSum < 0 ? "text-rose-400" : "text-zinc-400")}>{formatPnl(stats.pnlSum)}</span>
+        Taxa de acerto:{" "}
+        <span className={cn("num", stats.winRate >= 50 ? "text-emerald-400" : "text-rose-400")}>
+          {stats.wins + stats.losses > 0 ? `${stats.winRate.toFixed(0)}%` : "—"}
+        </span>
       </div>
     </div>
   );
@@ -358,7 +362,3 @@ function Tile({
   );
 }
 
-function formatPnl(n: number): string {
-  if (n === 0) return "R$ 0,00";
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}

@@ -19,6 +19,21 @@ export function isOwner(user: { email?: string | null } | null): boolean {
   return !!user?.email && user.email.toLowerCase() === OWNER_EMAIL;
 }
 
+/**
+ * FONTE ÚNICA DOS SINAIS (arquitetura global): todos os assinantes veem os MESMOS
+ * sinais/estatísticas, produzidos por uma única conta mestra — a do dono do
+ * sistema (OWNER_EMAIL). O scan roda só nessa conta e o dashboard de qualquer
+ * assinante lê os sinais dela. Retorna o id do usuário dono, ou null se ele ainda
+ * não existir no banco (nunca logou).
+ */
+export async function getSignalSourceUserId(): Promise<string | null> {
+  const owner = await prisma.user.findFirst({
+    where: { email: { equals: OWNER_EMAIL, mode: "insensitive" } },
+    select: { id: true },
+  });
+  return owner?.id ?? null;
+}
+
 export async function getOrCreateUser() {
   const { userId } = await auth();
   if (!userId) return null;

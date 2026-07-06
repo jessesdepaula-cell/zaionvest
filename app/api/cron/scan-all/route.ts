@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { scanAllActiveForUser } from "@/lib/scan/orchestrator";
+import { getSignalSourceUserId } from "@/lib/subscription";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-// Vercel Cron: configurado em vercel.json para rodar a cada 15 min.
-// Usa header `Authorization: Bearer ${CRON_SECRET}` (Vercel injeta automaticamente).
+// Vercel Cron / pg_cron: roda a cada 10-15 min.
+// Usa header `Authorization: Bearer ${CRON_SECRET}`.
+//
+// SINAIS GLOBAIS: o scan roda UMA vez, na conta mestra (dono). Todos os
+// assinantes leem esses mesmos sinais — sem varredura duplicada por usuário.
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
   const secret = process.env.CRON_SECRET;
@@ -15,39 +18,27 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const users = await prisma.user.findMany({
-    where: {
-      subscriptionStatus: { in: ["active", "trialing"] },
-      watchlist: { some: { active: true } },
-    },
-    select: { id: true },
-  });
-
-  const summary: Array<{
-    userId: string;
-    scanned: number;
-    failed: number;
-    details: any;
-  }> = [];
-
-  for (const u of users) {
-    try {
-      const results = await scanAllActiveForUser(u.id);
-      summary.push({
-        userId: u.id,
-        scanned: results.filter((r) => r.ok).length,
-        failed: results.filter((r) => !r.ok).length,
-        details: results,
-      });
-    } catch (e) {
-      summary.push({
-        userId: u.id,
-        scanned: 0,
-        failed: -1,
-        details: e instanceof Error ? e.message : String(e),
-      });
-    }
+  const sourceId = await getSignalSourceUserId();
+  if (!sourceId) {
+    return NextResponse.json(
+      { ok: false, error: "Conta mestra (dono) não encontrada — nenhum sinal gerado." },
+      { status: 200 },
+    );
   }
 
-  return NextResponse.json({ ok: true, users: users.length, summary });
+  try {
+    const results = await scanAllActiveForUser(sourceId);
+    return NextResponse.json({
+      ok: true,
+      source: sourceId,
+      scanned: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+      details: results,
+    });
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: e instanceof Error ? e.message : String(e) },
+      { status: 500 },
+    );
+  }
 }

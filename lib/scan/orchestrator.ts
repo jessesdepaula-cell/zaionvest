@@ -302,33 +302,40 @@ export async function scanWatchlistItem(
     },
   });
 
-  // Disparo assíncrono do e-mail de alerta para o assinante
+  // Disparo assíncrono do alerta por e-mail. SINAIS GLOBAIS: um novo sinal é
+  // enviado para TODOS os assinantes ativos (não só a conta mestra que o gerou).
+  // Best-effort: nunca bloqueia nem quebra o scan.
   if (hasSetup && signal.status === "PENDING") {
     prisma.user
-      .findUnique({
-        where: { id: input.userId },
+      .findMany({
+        where: { subscriptionStatus: { in: ["active", "trialing"] } },
         select: { email: true },
       })
-      .then((u) => {
-        if (u?.email) {
-          sendSignalEmail(u.email, {
-            symbol: signal.symbol,
-            timeframe: signal.timeframe,
-            mode: signal.mode,
-            direction: signal.direction ?? "NEUTRO",
-            entryPrice: signal.entryPrice,
-            stopPrice: signal.stopPrice,
-            target1: signal.target1,
-            target2: signal.target2,
-            target3: signal.target3,
-            riskReward: signal.riskReward,
-            justification: signal.justification,
-            tipoSetup: signal.tipoSetup,
-          }).catch((err) => console.error("[sendSignalEmail Catch]", err));
+      .then((subs) => {
+        const payload = {
+          symbol: signal.symbol,
+          timeframe: signal.timeframe,
+          mode: signal.mode,
+          direction: signal.direction ?? "NEUTRO",
+          entryPrice: signal.entryPrice,
+          stopPrice: signal.stopPrice,
+          target1: signal.target1,
+          target2: signal.target2,
+          target3: signal.target3,
+          riskReward: signal.riskReward,
+          justification: signal.justification,
+          tipoSetup: signal.tipoSetup,
+        };
+        for (const u of subs) {
+          if (u.email && !u.email.endsWith("@no-email.local")) {
+            sendSignalEmail(u.email, payload).catch((err) =>
+              console.error("[sendSignalEmail Catch]", err),
+            );
+          }
         }
       })
       .catch((err) => {
-        console.error("[Email User Query Error]", err);
+        console.error("[Email Subscribers Query Error]", err);
       });
   }
 
