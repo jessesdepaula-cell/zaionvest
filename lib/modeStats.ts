@@ -70,11 +70,26 @@ function tpLevelOf(s: SignalRow): number {
   return lvl > 0 ? lvl : 1; // WIN legado sem match: conservador, conta TP1
 }
 
+export function periodToDate(p?: string | null): Date | null {
+  if (!p || p === "all") return null;
+  const now = new Date();
+  if (p === "7d") return new Date(now.getTime() - 7 * 24 * 3600 * 1000);
+  if (p === "30d") return new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+  if (p === "ytd") return new Date(now.getFullYear(), 0, 1);
+  return null;
+}
+
 export async function getModeStats(
   userId: string,
+  since?: Date | null,
 ): Promise<{ smc: ModeStats; classico: ModeStats }> {
+  const where: any = { userId, hasSetup: true };
+  if (since) {
+    where.scannedAt = { gte: since };
+  }
+
   const signals: SignalRow[] = await prisma.signal.findMany({
-    where: { userId, hasSetup: true },
+    where,
     select: {
       mode: true,
       status: true,

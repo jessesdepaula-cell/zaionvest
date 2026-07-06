@@ -5,7 +5,8 @@ import { SignalCard, type SignalData } from "@/components/dashboard/SignalCard";
 import { ModeAccuracyMeter } from "@/components/dashboard/ModeAccuracyMeter";
 import { SignalNotifications } from "@/components/dashboard/SignalNotifications";
 import { ResetSignalsButton } from "@/components/dashboard/ResetSignalsButton";
-import { getModeStats } from "@/lib/modeStats";
+import { getModeStats, periodToDate } from "@/lib/modeStats";
+import { PeriodFilter } from "@/components/dashboard/PeriodFilter";
 import { AutoRefresh } from "./AutoRefresh";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function SinaisPage({
   searchParams,
 }: {
-  searchParams: Promise<{ modo?: string; status?: string }>;
+  searchParams: Promise<{ modo?: string; status?: string; periodo?: string }>;
 }) {
   const user = await getOrCreateUser();
   if (!user) return null;
@@ -23,6 +24,8 @@ export default async function SinaisPage({
   const params = await searchParams;
   const modoFilter = params?.modo;
   const statusFilter = params?.status;
+  const periodo = params?.periodo ?? "all";
+  const since = periodToDate(periodo);
 
   const where: any = { userId: user.id };
 
@@ -142,6 +145,7 @@ export default async function SinaisPage({
       hasSetup: true,
       status: { in: ["WIN", "LOSS"] },
       mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+      ...(since ? { closedAt: { gte: since } } : {}),
     },
     orderBy: { scannedAt: "desc" },
     take: 100,
@@ -161,6 +165,7 @@ export default async function SinaisPage({
         status: "PENDING",
         hasSetup: true,
         mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+        ...(since ? { scannedAt: { gte: since } } : {}),
       }
     }),
     filled: await prisma.signal.count({
@@ -169,6 +174,7 @@ export default async function SinaisPage({
         status: "FILLED",
         hasSetup: true,
         mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+        ...(since ? { filledAt: { gte: since } } : {}),
       }
     }),
     won: await prisma.signal.count({
@@ -177,6 +183,7 @@ export default async function SinaisPage({
         status: "WIN",
         hasSetup: true,
         mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+        ...(since ? { closedAt: { gte: since } } : {}),
       }
     }),
     lost: await prisma.signal.count({
@@ -185,6 +192,7 @@ export default async function SinaisPage({
         status: "LOSS",
         hasSetup: true,
         mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+        ...(since ? { closedAt: { gte: since } } : {}),
       }
     }),
     noSetup: allRecent.filter((s) => !s.hasSetup).length,
@@ -193,7 +201,7 @@ export default async function SinaisPage({
   const totalClosed = stats.won + stats.lost;
   const winRate = totalClosed > 0 ? (stats.won / totalClosed) * 100 : 0;
 
-  const modeStats = await getModeStats(user.id);
+  const modeStats = await getModeStats(user.id, since);
 
   const watchlistCount = await prisma.watchlist.count({
     where: { userId: user.id, active: true },
@@ -269,9 +277,12 @@ export default async function SinaisPage({
       </section>
 
       <section className="mb-6">
-        <h2 className="mb-3 text-[10px] uppercase tracking-widest text-zinc-500">
-          Assertividade por modo de análise
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[10px] uppercase tracking-widest text-zinc-500">
+            Assertividade por modo de análise
+          </h2>
+          <PeriodFilter />
+        </div>
         <ModeAccuracyMeter
           smc={modeStats.smc}
           classico={modeStats.classico}

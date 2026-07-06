@@ -6,7 +6,7 @@ import { EquityCurve, type EquityPoint } from "@/components/dashboard/EquityCurv
 import { PeriodFilter } from "@/components/dashboard/PeriodFilter";
 import { PerformanceHeatmap, type TradePoint } from "@/components/dashboard/PerformanceHeatmap";
 import { ModeAccuracyMeter } from "@/components/dashboard/ModeAccuracyMeter";
-import { getModeStats } from "@/lib/modeStats";
+import { getModeStats, periodToDate } from "@/lib/modeStats";
 import { SignalHistoryTable, type SignalHistoryItem } from "@/components/dashboard/SignalHistoryTable";
 
 export const dynamic = "force-dynamic";
@@ -59,14 +59,7 @@ function buildSeries(
     });
 }
 
-function periodToDate(p?: string | null): Date | null {
-  if (!p || p === "all") return null;
-  const now = new Date();
-  if (p === "7d") return new Date(now.getTime() - 7 * 24 * 3600 * 1000);
-  if (p === "30d") return new Date(now.getTime() - 30 * 24 * 3600 * 1000);
-  if (p === "ytd") return new Date(now.getFullYear(), 0, 1);
-  return null;
-}
+
 
 export default async function EstatisticasPage({
   searchParams,
@@ -148,7 +141,7 @@ export default async function EstatisticasPage({
   const seriesSmc = buildSeries(all.filter((t) => t.mode === "SMC"));
   const seriesClassico = buildSeries(all.filter((t) => t.mode === "CLASSICO"));
 
-  const modeStats = await getModeStats(user.id);
+  const modeStats = await getModeStats(user.id, since);
 
   const heatmapTrades: TradePoint[] = all
     .filter((t) => t.closedAt && t.rMultiple !== null && t.outcome !== "OPEN")

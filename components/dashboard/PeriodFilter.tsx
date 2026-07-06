@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const PERIODS = [
@@ -12,6 +12,7 @@ const PERIODS = [
 
 export function PeriodFilter() {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const active = params.get("periodo") ?? "all";
 
@@ -20,7 +21,7 @@ export function PeriodFilter() {
     if (p === "all") sp.delete("periodo");
     else sp.set("periodo", p);
     const qs = sp.toString();
-    router.push(`/dashboard/estatisticas${qs ? `?${qs}` : ""}`);
+    router.push(`${pathname}${qs ? `?${qs}` : ""}`);
   }
 
   return (
