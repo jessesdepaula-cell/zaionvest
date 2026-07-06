@@ -53,37 +53,6 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
   // Estado local de velas para suportar atualização em tempo real
   const [candles, setCandles] = useState<ChartCandle[] | null>(s.candleData);
 
-  useEffect(() => {
-    // Apenas faz o fetch de velas novas para sinais ativos (PENDING / FILLED)
-    if (s.status !== "PENDING" && s.status !== "FILLED") return;
-
-    let active = true;
-    async function loadRealtimeCandles() {
-      try {
-        const r = await fetch(
-          `/api/market/candles?symbol=${encodeURIComponent(s.symbol)}&tf=${s.timeframe}&limit=500`
-        );
-        if (!r.ok) return;
-        const data = await r.json();
-        if (active && Array.isArray(data.candles)) {
-          setCandles(data.candles);
-        }
-      } catch (err) {
-        console.error("Erro ao carregar candles atualizados:", err);
-      }
-    }
-
-    loadRealtimeCandles();
-    
-    // Atualiza a cada 30 segundos
-    const interval = setInterval(loadRealtimeCandles, 30000);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [s.symbol, s.timeframe, s.status]);
-
   // Default: expandido para sinais ativos (PENDING/FILLED), colapsado para fechados.
   // Persistimos a escolha do usuário em localStorage por par|tf|modo para que o
   // auto-refresh (router.refresh a cada 30s) e novos sinais entrando no mesmo
@@ -112,6 +81,42 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
       return next;
     });
   }
+
+  useEffect(() => {
+    let active = true;
+
+    // Se o sinal está fechado (WIN/LOSS/EXPIRED) e o card não está expandido, ou se já temos velas carregadas,
+    // não precisamos fazer uma nova requisição para economizar chamadas.
+    const isClosed = s.status === "WIN" || s.status === "LOSS" || s.status === "EXPIRED";
+    if (isClosed && (!expanded || candles)) return;
+
+    async function loadCandles() {
+      try {
+        const r = await fetch(
+          `/api/market/candles?symbol=${encodeURIComponent(s.symbol)}&tf=${s.timeframe}&limit=500`
+        );
+        if (!r.ok) return;
+        const data = await r.json();
+        if (active && Array.isArray(data.candles)) {
+          setCandles(data.candles);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar candles:", err);
+      }
+    }
+
+    loadCandles();
+
+    // Apenas sinais ativos (PENDING / FILLED) atualizam em tempo real
+    if (isClosed) return;
+
+    const interval = setInterval(loadCandles, 30000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [s.symbol, s.timeframe, s.status, expanded, candles]);
 
   return (
     <div
@@ -183,11 +188,10 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
  
       {!expanded && null}
 
-      {/* Gráfico de candles ao topo — SOMENTE para sinais ativos.
-          Sinal concluído (Ganho/Perda/Expirado) NÃO plota mais E/SL/TPs:
-          as marcações saem da tela e o gráfico do par fica liberado para a
-          próxima detecção (visível no Radar / no próximo sinal ativo). */}
-      {expanded && !isClosedSignal && candles && candles.length > 0 && (
+      {/* Gráfico de candles ao topo.
+          Sinais ativos atualizam em tempo real.
+          Sinais concluídos (WIN/LOSS/EXPIRED) mostram o gráfico histórico com as marcações de entrada e saída. */}
+      {expanded && candles && candles.length > 0 && (
         <div className="border-b border-white/5 p-4">
           <SignalChart
             candles={candles}
@@ -206,12 +210,12 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             defaultShowMA={s.mode === "CLASSICO"}
             defaultShowSmc={s.mode === "SMC"}
           />
-        </div>
-      )}
-      {expanded && isClosedSignal && (
-        <div className="border-b border-white/5 px-4 py-2.5 text-[11px] text-zinc-500">
-          Sinal concluído — as marcações de entrada, stop e alvos foram removidas do
-          gráfico. O par voltou ao radar, liberado para a próxima oportunidade.
+          {isClosedSignal && (
+            <div className="mt-2.5 text-[10px] text-zinc-500 border-t border-white/5 pt-2 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 animate-pulse" />
+              Sinal concluído. O par voltou ao radar, liberado para a próxima oportunidade.
+            </div>
+          )}
         </div>
       )}
 

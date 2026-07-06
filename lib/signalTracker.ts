@@ -193,6 +193,7 @@ export async function evaluateOpenSignalsAgainstCandles(
               ? "entrada não foi tocada dentro da janela do setup"
               : "o preço atingiu o Alvo 1 sem retornar à zona de entrada"
           }]`.trim(),
+          candleData: candles as any,
         },
       });
       continue;
@@ -202,7 +203,11 @@ export async function evaluateOpenSignalsAgainstCandles(
     if (status === "FILLED" && s.status === "PENDING" && !partialHit) {
       await prisma.signal.update({
         where: { id: s.id },
-        data: { status: "FILLED", filledAt: filledAt ?? new Date() },
+        data: { 
+          status: "FILLED", 
+          filledAt: filledAt ?? new Date(),
+          candleData: candles as any,
+        },
       });
       filled++;
     }
@@ -245,6 +250,7 @@ export async function evaluateOpenSignalsAgainstCandles(
           status: "FILLED",
           filledAt: filledAt ?? s.filledAt ?? new Date(),
           maxTargetHit: tpLevel > 0 ? tpLevel : 1,
+          candleData: candles as any,
         },
       });
 
@@ -278,6 +284,7 @@ export async function evaluateOpenSignalsAgainstCandles(
           rMultiple: r,
           tradeCreated: true,
           maxTargetHit: tpLevel > 0 ? tpLevel : null,
+          candleData: candles as any,
         },
       });
 
