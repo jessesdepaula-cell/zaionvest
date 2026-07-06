@@ -295,7 +295,10 @@ export async function scanWatchlistItem(
           ? (result.checklist_classico as object)
           : undefined,
       status: hasSetup ? "PENDING" : "NO_SETUP",
-      candleData: candles.slice(-3000) as object,
+      // candleData só serve para desenhar o gráfico de sinais COM setup. Gravar
+      // ~500 candles em cada log NO_SETUP (o cron cria milhares) inchava a tabela
+      // e deixava toda leitura lenta. NO_SETUP não guarda candles.
+      candleData: hasSetup ? (candles.slice(-500) as object) : undefined,
     },
   });
 

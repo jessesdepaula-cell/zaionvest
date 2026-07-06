@@ -40,10 +40,14 @@ export default async function SinaisPage({
     where.hasSetup = true;
   }
 
+  // NÃO trazer candleData aqui: são ~500 candles por linha e só os sinais ATIVOS
+  // (que desenham gráfico) precisam disso. Puxar o campo em 300 linhas gerava
+  // dezenas de MB por request — causa da lentidão de 20-40s por clique/refresh.
   const allRecent = await prisma.signal.findMany({
     where,
     orderBy: { scannedAt: "desc" },
     take: 300,
+    omit: { candleData: true },
   });
 
   const seen = new Set<string>();
@@ -86,6 +90,8 @@ export default async function SinaisPage({
           probability: null,
           confidence: null,
           entryPrice: null,
+          entryZoneLow: null,
+          entryZoneHigh: null,
           stopPrice: null,
           target1: null,
           target2: null,
@@ -97,8 +103,8 @@ export default async function SinaisPage({
           status: "NO_SETUP",
           exitPrice: null,
           rMultiple: null,
+          maxTargetHit: null,
           scannedAt: w.lastScanAt ?? new Date(),
-          candleData: null,
           tipoSetup: null,
           checklistSmc: null,
           checklistClassico: null,
@@ -120,6 +126,23 @@ export default async function SinaisPage({
   // histórico compacto. O par cujo último sinal fechou volta ao radar,
   // liberado para a próxima oportunidade.
   const activeSignals = deduped.filter(isActiveSignal);
+
+  // candleData só é necessário nos cards ATIVOS (gráfico). Buscamos os candles
+  // APENAS desses poucos sinais, em vez de trazer o campo em todas as linhas.
+  const activeRealIds = activeSignals
+    .filter((s) => !s.id.startsWith("mock-"))
+    .map((s) => s.id);
+  if (activeRealIds.length > 0) {
+    const candleRows = await prisma.signal.findMany({
+      where: { id: { in: activeRealIds } },
+      select: { id: true, candleData: true },
+    });
+    const candleMap = new Map(candleRows.map((r) => [r.id, r.candleData]));
+    for (const s of activeSignals) {
+      (s as { candleData?: unknown }).candleData = candleMap.get(s.id) ?? null;
+    }
+  }
+
   const monitoring = deduped
     .filter((s) => !isActiveSignal(s))
     .map((s) =>
@@ -133,7 +156,6 @@ export default async function SinaisPage({
             justification: `Último sinal deste par foi concluído (${
               s.status === "WIN" ? "ganho" : s.status === "LOSS" ? "perda" : "expirado"
             }). Gráfico liberado — monitorando a próxima oportunidade.`,
-            candleData: null,
           } as (typeof allRecent)[number])
         : s,
     );
@@ -149,6 +171,7 @@ export default async function SinaisPage({
     },
     orderBy: { scannedAt: "desc" },
     take: 100,
+    omit: { candleData: true }, // cards fechados não plotam gráfico
   });
 
   const recentClosed = closedSignalsFromDb.slice(0, 8);
@@ -391,7 +414,7 @@ function toSignalData(s: {
   scannedAt: Date;
   filledAt: Date | null;
   closedAt: Date | null;
-  candleData: unknown;
+  candleData?: unknown;
   tipoSetup: string | null;
   checklistSmc: unknown;
   checklistClassico: unknown;

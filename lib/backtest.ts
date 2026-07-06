@@ -78,7 +78,13 @@ export async function runBacktest(input: {
   if (input.symbol) where.symbol = input.symbol;
 
   const [rawSignals, symbolGroups] = await Promise.all([
-    prisma.signal.findMany({ where, orderBy: { scannedAt: "desc" }, take: 2000 }),
+    // omit candleData: 2000 linhas com ~500 candles cada estouravam o payload
+    prisma.signal.findMany({
+      where,
+      orderBy: { scannedAt: "desc" },
+      take: 2000,
+      omit: { candleData: true },
+    }),
     prisma.signal.groupBy({
       by: ["symbol"],
       where: { userId: input.userId },
