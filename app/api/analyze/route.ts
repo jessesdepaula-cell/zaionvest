@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireActiveSubscription } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { smcSystemPrompt } from "@/lib/smcManual";
-import { classicoSystemPrompt } from "@/lib/classicoManual";
+import { gorilaSystemPrompt } from "@/lib/gorilaManual";
 import { getAIClient } from "@/lib/ai";
 
 export const runtime = "nodejs";
@@ -11,7 +11,8 @@ export const maxDuration = 60;
 type Mode = "CLASSICO" | "SMC";
 
 const SMC_SYSTEM_PROMPT = smcSystemPrompt({ withImage: true, jsonShape: "analyze" });
-const CLASSICO_RIGOROSO_PROMPT = classicoSystemPrompt({ jsonShape: "analyze" });
+// Modo "Clássico" aplica o Método do Gorila — o MESMO do motor de sinais automáticos.
+const CLASSICO_RIGOROSO_PROMPT = gorilaSystemPrompt({ jsonShape: "analyze" });
 
 const SYSTEM_PROMPT = (mode: Mode) =>
   mode === "SMC" ? SMC_SYSTEM_PROMPT : CLASSICO_RIGOROSO_PROMPT;

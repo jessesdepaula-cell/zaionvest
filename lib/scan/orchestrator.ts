@@ -200,6 +200,35 @@ export async function scanWatchlistItem(
     }
   }
 
+  // Payoff assimétrico OBRIGATÓRIO: o alvo RECOMENDADO precisa valer >= 2R.
+  // É o que torna o sistema vendável — a ~50% de acerto, ganhar 2R e perder 1R
+  // já é expectativa positiva. Escolhe o MENOR alvo (a partir do T1) que alcança
+  // 2R e o fixa como recomendado; se nem o T3 chega a 2R, o setup é recusado.
+  if (hasSetup) {
+    const entry = num(result.entryPrice);
+    const stop = num(result.stopPrice);
+    const targets = [num(result.target1), num(result.target2), num(result.target3)];
+    const risk = entry !== null && stop !== null ? Math.abs(entry - stop) : 0;
+    const MIN_RR_ALVO = 2.0;
+    let chosen: number | null = null;
+    if (entry !== null && risk > 0) {
+      for (let idx = 0; idx < targets.length; idx++) {
+        const t = targets[idx];
+        if (t === null) continue;
+        if (Math.abs(t - entry) / risk >= MIN_RR_ALVO) {
+          chosen = idx + 1;
+          break;
+        }
+      }
+    }
+    if (chosen === null) {
+      hasSetup = false;
+      rrValidationMessage = `Nenhum alvo alcança R:R de 1:${MIN_RR_ALVO} — payoff insuficiente para operar.`;
+    } else {
+      result.recommendedTarget = chosen;
+    }
+  }
+
   // Anti-respawn: se um sinal GÊMEO (mesma entrada ±0.1%) deste par/modo acabou
   // de EXPIRAR (últimas 2h), não recria — evita o loop "cria → expira → recria"
   // que dispara e-mails repetidos do mesmo plano já invalidado pelo mercado.

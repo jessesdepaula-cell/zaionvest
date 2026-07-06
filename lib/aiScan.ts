@@ -1,5 +1,5 @@
 import { smcSystemPrompt } from "./smcManual";
-import { classicoSystemPrompt } from "./classicoManual";
+import { gorilaSystemPrompt } from "./gorilaManual";
 import { getAIClient } from "./ai";
 
 export type Candle = { t: number; o: number; h: number; l: number; c: number; v?: number };
@@ -75,7 +75,8 @@ function htfFor(tf: string): string {
 }
 
 const SMC_PROMPT = smcSystemPrompt({ withImage: false, jsonShape: "scan" });
-const CLASSICO_PROMPT = classicoSystemPrompt({ jsonShape: "scan" });
+// Modo "Clássico" aplica o Método do Gorila — coerente com o motor automático.
+const CLASSICO_PROMPT = gorilaSystemPrompt({ jsonShape: "scan" });
 
 function systemPrompt(mode: "SMC" | "CLASSICO") {
   if (mode === "SMC") return SMC_PROMPT;

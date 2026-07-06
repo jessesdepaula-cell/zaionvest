@@ -71,7 +71,7 @@ Se QUALQUER passo do checklist (1-6) falhar, hasSetup=false e probability=0. Sej
   return `${intro}\n\n${CLASSICO_MANUAL}\n\n${out}`;
 }
 
-const scanJsonShape = `FORMATO JSON DE SAÍDA (obrigatório, sem markdown):
+export const scanJsonShape = `FORMATO JSON DE SAÍDA (obrigatório, sem markdown):
 {
   "hasSetup": boolean,
   "tipo_setup": "Pullback Long" | "Pullback Short" | "Nenhum",
@@ -104,7 +104,7 @@ REGRAS NUMÉRICAS:
 - probability >= 70 EXIGE checklist 100% TRUE + confluência forte (suporte/resistência + EMA + Fib).
 - Preços SEMPRE lidos das velas. Nada inventado.`;
 
-const analyzeJsonShape = `FORMATO JSON DE SAÍDA (obrigatório, sem markdown):
+export const analyzeJsonShape = `FORMATO JSON DE SAÍDA (obrigatório, sem markdown):
 {
   "status": "VALIDO" | "INVALIDO",
   "modo_aplicado": "CLASSICO",

@@ -123,10 +123,11 @@ export async function evaluateOpenSignalsAgainstCandles(
       }
 
       // 2. FILLED -> Monitoramento PROGRESSIVO dos alvos (TP1 -> TP2 -> TP3) e stop,
-      // com PROTEÇÃO DINÂMICA: alvo conquistado vira piso. Depois do TP1 a proteção
-      // sobe para a entrada (breakeven); depois do TP2, para o próprio TP2 — se o
-      // preço passar do TP2 e voltar, a operação FECHA COMO GANHO no TP2 em vez de
-      // ficar pendurada esperando o TP3 com o lucro evaporando.
+      // com PROTEÇÃO DINÂMICA: o alvo CONQUISTADO vira o piso de saída (nunca a
+      // entrada). Depois do TP1 a proteção trava no PRÓPRIO TP1 (garante +1R real);
+      // depois do TP2, no TP2. Assim um vencedor que tocou o alvo e voltou fecha
+      // como GANHO no último alvo atingido — em vez de virar "zero a zero" no
+      // breakeven, que era o que zerava a expectativa (rabo direito amputado).
       if (status === "FILLED" && !isDetectionCandle) {
         const hitTarget = (p: number) => (isBuy ? c.h >= p : c.l <= p);
         const hitStop = stop !== null && (isBuy ? c.l <= stop : c.h >= stop);
@@ -159,17 +160,17 @@ export async function evaluateOpenSignalsAgainstCandles(
           break;
         }
 
-        // Proteção dinâmica: nível conquistado vira piso de saída.
-        // tpLevel 1 -> proteção na ENTRADA (breakeven); tpLevel 2 -> proteção no TP2.
-        // Não avalia na MESMA vela em que o nível foi conquistado (a ordem dos
-        // movimentos dentro da vela é desconhecida — benefício da dúvida ao trade).
+        // Proteção dinâmica: o nível conquistado vira o piso de saída.
+        // tpLevel 1 -> proteção no PRÓPRIO TP1 (trava >= +1R); tpLevel 2 -> proteção no TP2.
+        // NUNCA volta para a entrada: devolver o ganho ao breakeven zerava a
+        // expectativa. Não avalia na MESMA vela em que o nível foi conquistado (a
+        // ordem dos movimentos dentro da vela é desconhecida — benefício da dúvida).
         if (tpLevel >= 1 && !advancedThisCandle) {
-          const protection =
-            tpLevel >= 2 ? targets[1] : (s.entryPrice ?? stop);
+          const protection = tpLevel >= 2 ? targets[1] : targets[0];
           const hitProtection =
             protection !== null && (isBuy ? c.l <= protection : c.h >= protection);
           if (hitProtection) {
-            outcome = "WIN"; // parcial/alvo garantido preserva o ganho
+            outcome = "WIN"; // alvo garantido preserva o ganho (mínimo +1R)
             exitPrice = protection;
             closeAt = candleTime;
             break;

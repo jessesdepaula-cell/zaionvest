@@ -13,12 +13,12 @@ type Checklist = {
 };
 
 const ITEMS: Array<{ key: keyof Checklist; label: string; hint: string }> = [
-  { key: "tendencia_SMA200_alinhada", label: "Tendência SMA 200", hint: "Preço do lado correto da SMA 200 inclinada" },
-  { key: "alinhamento_perfeito_medias", label: "Alinhamento perfeito", hint: "EMA 9 > 20 > 50 > 200 (ou inverso), não cruzadas" },
-  { key: "preco_na_zona_de_valor", label: "Zona de Valor", hint: "Pullback tocou EMA 20 ou EMA 50" },
-  { key: "confluencia_suporte_resistencia", label: "Confluência", hint: "S/R horizontal ou Fib 50-61.8% sobreposto" },
-  { key: "volume_pullback_decrescente", label: "Volume decrescente", hint: "Velas de recuo menores que as de impulso" },
-  { key: "candle_gatilho_valido", label: "Candle de gatilho", hint: "Pin Bar / Engolfo / Inside Bar a favor" },
+  { key: "tendencia_SMA200_alinhada", label: "Tendência MMA 200", hint: "Preço do lado correto da MMA 200 inclinada" },
+  { key: "alinhamento_perfeito_medias", label: "Alinhamento das médias", hint: "MME 9 > MMA 21 > MMA 50 (ou inverso)" },
+  { key: "preco_na_zona_de_valor", label: "Proximidade", hint: "Preço perto da MMA 21 — não esticado (fator proximidade)" },
+  { key: "confluencia_suporte_resistencia", label: "Confluência", hint: "Agulhada (9/21/50 juntas) ou stop protegido por média" },
+  { key: "volume_pullback_decrescente", label: "Volume decrescente", hint: "Recuo com volume menor que o impulso (quando disponível)" },
+  { key: "candle_gatilho_valido", label: "Candle de gatilho", hint: "Gatilho PC / 9.2 / 9.1 com sombra de rejeição a favor" },
 ];
 
 export function ClassicoChecklist({
@@ -37,10 +37,10 @@ export function ClassicoChecklist({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-[10px] uppercase tracking-widest text-zinc-500">
-            Checklist Clássico (Pullback em Médias)
+            Checklist Clássico (Price Action + Médias)
           </p>
           <p className="mt-0.5 text-xs text-zinc-400">
-            6 condições do manual de Trend Following —{" "}
+            6 condições do método (tendência + proximidade + gatilho) —{" "}
             <span className={cn("num font-medium", ok ? "text-emerald-300" : "text-amber-300")}>
               {passed}/{total}
             </span>

@@ -27,8 +27,8 @@ export type GorilaSignalOutput = {
   meta: GorilaSignalMeta;
 };
 
-function htfBias(htf: Candle[]): "up" | "down" | "lateral" {
-  if (!htf || htf.length < 55) return "lateral";
+function htfBias(htf: Candle[]): "up" | "down" | "lateral" | "unknown" {
+  if (!htf || htf.length < 55) return "unknown";
   const closes = htf.map((c) => c.c);
   const e20 = ema(closes, 20);
   const e50 = ema(closes, 50);
@@ -83,17 +83,23 @@ export function generateGorilaSignal(input: {
   const isLong = alignedUp;
   const trend: "up" | "down" = isLong ? "up" : "down";
 
-  // ---- CONTEXTO 2: viés do timeframe superior não pode CONTRARIAR ----
+  // ---- CONTEXTO 2: viés do timeframe superior precisa CONFIRMAR a favor ----
+  // Hierarquia dos tempos: o TF maior manda. Só libera com viés A FAVOR; contra
+  // ou lateral (indefinido/de range) bloqueia. "unknown" = sem dados do HTF: não
+  // derruba o sinal, cai para a confirmação da SMA200 do próprio TF (trendOk).
   const bias = htfBias(input.htfCandles ?? []);
-  if ((isLong && bias === "down") || (!isLong && bias === "up")) {
-    return noSetup(`Viés do timeframe superior (${bias}) contra a operação — hierarquia dos tempos manda.`, trend);
+  const biasFavor = bias === (isLong ? "up" : "down");
+  if (bias !== "unknown" && !biasFavor) {
+    return noSetup(`Timeframe superior (${bias}) não confirma a favor — hierarquia dos tempos manda.`, trend);
   }
 
   // ---- CONTEXTO 3: fator proximidade (não operar esticado) ----
   const a = atr(candles);
   const tick = pipSize(price);
   const distA21 = Math.abs(price - a21);
-  if (distA21 > a * 4) {
+  // Filtro RÍGIDO de proximidade (fator do método): não operar esticado.
+  // Alinhado ao limiar do checklist (2.5x ATR) — acima disso, mercado "caro".
+  if (distA21 > a * 2.5) {
     return noSetup(`Movimento esticado (preço a ${(distA21 / a).toFixed(1)}x ATR da MMA21) — mercado caro, proximidade ruim.`, trend);
   }
 
@@ -154,7 +160,10 @@ export function generateGorilaSignal(input: {
 
   // ---- PLANO DE TRADE (regras do manual) ----
   const refC = candles[refIdx];
-  const buf = Math.max(a * 0.15, tick * 2);
+  // Buffer do stop = ~1 ATR além da estrutura. Um buffer minúsculo (0.15 ATR)
+  // era engolido pelo ruído normal (0.5–1 ATR) e gerava stops de ruído antes do
+  // alvo. 1 ATR mantém o stop técnico, atrás da estrutura, fora do ruído.
+  const buf = Math.max(a * 1.0, tick * 2);
 
   // Entrada: 1 tick além do extremo do candle de referência (ordem stop)
   const entry = round(isLong ? refC.h + tick : refC.l - tick, price);
@@ -240,26 +249,40 @@ export function generateGorilaSignal(input: {
   const checks = {
     tendencia_SMA200_alinhada: trendOk,
     alinhamento_perfeito_medias: true, // obrigatório — já validado no contexto
-    preco_na_zona_de_valor: proximityOk,
+    preco_na_zona_de_valor: proximityOk, // proximidade já é filtro rígido (sempre true aqui)
     confluencia_suporte_resistencia: confluenceOk,
     volume_pullback_decrescente: volumeOk,
     candle_gatilho_valido: gatilhoCandleOk,
   };
   const checksTrue = Object.values(checks).filter(Boolean).length;
-  if (checksTrue < 4) {
+
+  // PORTÃO DE QUALIDADE (mais rígido): pontua só as confluências DISCRICIONÁRIAS
+  // — alinhamento e proximidade já são filtros rígidos obrigatórios. O volume só
+  // entra no denominador quando o provedor entrega volume; em Forex costuma vir
+  // zerado, então contá-lo como "falha" travava o tier máximo para sempre.
+  const discretionary = [
+    trendOk,
+    confluenceOk,
+    gatilhoCandleOk,
+    ...(hasVolume ? [volumeOk] : []),
+  ];
+  const scoreTotal = discretionary.length; // 3 (sem volume) ou 4 (com volume)
+  const scoreTrue = discretionary.filter(Boolean).length;
+  // Aceita no máximo UMA confluência ausente (antes bastavam 4/6 ≈ 67%).
+  if (scoreTrue < scoreTotal - 1) {
     return noSetup(
-      `Gatilho ${setup} armado mas confluência insuficiente (${checksTrue}/6).`,
+      `Gatilho ${setup} armado mas confluência insuficiente (${scoreTrue}/${scoreTotal} confirmações).`,
       trend,
       checksTrue,
     );
   }
 
-  const probability = checksTrue >= 6 ? 82 : checksTrue === 5 ? 66 : 48;
-  const confidence: "ALTA" | "MEDIA" | "BAIXA" =
-    checksTrue >= 6 ? "ALTA" : checksTrue === 5 ? "MEDIA" : "BAIXA";
+  const strong = scoreTrue === scoreTotal; // todas as confluências a favor
+  const probability = strong ? 82 : 66;
+  const confidence: "ALTA" | "MEDIA" | "BAIXA" = strong ? "ALTA" : "MEDIA";
   const direction: NonNullable<ScanResult["direction"]> = isLong
-    ? checksTrue >= 6 ? "COMPRA_FORTE" : "COMPRA_FRACA"
-    : checksTrue >= 6 ? "VENDA_FORTE" : "VENDA_FRACA";
+    ? strong ? "COMPRA_FORTE" : "COMPRA_FRACA"
+    : strong ? "VENDA_FORTE" : "VENDA_FRACA";
 
   const setupLabel =
     setup === "PC" ? "PC — Ponto Contínuo" : setup === "9.2" ? "Setup 9.2" : "Setup 9.1";

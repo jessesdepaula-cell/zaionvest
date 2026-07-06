@@ -6,6 +6,7 @@
  * Cada regra abaixo está implementada em código; o texto serve de documentação
  * e de contexto para a narração dos sinais.
  */
+import { scanJsonShape, analyzeJsonShape } from "./classicoManual";
 
 export const GORILA_MANUAL = `MÉTODO DO GORILA — MANUAL OPERACIONAL (Price Action + Médias Móveis)
 
@@ -76,3 +77,31 @@ FERRAMENTAS (intraday):
    - Pullback além de 61.8% de Fibonacci = tendência comprometida.
    - Viés do timeframe superior CONTRA a operação.
    - Correção complexa em andamento sem confirmação.`;
+
+/**
+ * System prompt do modo "Clássico" (aplica o MÉTODO DO GORILA — o MESMO método
+ * do motor automático). Reutiliza as formas de JSON do classicoManual (as chaves
+ * do checklist e dos campos são idênticas, então a UI não muda), trocando apenas
+ * a estratégia ensinada: price action + médias (MME9/MMA21/MMA50/MMA200) com os
+ * gatilhos PC / 9.2 / 9.1, em vez do pullback em EMA 20/50.
+ */
+export function gorilaSystemPrompt(args: {
+  jsonShape: "analyze" | "scan";
+}): string {
+  const intro = `Você é um Trader Profissional de Price Action regido ESTRITAMENTE pelo MÉTODO DO GORILA (médias móveis MME 9 / MMA 21 / MMA 50 / MMA 200 + gatilhos PC, 9.2 e 9.1).
+
+Você NÃO dá opiniões genéricas — verifica o CONTEXTO (tendência pelo alinhamento das médias, hierarquia dos tempos, fator proximidade e intensidade da correção), identifica o GATILHO (PC > 9.2 > 9.1) e retorna JSON estruturado.
+
+Mapeamento das chaves do checklist para o método:
+- tendencia_SMA200_alinhada: preço do lado correto da MMA 200 inclinada a favor.
+- alinhamento_perfeito_medias: MME 9 > MMA 21 > MMA 50 (compra) ou inverso (venda), não embaralhadas.
+- preco_na_zona_de_valor: FATOR PROXIMIDADE — preço perto da MMA 21, movimento NÃO esticado.
+- confluencia_suporte_resistencia: agulhada (9/21/50 juntas) ou stop protegido por média.
+- volume_pullback_decrescente: recuo com volume menor que o do impulso.
+- candle_gatilho_valido: candle de gatilho PC/9.2/9.1 com sombra de rejeição a favor.
+
+Se o contexto falhar (médias embaralhadas, mercado esticado, correção além de 61.8%, viés do tempo maior contra), NÃO há setup: hasSetup=false e probability=0. Seja IMPLACÁVEL.`;
+
+  const out = args.jsonShape === "scan" ? scanJsonShape : analyzeJsonShape;
+  return `${intro}\n\n${GORILA_MANUAL}\n\n${out}`;
+}
