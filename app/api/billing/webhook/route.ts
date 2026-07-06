@@ -41,6 +41,18 @@ export async function POST(req: Request) {
       }
       break;
     }
+    case "PAYMENT_OVERDUE": {
+      // Cobrança venceu e não foi paga: rebaixa para "em atraso" — o assinante
+      // perde acesso (requireActiveSubscription só libera active/trialing) até
+      // regularizar. Se depois pagar, um PAYMENT_CONFIRMED reativa.
+      if (payment?.customer) {
+        await prisma.user.updateMany({
+          where: { stripeCustomerId: payment.customer },
+          data: { subscriptionStatus: "past_due" },
+        });
+      }
+      break;
+    }
     case "SUBSCRIPTION_DELETED":
     case "SUBSCRIPTION_DISABLED": {
       if (subscription) {

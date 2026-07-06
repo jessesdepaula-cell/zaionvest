@@ -72,19 +72,14 @@ export default async function ConfiguracoesPage() {
                   : "—"
               }
             />
-            <Field
-              label="Modo"
-              value={process.env.STRIPE_MOCK === "true" ? "MVP (mock)" : "Stripe"}
-            />
+            <Field label="Pagamento" value="Cartão / Pix (Asaas)" />
           </div>
-          {process.env.STRIPE_MOCK !== "true" && (
-            <Link
-              href="/billing"
-              className="mt-4 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-offwhite hover:bg-white/[0.08]"
-            >
-              Gerenciar assinatura
-            </Link>
-          )}
+          <Link
+            href="/billing"
+            className="mt-4 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-offwhite hover:bg-white/[0.08]"
+          >
+            Gerenciar assinatura
+          </Link>
         </Section>
 
         <Section icon={<Activity className="h-3.5 w-3.5" />} title="Notificações de sinal">

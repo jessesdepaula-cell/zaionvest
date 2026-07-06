@@ -32,6 +32,15 @@ export default async function DashboardLayout({
     user?.emailAddresses[0]?.emailAddress ||
     "Usuário";
 
+  // Dias restantes do teste grátis (só para assinantes em trial, não para o dono).
+  const trialDaysLeft =
+    !owner && subUser?.subscriptionStatus === "trialing" && subUser.currentPeriodEnd
+      ? Math.max(
+          0,
+          Math.ceil((new Date(subUser.currentPeriodEnd).getTime() - Date.now()) / 86_400_000),
+        )
+      : null;
+
   return (
     <div className="min-h-screen bg-charcoal text-offwhite">
       {/* Sidebar fixa em desktop */}
@@ -106,7 +115,25 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <main className="lg:pl-60">{children}</main>
+      <main className="lg:pl-60">
+        {trialDaysLeft !== null && (
+          <div className="border-b border-amber-500/20 bg-amber-500/[0.06] px-6 py-2.5 text-center text-xs text-amber-200">
+            <span className="font-medium">Teste grátis</span> —{" "}
+            {trialDaysLeft === 0
+              ? "último dia"
+              : `${trialDaysLeft} ${trialDaysLeft === 1 ? "dia restante" : "dias restantes"}`}
+            .{" "}
+            <Link
+              href="/billing"
+              className="font-semibold underline underline-offset-2 hover:text-amber-100"
+            >
+              Ativar assinatura
+            </Link>{" "}
+            para não perder acesso aos sinais.
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }
