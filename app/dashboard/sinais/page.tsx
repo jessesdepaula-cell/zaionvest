@@ -158,43 +158,29 @@ export default async function SinaisPage({
       ? (closedSignalsFromDb as any)
       : deduped;
 
+  const countGroups = await prisma.signal.groupBy({
+    by: ["status"],
+    where: {
+      userId: user.id,
+      hasSetup: true,
+      mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+      ...(since ? { scannedAt: { gte: since } } : {}),
+    },
+    _count: {
+      id: true,
+    },
+  });
+
+  const getCount = (status: string) => {
+    const group = countGroups.find((g) => g.status === status);
+    return group?._count?.id ?? 0;
+  };
+
   const stats = {
-    pending: await prisma.signal.count({
-      where: {
-        userId: user.id,
-        status: "PENDING",
-        hasSetup: true,
-        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
-        ...(since ? { scannedAt: { gte: since } } : {}),
-      }
-    }),
-    filled: await prisma.signal.count({
-      where: {
-        userId: user.id,
-        status: "FILLED",
-        hasSetup: true,
-        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
-        ...(since ? { filledAt: { gte: since } } : {}),
-      }
-    }),
-    won: await prisma.signal.count({
-      where: {
-        userId: user.id,
-        status: "WIN",
-        hasSetup: true,
-        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
-        ...(since ? { closedAt: { gte: since } } : {}),
-      }
-    }),
-    lost: await prisma.signal.count({
-      where: {
-        userId: user.id,
-        status: "LOSS",
-        hasSetup: true,
-        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
-        ...(since ? { closedAt: { gte: since } } : {}),
-      }
-    }),
+    pending: getCount("PENDING"),
+    filled: getCount("FILLED"),
+    won: getCount("WIN"),
+    lost: getCount("LOSS"),
     noSetup: allRecent.filter((s) => !s.hasSetup).length,
   };
   const signals = deduped;
