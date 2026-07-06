@@ -140,14 +140,15 @@ export function SignalChart({
   const initialVisible = computeInitialVisible(candles.length);
   const [view, setView] = useState<ViewState>({
     visibleCount: initialVisible,
-    offset: 0,
+    offset: -Math.floor(initialVisible / 2),
     yZoom: 1,
     yPan: 0,
   });
 
   // ao trocar TF, reseta visualização
   useEffect(() => {
-    setView({ visibleCount: computeInitialVisible(candles.length), offset: 0, yZoom: 1, yPan: 0 });
+    const vis = computeInitialVisible(candles.length);
+    setView({ visibleCount: vis, offset: -Math.floor(vis / 2), yZoom: 1, yPan: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tf, candles.length]);
 
@@ -326,7 +327,8 @@ export function SignalChart({
   }
 
   function reset() {
-    setView({ visibleCount: Math.min(candles.length, 120), offset: 0, yZoom: 1, yPan: 0 });
+    const vis = Math.min(candles.length, 120);
+    setView({ visibleCount: vis, offset: -Math.floor(vis / 2), yZoom: 1, yPan: 0 });
   }
 
   // React seta onWheel passivo por padrão em alguns runtimes — registra manualmente
