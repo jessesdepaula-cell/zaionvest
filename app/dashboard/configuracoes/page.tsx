@@ -1,14 +1,9 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { Activity, CreditCard, Database, Eye, Mail, Shield, User, Key } from "lucide-react";
+import { Activity, CreditCard, Mail, Shield, User } from "lucide-react";
 import { getOrCreateUser } from "@/lib/subscription";
-import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
-import {
-  DeleteAccountButton,
-  ExportButton,
-} from "@/components/dashboard/SettingsActions";
-import { APIKeysForm } from "@/components/dashboard/APIKeysForm";
+import { DeleteAccountButton } from "@/components/dashboard/SettingsActions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +11,6 @@ export default async function ConfiguracoesPage() {
   const user = await getOrCreateUser();
   if (!user) return null;
   const clerkUser = await currentUser();
-
-  const [tradeCount, signalCount, analysisCount, watchlistCount] = await Promise.all([
-    prisma.trade.count({ where: { userId: user.id } }),
-    prisma.signal.count({ where: { userId: user.id } }),
-    prisma.analysis.count({ where: { userId: user.id } }),
-    prisma.watchlist.count({ where: { userId: user.id } }),
-  ]);
 
   const fullName =
     [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") ||
@@ -55,13 +43,6 @@ export default async function ConfiguracoesPage() {
             />
             <Field label="ID interno" value={user.id} mono />
           </div>
-        </Section>
-
-        <Section icon={<Key className="h-3.5 w-3.5" />} title="Configuração de IA (Chaves de API)">
-          <APIKeysForm
-            initialGeminiKey={user.geminiApiKey ?? ""}
-            initialOpenAIKey={user.openaiApiKey ?? ""}
-          />
         </Section>
 
         <Section
@@ -104,35 +85,6 @@ export default async function ConfiguracoesPage() {
               Gerenciar assinatura
             </Link>
           )}
-        </Section>
-
-        <Section icon={<Database className="h-3.5 w-3.5" />} title="Seus dados">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <DataCount label="Análises" value={analysisCount} />
-            <DataCount label="Trades" value={tradeCount} />
-            <DataCount label="Sinais" value={signalCount} />
-            <DataCount label="Watchlist" value={watchlistCount} />
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <ExportButton href="/api/export/trades" label="Exportar diário de trades" />
-            <ExportButton href="/api/export/signals" label="Exportar histórico de sinais" />
-          </div>
-          <p className="mt-2 text-[10px] text-zinc-500">
-            CSV em UTF-8 (com BOM). Abra direto no Excel ou Google Sheets.
-          </p>
-        </Section>
-
-        <Section icon={<Eye className="h-3.5 w-3.5" />} title="Fonte de dados">
-          <p className="text-xs text-zinc-400">
-            Os candles vêm direto do mercado — Binance para cripto e Twelve Data para forex.
-            Nenhum robô precisa ser instalado.
-          </p>
-          <Link
-            href="/dashboard/watchlist"
-            className="mt-3 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-offwhite hover:bg-white/[0.08]"
-          >
-            Gerenciar watchlist
-          </Link>
         </Section>
 
         <Section icon={<Activity className="h-3.5 w-3.5" />} title="Notificações de sinal">
@@ -243,15 +195,6 @@ function Field({
       >
         {value}
       </div>
-    </div>
-  );
-}
-
-function DataCount({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-3">
-      <div className="text-[10px] uppercase tracking-widest text-zinc-500">{label}</div>
-      <div className="num mt-1 text-xl font-medium text-offwhite">{value}</div>
     </div>
   );
 }
