@@ -24,17 +24,18 @@ export default async function SinaisPage({
   const modoFilter = params?.modo;
   const statusFilter = params?.status;
 
-  const where: {
-    userId: string;
-    mode?: string;
-    status?: string;
-    hasSetup?: boolean;
-  } = { userId: user.id };
+  const where: any = { userId: user.id };
 
   if (modoFilter === "smc") where.mode = "SMC";
   if (modoFilter === "classico") where.mode = "CLASSICO";
-  if (statusFilter === "abertos") where.status = "FILLED";
-  if (statusFilter === "pendentes") where.status = "PENDING";
+  if (statusFilter === "abertos") {
+    where.status = "FILLED";
+    where.hasSetup = true;
+  }
+  if (statusFilter === "pendentes") {
+    where.status = "PENDING";
+    where.hasSetup = true;
+  }
 
   const allRecent = await prisma.signal.findMany({
     where,
@@ -133,18 +134,59 @@ export default async function SinaisPage({
           } as (typeof allRecent)[number])
         : s,
     );
-  const recentClosed = allRecent.filter((s) => s.hasSetup && isClosedTrade(s.status)).slice(0, 8);
+  // Busca os sinais concluídos diretamente no banco de dados para evitar que sejam
+  // empurrados pelos milhares de logs "NO_SETUP" do cron job.
+  const closedSignalsFromDb = await prisma.signal.findMany({
+    where: {
+      userId: user.id,
+      hasSetup: true,
+      status: { in: ["WIN", "LOSS"] },
+      mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+    },
+    orderBy: { scannedAt: "desc" },
+    take: 100,
+  });
+
+  const recentClosed = closedSignalsFromDb.slice(0, 8);
 
   const visible: typeof allRecent =
     statusFilter === "fechados"
-      ? allRecent.filter((s) => s.hasSetup && isClosedTrade(s.status))
+      ? (closedSignalsFromDb as any)
       : deduped;
 
   const stats = {
-    pending: allRecent.filter((s) => s.status === "PENDING" && s.hasSetup).length,
-    filled: allRecent.filter((s) => s.status === "FILLED").length,
-    won: allRecent.filter((s) => s.status === "WIN").length,
-    lost: allRecent.filter((s) => s.status === "LOSS").length,
+    pending: await prisma.signal.count({
+      where: {
+        userId: user.id,
+        status: "PENDING",
+        hasSetup: true,
+        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+      }
+    }),
+    filled: await prisma.signal.count({
+      where: {
+        userId: user.id,
+        status: "FILLED",
+        hasSetup: true,
+        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+      }
+    }),
+    won: await prisma.signal.count({
+      where: {
+        userId: user.id,
+        status: "WIN",
+        hasSetup: true,
+        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+      }
+    }),
+    lost: await prisma.signal.count({
+      where: {
+        userId: user.id,
+        status: "LOSS",
+        hasSetup: true,
+        mode: modoFilter === "smc" ? "SMC" : modoFilter === "classico" ? "CLASSICO" : undefined,
+      }
+    }),
     noSetup: allRecent.filter((s) => !s.hasSetup).length,
   };
   const signals = deduped;
