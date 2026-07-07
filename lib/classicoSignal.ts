@@ -74,6 +74,16 @@ export function generateClassicoSignal(input: {
     s200prev !== null &&
     (isLong ? price > s200 && s200 >= s200prev : price < s200 && s200 <= s200prev);
 
+  // ---- SMA200 obrigatória (tendência maior a favor) ----
+  // Antes era opcional (só somava no score). Sem SMA200 a favor operar pullback
+  // vira brigar contra tendência maior — principal causa de perdas do modo.
+  if (!trendOk) {
+    return noSetup(
+      "SMA200 não confirma a favor (preço do lado errado ou inclinação contrária).",
+      trend,
+    );
+  }
+
   // ---- ZONA DE VALOR (faixa EMA20–EMA50) — a entrada é o pullback até ela ----
   const zoneTop = Math.max(e20, e50);
   const zoneBottom = Math.min(e20, e50);
@@ -91,9 +101,13 @@ export function generateClassicoSignal(input: {
     return noSetup("Pullback profundo demais: preço acima da EMA 50 — tendência em risco.", trend);
   }
   const distPct = (Math.abs(price - entryRaw) / price) * 100;
-  if (distPct > 1.0) {
+  // Distância máxima ajustada por tipo de ativo. 1% era largo demais em Forex
+  // (100 pips no EURUSD = pullback tarde: risco fica desproporcional ao alvo).
+  const isFx = /^(EUR|GBP|USD|CHF|JPY|AUD|NZD|CAD|XAU)/i.test(input.symbol);
+  const maxDistPct = isFx ? 0.35 : 0.8;
+  if (distPct > maxDistPct) {
     return noSetup(
-      `Preço longe da Zona de Valor (${distPct.toFixed(2)}% > 1%). Aguardando pullback.`,
+      `Preço longe da Zona de Valor (${distPct.toFixed(2)}% > ${maxDistPct}%). Aguardando pullback.`,
       trend,
     );
   }
@@ -132,6 +146,14 @@ export function generateClassicoSignal(input: {
     return c.h >= zoneBottom - tol && c.c < c.o && upperWick >= body * 0.5;
   });
 
+  // Gatilho é obrigatório: sem candle de rejeição na zona, é chute — não sinal.
+  if (!gatilhoOk) {
+    return noSetup(
+      "Sem candle-gatilho de rejeição na Zona de Valor (pavio contra a zona + corpo a favor).",
+      trend,
+    );
+  }
+
   const checks = {
     tendencia_SMA200_alinhada: trendOk,
     alinhamento_perfeito_medias: true, // obrigatório — já validado acima
@@ -142,9 +164,22 @@ export function generateClassicoSignal(input: {
   };
   const checksTrue = Object.values(checks).filter(Boolean).length;
 
-  if (checksTrue < 4) {
+  // PORTÃO DE QUALIDADE (novo — mesmo padrão do Gorila).
+  // Só as confluências DISCRICIONÁRIAS entram no score — as automáticas
+  // (alinhamento, zona) já foram exigidas como filtro rígido. O volume só entra
+  // no denominador quando o provedor entrega volume: em Forex vem zerado e
+  // contá-lo como falha travava o tier ALTA para sempre e ainda liberava sinais
+  // fracos de graça no gate antigo (4/6 com 2 automáticos).
+  const discretionary = [
+    confluenciaOk,
+    gatilhoOk, // já obrigatório acima, mantém no score p/ tier
+    ...(hasVolume ? [volumeOk] : []),
+  ];
+  const scoreTotal = discretionary.length; // 2 (sem volume) ou 3 (com volume)
+  const scoreTrue = discretionary.filter(Boolean).length;
+  if (scoreTrue < scoreTotal - (hasVolume ? 1 : 0)) {
     return noSetup(
-      `Confluência insuficiente (${checksTrue}/6). Faltam: ${Object.entries(checks)
+      `Confluência insuficiente (${scoreTrue}/${scoreTotal}). Faltam: ${Object.entries(checks)
         .filter(([, v]) => !v)
         .map(([k]) => k)
         .join(", ")}.`,
@@ -187,8 +222,14 @@ export function generateClassicoSignal(input: {
   const [t1, t2, t3] = targets.slice(0, 3).map((t) => round(t, price));
 
   const rr = Math.abs(t1 - entry) / risk;
-  if (rr < 0.75) {
-    return noSetup(`R:R do Alvo 1 (${rr.toFixed(2)}) abaixo do mínimo. Sem trade.`, trend, checksTrue);
+  // R:R mínimo 1.5 no Alvo 1. Com 0.75 (antigo) mesmo 60% de acerto dava
+  // expectativa negativa (0.6·0.75 − 0.4·1 = +0.05 antes de custos → negativo).
+  if (rr < 1.5) {
+    return noSetup(
+      `R:R do Alvo 1 (${rr.toFixed(2)}) abaixo do mínimo (1.5). Sem trade — expectativa ruim.`,
+      trend,
+      checksTrue,
+    );
   }
 
   // Sanidade do plano: o preço atual NÃO pode já ter passado do Alvo 1
@@ -201,12 +242,15 @@ export function generateClassicoSignal(input: {
     );
   }
 
-  const probability = checksTrue >= 6 ? 82 : checksTrue === 5 ? 66 : 48;
-  const confidence: "ALTA" | "MEDIA" | "BAIXA" =
-    checksTrue >= 6 ? "ALTA" : checksTrue === 5 ? "MEDIA" : "BAIXA";
+  // Calibração baseada nas discricionárias (mesma lógica do Gorila):
+  // todas as confirmações a favor = ALTA; senão MEDIA. BAIXA não sai mais no
+  // clássico (o gate acima já impede — ou é sinal decente ou não é sinal).
+  const strong = scoreTrue === scoreTotal;
+  const probability = strong ? 78 : 62;
+  const confidence: "ALTA" | "MEDIA" | "BAIXA" = strong ? "ALTA" : "MEDIA";
   const direction: NonNullable<ScanResult["direction"]> = isLong
-    ? checksTrue >= 6 ? "COMPRA_FORTE" : "COMPRA_FRACA"
-    : checksTrue >= 6 ? "VENDA_FORTE" : "VENDA_FRACA";
+    ? strong ? "COMPRA_FORTE" : "COMPRA_FRACA"
+    : strong ? "VENDA_FORTE" : "VENDA_FRACA";
 
   const structure = `${isLong ? "Compra" : "Venda"} no pullback à Zona de Valor (EMA20–EMA50), tendência ${
     isLong ? "de alta" : "de baixa"

@@ -1,21 +1,24 @@
 import type { Candle, Quote, Timeframe } from "../types";
 
-const TF_TO_YAHOO: Record<Timeframe, string> = {
+// Yahoo Chart API aceita: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo.
+// Não existe "4h" nativo — H4 é agregado a partir de 60m (ver yahooCandles).
+const TF_TO_YAHOO: Record<Exclude<Timeframe, "H4">, string> = {
   M5: "5m",
   M15: "15m",
   M30: "30m",
-  H1: "1h",
-  H4: "4h",
+  H1: "60m",
   D1: "1d",
 };
 
-// Mapeamento de símbolos internos para os símbolos do Yahoo Finance
+// Símbolos do Yahoo Finance. Nada de futuro (GC=F) para XAUUSD — spot é o que
+// o MT5/corretoras Forex mostram. Yahoo não tem XAU/USD spot puro, então
+// XAUUSD sai daqui vazio e o router deve pegar TwelveData primeiro.
 const SYMBOL_MAP: Record<string, string> = {
   EURUSD: "EURUSD=X",
   GBPUSD: "GBPUSD=X",
   USDJPY: "USDJPY=X",
   USDCHF: "USDCHF=X",
-  XAUUSD: "GC=F", // Contrato futuro de ouro na COMEX
+  XAUUSD: "XAUUSD=X",
 };
 
 function rangeForLimit(tf: Timeframe, limit: number): string {
@@ -29,7 +32,8 @@ function rangeForLimit(tf: Timeframe, limit: number): string {
     return limit <= 100 ? "1mo" : "3mo";
   }
   if (tf === "H4") {
-    return limit <= 100 ? "3mo" : "6mo";
+    // Precisamos de 4x mais candles H1 para agregar em H4 sem furos.
+    return limit <= 100 ? "3mo" : "1y";
   }
   if (tf === "D1") {
     return limit <= 100 ? "1y" : "max";
@@ -37,14 +41,52 @@ function rangeForLimit(tf: Timeframe, limit: number): string {
   return "1mo";
 }
 
+/**
+ * Agrega candles H1 -> H4 alinhando pelo horário UTC (buckets de 4h).
+ * Preserva o OHLC correto: open do 1º candle do bucket, high/low máximos/mínimos,
+ * close do último. Só emite bucket completo se tiver >=2 candles (evita "H4 de 1h").
+ */
+function aggregateH1ToH4(h1: Candle[]): Candle[] {
+  if (h1.length === 0) return h1;
+  const out: Candle[] = [];
+  const bucketSec = 4 * 3600;
+  let bucketStart = -1;
+  let cur: Candle | null = null;
+  let n = 0;
+  for (const c of h1) {
+    const b = Math.floor(c.t / bucketSec) * bucketSec;
+    if (b !== bucketStart) {
+      if (cur && n >= 1) out.push(cur);
+      cur = { t: b, o: c.o, h: c.h, l: c.l, c: c.c, v: c.v };
+      bucketStart = b;
+      n = 1;
+    } else if (cur) {
+      cur.h = Math.max(cur.h, c.h);
+      cur.l = Math.min(cur.l, c.l);
+      cur.c = c.c;
+      if (typeof c.v === "number") cur.v = (cur.v ?? 0) + c.v;
+      n += 1;
+    }
+  }
+  if (cur && n >= 1) out.push(cur);
+  return out;
+}
+
 export async function yahooCandles(
   symbol: string,
   tf: Timeframe,
   limit = 500,
 ): Promise<Candle[]> {
+  // H4 é sintético em cima de H1 (Yahoo não oferece 4h nativo).
+  if (tf === "H4") {
+    const h1 = await yahooCandles(symbol, "H1", Math.min(1000, limit * 4 + 20));
+    const h4 = aggregateH1ToH4(h1);
+    return h4.length > limit ? h4.slice(-limit) : h4;
+  }
+
   const yahooSymbol = SYMBOL_MAP[symbol.toUpperCase().replace("/", "")] ?? `${symbol}=X`;
   const range = rangeForLimit(tf, limit);
-  const interval = TF_TO_YAHOO[tf] ?? "15m";
+  const interval = TF_TO_YAHOO[tf as Exclude<Timeframe, "H4">] ?? "15m";
   
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     yahooSymbol,
@@ -117,14 +159,34 @@ export async function yahooCandles(
       continue;
     }
 
+    const on = Number(o), hn = Number(h), ln = Number(l), cn = Number(c);
+    // OHLC inválido do Yahoo (não é raro: candles com low=0 ou high<low no
+    // fim de semana em Forex, buracos em cripto de baixa liquidez).
+    if (!(hn >= ln && hn >= on && hn >= cn && ln <= on && ln <= cn && ln > 0)) {
+      continue;
+    }
     candles.push({
       t,
-      o: Number(o),
-      h: Number(h),
-      l: Number(l),
-      c: Number(c),
+      o: on,
+      h: hn,
+      l: ln,
+      c: cn,
       v: v !== null && v !== undefined ? Number(v) : undefined,
     });
+  }
+
+  // Sanity: descarta spikes fantasmas (candle >8x o range mediano da amostra).
+  // Aparecem em Forex do Yahoo perto da abertura de segunda e distorcem a
+  // escala do gráfico e o cálculo do ATR/stops.
+  if (candles.length > 20) {
+    const ranges = candles.map((k) => k.h - k.l).sort((a, b) => a - b);
+    const median = ranges[Math.floor(ranges.length / 2)] || 0;
+    if (median > 0) {
+      const cutoff = median * 8;
+      for (let i = candles.length - 1; i >= 0; i--) {
+        if (candles[i].h - candles[i].l > cutoff) candles.splice(i, 1);
+      }
+    }
   }
 
   // Se retornou mais candles do que o limite solicitado, pega os últimos

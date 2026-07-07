@@ -972,24 +972,101 @@ export function SignalChart({
           </g>
         )}
 
-        {visible.map((c, i) => {
-          const cx = xOf(i);
-          const isUp = c.c >= c.o;
-          const color = isUp ? "#10B981" : "#F43F5E";
-          const yH = yOf(c.h);
-          const yL = yOf(c.l);
-          const yO = yOf(c.o);
-          const yC = yOf(c.c);
-          const bodyTop = Math.min(yO, yC);
-          const bodyH = Math.max(1, Math.abs(yC - yO));
-          const w = Math.max(1, candleW * 0.65);
-          return (
-            <g key={i}>
-              <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={color} strokeWidth="1" opacity="0.9" />
-              <rect x={cx - w / 2} y={bodyTop} width={w} height={bodyH} fill={color} opacity="0.92" />
-            </g>
-          );
-        })}
+        {/*
+          Estilo MetaTrader/MT5: velas de alta OCAS (só o contorno), velas de
+          baixa PREENCHIDAS. Corpo mais largo (0.78x da coluna), coords em pixel
+          inteiro e wick alinhado ao centro do corpo para não borrar.
+        */}
+        <g shapeRendering="crispEdges">
+          {visible.map((c, i) => {
+            const isUp = c.c >= c.o;
+            const up = "#26A69A";   // verde MT5 (alta)
+            const down = "#EF5350"; // vermelho MT5 (baixa)
+            const color = isUp ? up : down;
+
+            const yH = yOf(c.h);
+            const yL = yOf(c.l);
+            const yO = yOf(c.o);
+            const yC = yOf(c.c);
+
+            // corpo 78% da largura da coluna (mín 2px), largura ímpar p/ o wick
+            // (1px) cair no centro exato do corpo sem antialiasing borrar.
+            let w = Math.max(2, Math.round(candleW * 0.78));
+            if (w % 2 === 0) w -= 1;
+            const cxI = Math.round(xOf(i));
+            const xI = cxI - Math.floor(w / 2);
+
+            const yTopI = Math.round(Math.min(yO, yC));
+            const yBotI = Math.round(Math.max(yO, yC));
+            const bodyH = Math.max(1, yBotI - yTopI);
+
+            const yHI = Math.round(yH);
+            const yLI = Math.round(yL);
+
+            // Doji (open ≈ close): desenha uma linha horizontal em vez do corpo
+            // de 1px que ficava "sumido" no gráfico.
+            const isDoji = Math.abs(yC - yO) < 0.6;
+
+            return (
+              <g key={i}>
+                {/* wick de alta (acima do corpo) */}
+                {yHI < yTopI && (
+                  <line
+                    x1={cxI + 0.5}
+                    y1={yHI}
+                    x2={cxI + 0.5}
+                    y2={yTopI}
+                    stroke={color}
+                    strokeWidth="1"
+                  />
+                )}
+                {/* wick de baixa (abaixo do corpo) */}
+                {yLI > yBotI && (
+                  <line
+                    x1={cxI + 0.5}
+                    y1={yBotI}
+                    x2={cxI + 0.5}
+                    y2={yLI}
+                    stroke={color}
+                    strokeWidth="1"
+                  />
+                )}
+                {isDoji ? (
+                  <line
+                    x1={xI}
+                    y1={yTopI + 0.5}
+                    x2={xI + w}
+                    y2={yTopI + 0.5}
+                    stroke={color}
+                    strokeWidth="1"
+                  />
+                ) : isUp ? (
+                  // vela de alta: OCA (fundo do fundo do gráfico + contorno)
+                  <rect
+                    x={xI}
+                    y={yTopI}
+                    width={w}
+                    height={bodyH}
+                    fill="#0A0A0A"
+                    stroke={color}
+                    strokeWidth="1"
+                  />
+                ) : (
+                  // vela de baixa: preenchida (padrão MT5)
+                  <rect
+                    x={xI}
+                    y={yTopI}
+                    width={w}
+                    height={bodyH}
+                    fill={color}
+                    stroke={color}
+                    strokeWidth="1"
+                  />
+                )}
+              </g>
+            );
+          })}
+        </g>
 
         {/* Bolinha de execução: o preço TOCOU a entrada programada neste candle */}
         {fillIdxInView !== null && entry !== null && (

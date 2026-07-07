@@ -58,15 +58,28 @@ export async function getCandles(
       }
     }
   } else {
-    // Para Forex (e outros sem binance), usamos Yahoo Finance como primário e TwelveData como fallback
-    try {
-      candles = await yahooCandles(spec.symbol, tf, limit);
-    } catch (e) {
-      console.warn(`[getCandles] Falha no Yahoo Finance para ${spec.symbol}. Tentando TwelveData... Erro:`, e instanceof Error ? e.message : e);
-      if (spec.twelvedata) {
+    // XAUUSD: Yahoo retorna GC=F (futuro COMEX) — OHLC bem diferente do XAU/USD
+    // spot que o MT5 (e as corretoras Forex) usam. TwelveData tem XAU/USD spot,
+    // então priorizamos ele para o ouro quando a chave existir.
+    const preferTwelve = spec.symbol === "XAUUSD" && !!spec.twelvedata;
+    if (preferTwelve && spec.twelvedata) {
+      try {
         candles = await twelveCandles(spec.twelvedata, tf, limit);
-      } else {
-        throw e;
+      } catch (e) {
+        console.warn(`[getCandles] TwelveData falhou para ${spec.symbol}. Caindo p/ Yahoo. Erro:`, e instanceof Error ? e.message : e);
+        candles = await yahooCandles(spec.symbol, tf, limit);
+      }
+    } else {
+      // Forex geral: Yahoo primário (grátis, sem chave), TwelveData fallback.
+      try {
+        candles = await yahooCandles(spec.symbol, tf, limit);
+      } catch (e) {
+        console.warn(`[getCandles] Falha no Yahoo Finance para ${spec.symbol}. Tentando TwelveData... Erro:`, e instanceof Error ? e.message : e);
+        if (spec.twelvedata) {
+          candles = await twelveCandles(spec.twelvedata, tf, limit);
+        } else {
+          throw e;
+        }
       }
     }
   }
