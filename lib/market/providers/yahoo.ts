@@ -10,15 +10,15 @@ const TF_TO_YAHOO: Record<Exclude<Timeframe, "H4">, string> = {
   D1: "1d",
 };
 
-// Símbolos do Yahoo Finance. Nada de futuro (GC=F) para XAUUSD — spot é o que
-// o MT5/corretoras Forex mostram. Yahoo não tem XAU/USD spot puro, então
-// XAUUSD sai daqui vazio e o router deve pegar TwelveData primeiro.
+// Símbolos do Yahoo Finance. Para ouro, usamos GC=F (Gold Futures COMEX) como
+// fallback já que XAUUSD=X não existe mais no Yahoo. TwelveData tem o spot real
+// e é priorizado no router para XAUUSD, então este é só backup.
 const SYMBOL_MAP: Record<string, string> = {
   EURUSD: "EURUSD=X",
   GBPUSD: "GBPUSD=X",
   USDJPY: "USDJPY=X",
   USDCHF: "USDCHF=X",
-  XAUUSD: "XAUUSD=X",
+  XAUUSD: "GC=F", // Gold Futures COMEX (fallback, TwelveData tem o spot)
 };
 
 function rangeForLimit(tf: Timeframe, limit: number): string {
