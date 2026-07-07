@@ -152,9 +152,9 @@ export default async function BillingPage({
             description="Um auditor dedicado analisa e publica de forma transparente as taxas de acerto históricas de cada setup."
           />
           <FeatureCard
-            icon={<ArrowRight className="h-5 w-5 text-emerald-400" />}
-            title="Exportação de Dados"
-            description="Exporte seu diário de trades e histórico de sinais diretamente para planilhas CSV para auditar seus resultados."
+            icon={<Sparkles className="h-5 w-5 text-emerald-400" />}
+            title="Alertas por E-mail em Tempo Real"
+            description="Assim que um novo setup é confirmado, você recebe um e-mail na hora com entrada, stop e alvos — sem precisar ficar olhando a tela."
           />
         </div>
       </section>

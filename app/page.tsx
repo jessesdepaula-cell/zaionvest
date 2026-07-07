@@ -119,7 +119,7 @@ export default function LandingPage() {
               day: "Dia 1",
               icon: "🚀",
               title: "Acesso imediato",
-              desc: "Crie sua conta, configure sua watchlist com os ativos que você já opera. A IA começa a monitorar em segundos.",
+              desc: "Crie sua conta e já entra tudo pronto: a mesa monitora os melhores ativos em tempo real e os sinais aparecem no seu painel em segundos.",
               color: "border-blue-500/20 bg-blue-500/[0.03]",
               textColor: "text-blue-400",
             },
@@ -225,7 +225,7 @@ export default function LandingPage() {
           <FeatureCard
             icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
             title="Radar de Varredura Automática"
-            description="Seus ativos em watchlist são varridos constantemente por nossos servidores em múltiplos timeframes sem latência."
+            description="A mesa varre os melhores ativos constantemente, em múltiplos timeframes, nos nossos servidores — você só recebe os sinais prontos."
           />
           <FeatureCard
             icon={<Mail className="h-5 w-5 text-emerald-400" />}
@@ -278,8 +278,8 @@ export default function LandingPage() {
                 ["Alertas por e-mail", "❌ Não", "❌ Não", "✅ Sim"],
                 ["Cobertura Forex + Cripto", "Parcial", "❌ Não", "✅ Sim"],
                 ["Histórico de assertividade", "❌ Não", "❌ Não", "✅ Auditável"],
-                ["Backtesting", "❌ Não", "❌ Não", "✅ Sim"],
-                ["Diário de trades + CSV", "❌ Não", "❌ Não", "✅ Sim"],
+                ["Sinais SMC + Price Action Clássico", "Parcial", "❌ Não", "✅ Sim"],
+                ["Análise de gráfico por imagem", "❌ Não", "❌ Não", "✅ Sim"],
                 ["100% no navegador", "✅ Sim", "Parcial", "✅ Sim"],
                 ["Gráfico com E/SL/TP plotados", "✅ Sim", "✅ Sim", "✅ Sim"],
               ].map(([feature, a, b, us], i) => (
@@ -368,7 +368,7 @@ export default function LandingPage() {
           <div className="mt-4 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
             <p className="text-xs font-semibold text-emerald-300">🎯 Seus 3 primeiros dias são 100% gratuitos</p>
             <p className="mt-1 text-[11px] text-zinc-400">
-              Cadastre-se hoje, configure sua watchlist e veja a IA trabalhando. Nenhuma cobrança
+              Cadastre-se hoje e veja a IA trabalhando na hora. Nenhuma cobrança
               até o 4º dia. Cancele antes e não paga nada.
             </p>
           </div>
@@ -380,8 +380,8 @@ export default function LandingPage() {
               "Gráfico com E, SL e TP plotados visualmente",
               "Gestão de risco com R:R calculado",
               "Histórico de assertividade auditável",
-              "Diário de trades + exportação CSV",
-              "Backtesting de estratégias",
+              "Modos SMC e Price Action Clássico",
+              "Análise de gráfico por imagem (visão computacional)",
               "Cancelamento simplificado e imediato",
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-2.5 text-xs text-zinc-300">
@@ -420,11 +420,11 @@ export default function LandingPage() {
           />
           <FaqItem
             q="Como funcionam os alertas por e-mail?"
-            a="Quando a IA detectar uma confluência de alta probabilidade em qualquer ativo da sua watchlist, você recebe automaticamente um e-mail com o símbolo, direção (Compra/Venda), preço de entrada, stop loss, alvos e a análise estrutural completa."
+            a="Quando a IA detectar uma confluência de alta probabilidade em qualquer ativo monitorado pela mesa, você recebe automaticamente um e-mail com o símbolo, direção (Compra/Venda), preço de entrada, stop loss, alvos e a análise estrutural completa."
           />
           <FaqItem
             q="Eu preciso instalar algum robô ou indicador?"
-            a="Não. O Trade Vision AI roda 100% em nuvem e através do seu navegador. Basta abrir o site, configurar sua watchlist e aguardar os sinais chegarem por e-mail."
+            a="Não. O Trade Vision AI roda 100% em nuvem e através do seu navegador. Basta abrir o site e aguardar os sinais chegarem por e-mail e no painel."
           />
           <FaqItem
             q="Qual a assertividade média dos setups?"
@@ -436,7 +436,7 @@ export default function LandingPage() {
           />
           <FaqItem
             q="Quais ativos são suportados?"
-            a="Forex (EUR/USD, GBP/USD, USD/JPY e mais), Cripto (BTC, ETH e outros pares), Ouro (XAUUSD) e índices. A watchlist é totalmente personalizável."
+            a="Forex (EUR/USD, GBP/USD, USD/JPY e mais), Cripto (BTC, ETH e outros pares) e Ouro (XAUUSD). A mesa seleciona e monitora os melhores ativos para você."
           />
         </div>
       </section>
