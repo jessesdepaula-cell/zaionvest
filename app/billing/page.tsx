@@ -9,12 +9,12 @@ export default async function BillingPage({
   const params = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[#070709] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300">
+    <main className="min-h-screen bg-[#2A1D0A] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* Glow de Fundo */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-gradient-to-b from-emerald-950/20 to-transparent blur-[120px] pointer-events-none z-0" />
 
       {/* Header Fixo Simples */}
-      <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-white/5">
+      <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-[#f0ddb0]/5">
         <div className="flex items-center gap-2">
           <div className="grid h-7 w-7 place-items-center rounded-md border border-emerald-500/20 bg-emerald-500/5">
             <Target className="h-4 w-4 text-emerald-500" />
@@ -69,7 +69,7 @@ export default async function BillingPage({
           </form>
           <a
             href="#pricing"
-            className="text-xs text-zinc-400 hover:text-zinc-200 transition py-3 px-6 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
+            className="text-xs text-zinc-400 hover:text-zinc-200 transition py-3 px-6 rounded-xl border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] hover:bg-[#f0ddb0]/[0.05]"
           >
             Ver Detalhes do Plano
           </a>
@@ -83,9 +83,9 @@ export default async function BillingPage({
       </section>
 
       {/* A Cilada do Varejo vs Realidade Institucional */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-white/5">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-[#f0ddb0]/5">
         <div className="grid gap-8 md:grid-cols-2">
-          <div className="rounded-2xl border border-white/5 bg-[#0a0a0c] p-6 sm:p-8">
+          <div className="rounded-2xl border border-[#f0ddb0]/5 bg-[#3A2610] p-6 sm:p-8">
             <h3 className="text-lg font-semibold text-rose-400 flex items-center gap-2">
               ⚠️ A Cilada do Trader de Varejo
             </h3>
@@ -99,7 +99,7 @@ export default async function BillingPage({
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-emerald-500/10 bg-[#090b0a] p-6 sm:p-8 relative overflow-hidden">
+          <div className="rounded-2xl border border-emerald-500/10 bg-[#4A3418] p-6 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-500/[0.02] blur-xl" />
             <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
               🛡️ A Vantagem Profissional da ZaionVest
@@ -117,7 +117,7 @@ export default async function BillingPage({
       </section>
 
       {/* Principais Recursos */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-white/5">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-[#f0ddb0]/5">
         <h2 className="text-center text-2xl font-bold tracking-tight text-offwhite">
           Tudo o que você precisa para dominar o mercado
         </h2>
@@ -160,13 +160,13 @@ export default async function BillingPage({
       </section>
 
       {/* Preço e Call to Action */}
-      <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-white/5 text-center">
+      <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f0ddb0]/5 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-offwhite">O investimento que se paga em poucas operações</h2>
         <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
           Tenha acesso ilimitado à plataforma pelo preço de um único stop loss bobo que você evitará logo no primeiro dia.
         </p>
 
-        <div className="mt-10 mx-auto max-w-sm rounded-3xl border border-emerald-500/20 bg-[#0a0c0b] p-8 shadow-2xl relative overflow-hidden text-left">
+        <div className="mt-10 mx-auto max-w-sm rounded-3xl border border-emerald-500/20 bg-[#4A3418] p-8 shadow-2xl relative overflow-hidden text-left">
           <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500/[0.03] blur-2xl pointer-events-none" />
           
           <div className="flex justify-between items-center">
@@ -185,7 +185,7 @@ export default async function BillingPage({
             Seu cartão não será cobrado hoje. O período de teste é totalmente gratuito por 3 dias, cancelável a qualquer momento.
           </p>
 
-          <div className="mt-6 border-t border-white/5 pt-6 space-y-3.5">
+          <div className="mt-6 border-t border-[#f0ddb0]/5 pt-6 space-y-3.5">
             {[
               "Leitura computacional de setups de fotos",
               "Varredura automática e radar de sinais ativos",
@@ -218,7 +218,7 @@ export default async function BillingPage({
       </section>
 
       {/* FAQ rápido */}
-      <section className="relative z-10 mx-auto max-w-4xl px-6 py-16 border-t border-white/5">
+      <section className="relative z-10 mx-auto max-w-4xl px-6 py-16 border-t border-[#f0ddb0]/5">
         <h2 className="text-center text-xl font-bold tracking-tight text-offwhite flex items-center justify-center gap-2">
           <HelpCircle className="h-5 w-5 text-emerald-400" />
           Perguntas Frequentes
@@ -253,7 +253,7 @@ export default async function BillingPage({
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-10 text-center text-xs text-zinc-500">
+      <footer className="relative z-10 border-t border-[#f0ddb0]/5 py-10 text-center text-xs text-zinc-500">
         <p>© 2026 ZaionVest. Todos os direitos reservados.</p>
         <p className="mt-1.5 text-[10px] text-zinc-600 max-w-lg mx-auto leading-relaxed">
           A ZaionVest fornece ferramentas de análise de padrões técnicos. Todo conteúdo disponibilizado tem caráter exclusivamente educacional. Não realizamos recomendações de investimentos ou promessas de lucros.
@@ -273,8 +273,8 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-5 hover:border-white/10 transition">
-      <div className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-white/[0.02]">
+    <div className="rounded-2xl border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.01] p-5 hover:border-[#f0ddb0]/10 transition">
+      <div className="grid h-9 w-9 place-items-center rounded-lg border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02]">
         {icon}
       </div>
       <h3 className="mt-4 text-sm font-semibold text-offwhite">{title}</h3>

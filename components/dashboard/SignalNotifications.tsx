@@ -164,7 +164,7 @@ export function SignalNotifications({ signals }: { signals: SignalLite[] }) {
           "grid h-8 w-8 place-items-center rounded-md border",
           granted && enabled
             ? "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-400"
-            : "border-white/10 bg-white/[0.03] text-zinc-500",
+            : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-500",
         )}>
           {granted && enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
         </div>
@@ -190,7 +190,7 @@ export function SignalNotifications({ signals }: { signals: SignalLite[] }) {
 
       <div className="flex flex-wrap items-center gap-2">
         {granted && (
-          <label className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.02] px-2 py-1.5 text-[10px] uppercase tracking-widest text-zinc-400">
+          <label className="flex items-center gap-2 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-2 py-1.5 text-[10px] uppercase tracking-widest text-zinc-400">
             Prob. mínima
             <select
               value={minProb}
@@ -210,7 +210,7 @@ export function SignalNotifications({ signals }: { signals: SignalLite[] }) {
         {granted && (
           <button
             onClick={testNotification}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] uppercase tracking-widest text-zinc-300 hover:bg-white/[0.08]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-2.5 py-1.5 text-[10px] uppercase tracking-widest text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
           >
             <Volume2 className="h-3 w-3" />
             Testar
@@ -224,7 +224,7 @@ export function SignalNotifications({ signals }: { signals: SignalLite[] }) {
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] uppercase tracking-widest transition",
               enabled
                 ? "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300 hover:bg-emerald-500/[0.14]"
-                : "border-white/10 bg-white/[0.04] text-zinc-400 hover:text-offwhite",
+                : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] text-zinc-400 hover:text-offwhite",
             )}
           >
             {enabled ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}

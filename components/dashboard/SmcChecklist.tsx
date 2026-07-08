@@ -27,7 +27,7 @@ export function SmcChecklist({ data, tipoSetup }: { data: Checklist; tipoSetup?:
   const ok = passed === total;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-[10px] uppercase tracking-widest text-zinc-500">Checklist SMC</p>

@@ -101,7 +101,7 @@ export function WatchlistEditor({
           </button>
           <button
             onClick={() => setAdding((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-offwhite hover:bg-white/[0.08]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-3 py-1.5 text-xs text-offwhite hover:bg-[#f0ddb0]/[0.08]"
           >
             <Plus className="h-3.5 w-3.5" />
             Adicionar
@@ -115,14 +115,14 @@ export function WatchlistEditor({
             await addWatch(fd);
             setAdding(false);
           }}
-          className="mb-3 flex flex-wrap items-end gap-2 rounded-md border border-white/10 bg-white/[0.02] p-3"
+          className="mb-3 flex flex-wrap items-end gap-2 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-3"
         >
           <label className="block">
             <span className="mb-0.5 block text-[10px] uppercase tracking-widest text-zinc-500">Símbolo</span>
             <select
               name="symbol"
               required
-              className="rounded-md border border-white/10 bg-white/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
+              className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
             >
               {symbols.map((s) => (
                 <option key={s.symbol} value={s.symbol} className="bg-charcoal">
@@ -136,7 +136,7 @@ export function WatchlistEditor({
             <select
               name="timeframe"
               defaultValue="M15"
-              className="rounded-md border border-white/10 bg-white/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
+              className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
             >
               {["M15", "M30", "H1", "H4", "D1"].map((t) => (
                 <option key={t} value={t} className="bg-charcoal">
@@ -150,7 +150,7 @@ export function WatchlistEditor({
             <select
               name="mode"
               defaultValue="SMC"
-              className="rounded-md border border-white/10 bg-white/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
+              className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
             >
               <option value="SMC" className="bg-charcoal">
                 SMC
@@ -180,8 +180,8 @@ export function WatchlistEditor({
             className={cn(
               "flex items-center gap-3 rounded-md border px-3 py-2 transition",
               it.active
-                ? "border-white/10 bg-white/[0.02]"
-                : "border-white/5 bg-white/[0.01] opacity-50",
+                ? "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02]"
+                : "border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.01] opacity-50",
             )}
           >
             <div className="flex flex-1 items-center gap-2">
@@ -208,7 +208,7 @@ export function WatchlistEditor({
               onClick={() => scanItem(it.id)}
               disabled={scanningId === it.id || !it.active}
               title="Escanear este item agora"
-              className="grid h-7 w-7 place-items-center rounded-md text-emerald-400 hover:bg-white/[0.04] disabled:opacity-30"
+              className="grid h-7 w-7 place-items-center rounded-md text-emerald-400 hover:bg-[#f0ddb0]/[0.04] disabled:opacity-30"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", scanningId === it.id && "animate-spin")} />
             </button>
@@ -219,8 +219,8 @@ export function WatchlistEditor({
                 className={cn(
                   "grid h-7 w-7 place-items-center rounded-md",
                   it.active
-                    ? "text-emerald-400 hover:bg-white/[0.04]"
-                    : "text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200",
+                    ? "text-emerald-400 hover:bg-[#f0ddb0]/[0.04]"
+                    : "text-zinc-500 hover:bg-[#f0ddb0]/[0.04] hover:text-zinc-200",
                 )}
               >
                 <Power className="h-3.5 w-3.5" />
@@ -232,7 +232,7 @@ export function WatchlistEditor({
               }}
             >
               <input type="hidden" name="id" value={it.id} />
-              <button className="grid h-7 w-7 place-items-center rounded-md text-zinc-500 hover:bg-white/[0.04] hover:text-rose-400">
+              <button className="grid h-7 w-7 place-items-center rounded-md text-zinc-500 hover:bg-[#f0ddb0]/[0.04] hover:text-rose-400">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </form>

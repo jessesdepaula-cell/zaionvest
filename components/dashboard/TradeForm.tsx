@@ -35,7 +35,7 @@ export function TradeFormButton({
           "inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition",
           variant === "primary"
             ? "bg-emerald-500 text-charcoal hover:bg-emerald-400"
-            : "border border-white/10 bg-white/[0.04] text-offwhite hover:bg-white/[0.08]",
+            : "border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] text-offwhite hover:bg-[#f0ddb0]/[0.08]",
         )}
       >
         <Plus className="h-3.5 w-3.5" />
@@ -47,7 +47,7 @@ export function TradeFormButton({
           <div className="glass relative w-full max-w-lg rounded-xl p-6">
             <button
               onClick={() => setOpen(false)}
-              className="absolute right-4 top-4 grid h-7 w-7 place-items-center rounded-md border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
+              className="absolute right-4 top-4 grid h-7 w-7 place-items-center rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-300 hover:bg-[#f0ddb0]/[0.06]"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -134,7 +134,7 @@ function Field({
   textarea?: boolean;
 }) {
   const cls = cn(
-    "w-full rounded-md border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-offwhite outline-none transition focus:border-emerald-500/50 focus:bg-white/[0.04]",
+    "w-full rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-3 py-2 text-sm text-offwhite outline-none transition focus:border-emerald-500/50 focus:bg-[#f0ddb0]/[0.04]",
     mono && "font-mono tabular-nums",
   );
   return (
@@ -170,7 +170,7 @@ function Select({
       <select
         name={name}
         defaultValue={defaultValue}
-        className="w-full rounded-md border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-offwhite outline-none transition focus:border-emerald-500/50 focus:bg-white/[0.04]"
+        className="w-full rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-3 py-2 text-sm text-offwhite outline-none transition focus:border-emerald-500/50 focus:bg-[#f0ddb0]/[0.04]"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value} className="bg-charcoal">

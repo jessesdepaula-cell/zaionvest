@@ -72,14 +72,14 @@ export function TradeRow({ trade }: { trade: Trade }) {
 
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="ml-auto grid h-8 w-8 place-items-center rounded-md text-zinc-400 hover:bg-white/[0.04] hover:text-offwhite"
+          className="ml-auto grid h-8 w-8 place-items-center rounded-md text-zinc-400 hover:bg-[#f0ddb0]/[0.04] hover:text-offwhite"
         >
           <ChevronRight className={cn("h-4 w-4 transition", expanded && "rotate-90")} />
         </button>
       </div>
 
       {expanded && (
-        <div className="border-t border-white/5 px-4 py-3">
+        <div className="border-t border-[#f0ddb0]/5 px-4 py-3">
           {trade.notes && (
             <div className="mb-3">
               <div className="text-[10px] uppercase tracking-widest text-zinc-500">Anotações</div>
@@ -142,7 +142,7 @@ export function TradeRow({ trade }: { trade: Trade }) {
                 <button
                   type="submit"
                   disabled={!!closing}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-white/[0.08] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-[#f0ddb0]/[0.04] px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-[#f0ddb0]/[0.08] disabled:opacity-50"
                 >
                   <Minus className="h-3.5 w-3.5" />
                   Empate
@@ -197,7 +197,7 @@ function MiniField({ label, name, placeholder }: { label: string; name: string; 
       <input
         name={name}
         placeholder={placeholder}
-        className="num w-28 rounded-md border border-white/10 bg-white/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
+        className="num w-28 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-2 py-1.5 text-xs outline-none focus:border-emerald-500/50"
         autoComplete="off"
       />
     </label>
@@ -222,7 +222,7 @@ function DirectionPill({ direction }: { direction: string }) {
 
 function ModePill({ mode }: { mode: string }) {
   return (
-    <span className="rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-zinc-300">
+    <span className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-zinc-300">
       {mode === "SMC" ? "SMC" : "Clássico"}
     </span>
   );

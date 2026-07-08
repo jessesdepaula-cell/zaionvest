@@ -33,7 +33,7 @@ export function ResetSignalsButton() {
           "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[10px] uppercase tracking-widest transition " +
           (confirming
             ? "border-rose-500/50 bg-rose-500/[0.15] text-rose-200"
-            : "border-white/10 bg-white/[0.02] text-zinc-400 hover:text-rose-300")
+            : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] text-zinc-400 hover:text-rose-300")
         }
         title="Apaga todos os sinais e zera contadores"
       >

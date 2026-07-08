@@ -76,7 +76,7 @@ export default async function ConfiguracoesPage() {
           </div>
           <Link
             href="/billing"
-            className="mt-4 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-offwhite hover:bg-white/[0.08]"
+            className="mt-4 inline-flex items-center gap-2 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-3 py-2 text-xs text-offwhite hover:bg-[#f0ddb0]/[0.08]"
           >
             Gerenciar assinatura
           </Link>
@@ -93,7 +93,7 @@ export default async function ConfiguracoesPage() {
                   Quando a IA detectar um setup de alta probabilidade, você receberá automaticamente um e-mail com{" "}
                   <span className="text-zinc-300">Entrada, Stop Loss, Alvos e análise estrutural</span> para:
                 </p>
-                <p className="mt-1.5 rounded bg-white/[0.04] border border-white/10 px-2 py-1 text-xs font-mono text-offwhite">
+                <p className="mt-1.5 rounded bg-[#f0ddb0]/[0.04] border border-[#f0ddb0]/10 px-2 py-1 text-xs font-mono text-offwhite">
                   {email}
                 </p>
                 <p className="mt-1.5 text-[10px] text-zinc-500">
@@ -150,7 +150,7 @@ function Section({
         "rounded-xl border p-5",
         tone === "rose"
           ? "border-rose-500/20 bg-rose-500/[0.02]"
-          : "border-white/10 bg-white/[0.015]",
+          : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.015]",
       )}
     >
       <div className="mb-4 flex items-center justify-between">
@@ -177,7 +177,7 @@ function Field({
   mono?: boolean;
 }) {
   return (
-    <div className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-2">
+    <div className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-3 py-2">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500">
         {icon}
         {label}

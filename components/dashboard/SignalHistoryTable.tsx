@@ -89,7 +89,7 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
 
       {/* Filtros */}
       <div className="mb-4 flex flex-wrap gap-2">
-        <div className="flex rounded-lg border border-white/10 overflow-hidden text-[10px]">
+        <div className="flex rounded-lg border border-[#f0ddb0]/10 overflow-hidden text-[10px]">
           {(["ALL", "SMC", "CLASSICO"] as const).map((m) => (
             <button
               key={m}
@@ -105,7 +105,7 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
             </button>
           ))}
         </div>
-        <div className="flex rounded-lg border border-white/10 overflow-hidden text-[10px]">
+        <div className="flex rounded-lg border border-[#f0ddb0]/10 overflow-hidden text-[10px]">
           {(["ALL", "WIN", "LOSS", "PENDING", "FILLED", "EXPIRED"] as const).map((s) => (
             <button
               key={s}
@@ -113,7 +113,7 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
               className={cn(
                 "px-3 py-1.5 transition",
                 statusFilter === s
-                  ? "bg-white/10 text-white"
+                  ? "bg-[#f0ddb0]/10 text-[#F0DDB0]"
                   : "text-zinc-500 hover:text-zinc-300"
               )}
             >
@@ -125,14 +125,14 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
 
       {/* Tabela */}
       {paginated.length === 0 ? (
-        <div className="rounded-xl border border-white/5 bg-white/[0.01] py-10 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.01] py-10 text-center text-sm text-zinc-500">
           Nenhum sinal encontrado para os filtros selecionados.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-white/5">
+        <div className="overflow-x-auto rounded-xl border border-[#f0ddb0]/5">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02] text-[10px] uppercase tracking-widest text-zinc-500">
+              <tr className="border-b border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] text-[10px] uppercase tracking-widest text-zinc-500">
                 <th className="px-4 py-3 text-left">Data</th>
                 <th className="px-4 py-3 text-left">Ativo</th>
                 <th className="px-4 py-3 text-left">TF</th>
@@ -165,9 +165,9 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
                 });
 
                 return (
-                  <tr key={s.id} className="border-b border-white/[0.03] hover:bg-white/[0.015] transition">
+                  <tr key={s.id} className="border-b border-[#f0ddb0]/[0.03] hover:bg-[#f0ddb0]/[0.015] transition">
                     <td className="px-4 py-3 text-zinc-500">{date}</td>
-                    <td className="px-4 py-3 font-semibold text-white">{s.symbol}</td>
+                    <td className="px-4 py-3 font-semibold text-[#F0DDB0]">{s.symbol}</td>
                     <td className="px-4 py-3 text-zinc-400">{s.timeframe}</td>
                     <td className="px-4 py-3">
                       <span className={cn(
@@ -208,14 +208,14 @@ export function SignalHistoryTable({ signals }: { signals: SignalHistoryItem[] }
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 transition hover:bg-white/[0.04] disabled:opacity-30"
+              className="flex items-center gap-1 rounded-md border border-[#f0ddb0]/10 px-3 py-1.5 transition hover:bg-[#f0ddb0]/[0.04] disabled:opacity-30"
             >
               <ChevronLeft className="h-3 w-3" /> Anterior
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 transition hover:bg-white/[0.04] disabled:opacity-30"
+              className="flex items-center gap-1 rounded-md border border-[#f0ddb0]/10 px-3 py-1.5 transition hover:bg-[#f0ddb0]/[0.04] disabled:opacity-30"
             >
               Próxima <ChevronRight className="h-3 w-3" />
             </button>

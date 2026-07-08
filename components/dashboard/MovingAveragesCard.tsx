@@ -18,7 +18,7 @@ export type MovingAveragesData = {
 };
 
 const MAS = [
-  { key: "ema9", slopeKey: "ema9_slope", label: "EMA 9", color: "#FBBF24" },
+  { key: "ema9", slopeKey: "ema9_slope", label: "EMA 9", color: "#DEA82F" },
   { key: "ema20", slopeKey: "ema20_slope", label: "EMA 20", color: "#F97316" },
   { key: "ema50", slopeKey: "ema50_slope", label: "EMA 50", color: "#3B82F6" },
   { key: "sma200", slopeKey: "sma200_slope", label: "SMA 200", color: "#E4E4E7" },
@@ -69,7 +69,7 @@ export function MovingAveragesCard({ data }: { data: MovingAveragesData }) {
           return (
             <div
               key={m.key}
-              className="rounded-md border border-white/10 bg-white/[0.02] p-3"
+              className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-3"
             >
               <div
                 className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest"

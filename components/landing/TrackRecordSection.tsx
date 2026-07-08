@@ -25,7 +25,7 @@ export async function TrackRecordSection() {
   const hasSample = totalClosed >= 3;
 
   return (
-    <section id="resultados" className="relative z-10 mx-auto max-w-6xl px-6 py-24 border-t border-white/5">
+    <section id="resultados" className="relative z-10 mx-auto max-w-6xl px-6 py-24 border-t border-[#f0ddb0]/5">
       {/* Glow decorativo */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent blur-3xl" />
 
@@ -39,7 +39,7 @@ export async function TrackRecordSection() {
             </span>
             Placar ao vivo — atualizado agora
           </div>
-          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-[#F0DDB0] sm:text-5xl">
             A prova está no <span className="bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">próprio scanner</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
@@ -86,8 +86,8 @@ export async function TrackRecordSection() {
 
             {/* Últimos ganhos — feed persuasivo */}
             {data.recent.length > 0 && (
-              <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.03] to-white/[0.01]">
-                <div className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-3.5">
+              <div className="mt-8 overflow-hidden rounded-2xl border border-[#f0ddb0]/10 bg-gradient-to-b from-[#f0ddb0]/[0.03] to-[#f0ddb0]/[0.01]">
+                <div className="flex items-center justify-between gap-3 border-b border-[#f0ddb0]/5 px-5 py-3.5">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -101,12 +101,12 @@ export async function TrackRecordSection() {
                     dados do banco em tempo real
                   </span>
                 </div>
-                <div className="divide-y divide-white/[0.04]">
+                <div className="divide-y divide-[#f0ddb0]/[0.04]">
                   {data.recent.map((r, i) => {
                     const win = r.status === "WIN";
                     const buy = r.direction?.startsWith("COMPRA");
                     return (
-                      <div key={i} className="flex items-center justify-between gap-3 px-5 py-3 text-xs transition hover:bg-white/[0.02]">
+                      <div key={i} className="flex items-center justify-between gap-3 px-5 py-3 text-xs transition hover:bg-[#f0ddb0]/[0.02]">
                         <div className="flex min-w-0 items-center gap-2.5">
                           <div className={
                             win
@@ -122,7 +122,7 @@ export async function TrackRecordSection() {
                           <span className="text-sm font-semibold text-zinc-100">{r.symbol}</span>
                           <span className="text-zinc-600">·</span>
                           <span className="text-zinc-500">{r.timeframe}</span>
-                          <span className="rounded border border-white/10 bg-white/[0.02] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-400">
+                          <span className="rounded border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-400">
                             {r.mode === "SMC" ? "SMC" : "Clássico"}
                           </span>
                           {r.closedAt && (
@@ -157,7 +157,7 @@ export async function TrackRecordSection() {
             <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/[0.08]">
               <Zap className="h-5 w-5 text-emerald-400" />
             </div>
-            <p className="text-lg font-bold text-white">
+            <p className="text-lg font-bold text-[#F0DDB0]">
               {data.totalSignals} sinais já emitidos pelo scanner
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
@@ -173,7 +173,7 @@ export async function TrackRecordSection() {
             <Sparkles className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
             Teste 3 dias 100% grátis
           </div>
-          <h3 className="text-balance text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+          <h3 className="text-balance text-2xl font-extrabold tracking-tight text-[#F0DDB0] sm:text-3xl">
             Opere com o scanner por 3 dias.<br />
             <span className="bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
               Se pagar o trade, você assina.
@@ -185,7 +185,7 @@ export async function TrackRecordSection() {
           </p>
           <Link
             href="/sign-up"
-            className="group mt-6 inline-flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-500 px-6 py-3.5 text-sm font-bold text-black shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 hover:shadow-emerald-500/40"
+            className="group mt-6 inline-flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-500 px-6 py-3.5 text-sm font-bold text-[#2A1D0A] shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 hover:shadow-emerald-500/40"
           >
             Começar teste grátis agora
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
@@ -238,11 +238,11 @@ function ModeCard({ data, label }: { data: ModeTrackRecord; label: string }) {
   const tp2Pct = data.closed > 0 ? Math.round((data.tp2 / data.closed) * 100) : 0;
   const tp3Pct = data.closed > 0 ? Math.round((data.tp3 / data.closed) * 100) : 0;
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-6">
+    <div className="relative overflow-hidden rounded-2xl border border-[#f0ddb0]/10 bg-gradient-to-br from-[#f0ddb0]/[0.04] to-[#f0ddb0]/[0.01] p-6">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-widest text-emerald-500 font-semibold">Operacional</p>
-          <p className="mt-0.5 text-xl font-bold tracking-tight text-white">{label}</p>
+          <p className="mt-0.5 text-xl font-bold tracking-tight text-[#F0DDB0]">{label}</p>
         </div>
         {hasData && (
           <div className="text-right">
@@ -258,7 +258,7 @@ function ModeCard({ data, label }: { data: ModeTrackRecord; label: string }) {
         <>
           {/* Barra de assertividade */}
           <div className="mb-5">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#f0ddb0]/5">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300 transition-all duration-1000"
                 style={{ width: `${Math.min(100, data.winRate)}%` }}
@@ -286,7 +286,7 @@ function ModeCard({ data, label }: { data: ModeTrackRecord; label: string }) {
           </div>
 
           {/* Rodapé: melhor trade + retorno */}
-          <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/5 pt-4 text-[11px]">
+          <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#f0ddb0]/5 pt-4 text-[11px]">
             <div>
               <p className="text-zinc-500">Retorno acumulado</p>
               <p className={
@@ -308,7 +308,7 @@ function ModeCard({ data, label }: { data: ModeTrackRecord; label: string }) {
           </div>
         </>
       ) : (
-        <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-center">
+        <div className="rounded-xl border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] p-4 text-center">
           <p className="text-xs text-zinc-400">Coletando primeiros resultados deste operacional…</p>
           <p className="mt-1 text-[11px] text-zinc-600">
             O placar atualiza automaticamente conforme os trades fecham
@@ -321,7 +321,7 @@ function ModeCard({ data, label }: { data: ModeTrackRecord; label: string }) {
 
 function MicroStat({ value, label, tone }: { value: number; label: string; tone?: "win" | "loss" }) {
   return (
-    <div className="rounded-lg border border-white/5 bg-white/[0.02] px-2 py-2.5 text-center">
+    <div className="rounded-lg border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] px-2 py-2.5 text-center">
       <p className={
         tone === "win"
           ? "num text-2xl font-bold leading-none text-emerald-400"
@@ -340,7 +340,7 @@ function TargetBar({ label, count, pct }: { label: string; count: number; pct: n
   return (
     <div className="flex items-center gap-2.5">
       <span className="w-8 text-[10px] font-bold text-emerald-400/80">{label}</span>
-      <div className="flex-1 h-2 overflow-hidden rounded-full bg-white/[0.03]">
+      <div className="flex-1 h-2 overflow-hidden rounded-full bg-[#f0ddb0]/[0.03]">
         <div
           className="h-full rounded-full bg-gradient-to-r from-emerald-500/60 to-emerald-400/90 transition-all duration-1000"
           style={{ width: `${Math.min(100, pct)}%` }}

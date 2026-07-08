@@ -39,7 +39,7 @@ export function SidebarNav({ owner = false }: { owner?: boolean }) {
               "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition",
               isActive
                 ? "bg-emerald-500/[0.10] text-emerald-300"
-                : "text-zinc-400 hover:bg-white/[0.04] hover:text-offwhite",
+                : "text-zinc-400 hover:bg-[#f0ddb0]/[0.04] hover:text-offwhite",
             )}
           >
             <Icon

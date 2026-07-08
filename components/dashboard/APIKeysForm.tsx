@@ -45,7 +45,7 @@ export function APIKeysForm({ initialGeminiKey, initialOpenAIKey }: APIKeysFormP
               value={geminiKey}
               onChange={(e) => setGeminiKey(e.target.value)}
               placeholder="Cole sua GEMINI_API_KEY aqui..."
-              className="w-full rounded-md border border-white/10 bg-charcoal px-3 py-2.5 text-sm text-offwhite outline-none focus:border-emerald-500/50 pr-10"
+              className="w-full rounded-md border border-[#f0ddb0]/10 bg-charcoal px-3 py-2.5 text-sm text-offwhite outline-none focus:border-emerald-500/50 pr-10"
             />
             <Key className="absolute right-3 top-3 h-4 w-4 text-zinc-600" />
           </div>
@@ -72,7 +72,7 @@ export function APIKeysForm({ initialGeminiKey, initialOpenAIKey }: APIKeysFormP
               value={openaiKey}
               onChange={(e) => setOpenaiKey(e.target.value)}
               placeholder="Cole sua OPENAI_API_KEY aqui..."
-              className="w-full rounded-md border border-white/10 bg-charcoal px-3 py-2.5 text-sm text-offwhite outline-none focus:border-emerald-500/50 pr-10"
+              className="w-full rounded-md border border-[#f0ddb0]/10 bg-charcoal px-3 py-2.5 text-sm text-offwhite outline-none focus:border-emerald-500/50 pr-10"
             />
             <Key className="absolute right-3 top-3 h-4 w-4 text-zinc-600" />
           </div>

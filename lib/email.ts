@@ -26,7 +26,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
   try {
     const isBuy = signal.direction.toUpperCase().includes("COMPRA");
     const dirText = isBuy ? "COMPRA" : "VENDA";
-    const dirColor = isBuy ? "#10B981" : "#EF4444"; // Verde vs Vermelho
+    const dirColor = isBuy ? "#D4A03B" : "#C86A4F"; // Dourado vs Rústico
 
     const formatPrice = (val: number | null) =>
       val !== null ? val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : "N/A";
@@ -43,8 +43,8 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0f1115;
-            color: #e5e7eb;
+            background-color: #2a1d0a;
+            color: #e0d0a0;
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
@@ -52,27 +52,27 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
           .container {
             max-width: 600px;
             margin: 40px auto;
-            background-color: #161a22;
+            background-color: #3a2610;
             border-radius: 12px;
             overflow: hidden;
-            border: 1px solid #242b35;
+            border: 1px solid rgba(240,221,176,0.12);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
           }
           .header {
             padding: 24px;
             text-align: center;
-            border-bottom: 1px solid #242b35;
-            background: linear-gradient(180deg, #1f2530 0%, #161a22 100%);
+            border-bottom: 1px solid rgba(240,221,176,0.10);
+            background: linear-gradient(180deg, #4a3418 0%, #3a2610 100%);
           }
           .logo {
             font-size: 18px;
             font-weight: 700;
             letter-spacing: 0.05em;
-            color: #fff;
+            color: #f0ddb0;
             margin: 0;
           }
           .logo span {
-            color: #10b981;
+            color: #d4a03b;
           }
           .content {
             padding: 32px 24px;
@@ -91,7 +91,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             text-transform: uppercase;
           }
           .card {
-            background-color: #1f2530;
+            background-color: #4a3418;
             border-left: 4px solid ${dirColor};
             border-radius: 6px;
             padding: 20px;
@@ -101,13 +101,13 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             font-size: 20px;
             font-weight: 700;
             margin: 0 0 16px 0;
-            color: #ffffff;
+            color: #f0ddb0;
             display: flex;
             align-items: center;
             justify-content: space-between;
           }
           .symbol-badge {
-            background-color: rgba(255,255,255,0.08);
+            background-color: rgba(240,221,176,0.10);
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 14px;
@@ -121,10 +121,10 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
           }
           .grid-item {
             font-size: 13px;
-            color: #9ca3af;
+            color: rgba(240,221,176,0.65);
           }
           .grid-item strong {
-            color: #ffffff;
+            color: #f0ddb0;
             font-size: 14px;
             display: block;
             margin-top: 2px;
@@ -133,11 +133,11 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
           .justification-box {
             font-size: 13px;
             line-height: 1.6;
-            color: #9ca3af;
+            color: rgba(240,221,176,0.75);
             background-color: rgba(0,0,0,0.25);
             padding: 14px;
             border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(240,221,176,0.08);
             margin-top: 20px;
           }
           .justification-title {
@@ -145,7 +145,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #10b981;
+            color: #d4a03b;
             margin-bottom: 6px;
           }
           .btn-container {
@@ -154,8 +154,8 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
           }
           .btn {
             display: inline-block;
-            background-color: #10b981;
-            color: #ffffff !important;
+            background-color: #d4a03b;
+            color: #2a1d0a !important;
             text-decoration: none;
             padding: 12px 30px;
             border-radius: 6px;
@@ -164,14 +164,14 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             transition: background-color 0.2s;
           }
           .btn:hover {
-            background-color: #059669;
+            background-color: #b8871f;
           }
           .footer {
             padding: 24px;
             text-align: center;
             font-size: 11px;
-            color: #6b7280;
-            border-top: 1px solid #242b35;
+            color: rgba(240,221,176,0.5);
+            border-top: 1px solid rgba(240,221,176,0.08);
           }
         </style>
       </head>

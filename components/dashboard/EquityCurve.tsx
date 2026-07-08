@@ -165,8 +165,8 @@ export function EquityCurve({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] uppercase tracking-widest transition",
                   off
-                    ? "border-white/5 text-zinc-600 hover:text-zinc-400"
-                    : "border-white/10 bg-white/[0.03] text-zinc-300",
+                    ? "border-[#f0ddb0]/5 text-zinc-600 hover:text-zinc-400"
+                    : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-300",
                 )}
               >
                 <span
@@ -218,7 +218,7 @@ export function EquityCurve({
                 y1={yScale(t)}
                 x2={W - padR}
                 y2={yScale(t)}
-                stroke="rgba(255,255,255,0.04)"
+                stroke="rgba(240,221,176,0.04)"
                 strokeWidth="1"
               />
               <text
@@ -226,7 +226,7 @@ export function EquityCurve({
                 y={yScale(t) + 4}
                 fontSize="10"
                 textAnchor="end"
-                fill="rgba(244,244,247,0.4)"
+                fill="rgba(240,221,176,0.4)"
                 fontFamily="JetBrains Mono, monospace"
               >
                 {formatR(t)}
@@ -240,7 +240,7 @@ export function EquityCurve({
             y1={zeroY}
             x2={W - padR}
             y2={zeroY}
-            stroke="rgba(255,255,255,0.18)"
+            stroke="rgba(240,221,176,0.18)"
             strokeWidth="1"
             strokeDasharray="3 3"
           />
@@ -259,8 +259,8 @@ export function EquityCurve({
                     y={pyTop}
                     width={Math.max(2, px2 - px1)}
                     height={Math.max(2, pyBottom - pyTop)}
-                    fill="rgba(244,63,94,0.10)"
-                    stroke="rgba(244,63,94,0.25)"
+                    fill="rgba(200,106,79,0.10)"
+                    stroke="rgba(200,106,79,0.25)"
                     strokeDasharray="2 3"
                   />
                   <line
@@ -268,7 +268,7 @@ export function EquityCurve({
                     y1={pyBottom}
                     x2={W - padR}
                     y2={pyBottom}
-                    stroke="rgba(244,63,94,0.35)"
+                    stroke="rgba(200,106,79,0.35)"
                     strokeWidth="1"
                     strokeDasharray="1 3"
                   />
@@ -334,13 +334,13 @@ export function EquityCurve({
                 y1={padT}
                 x2={hoverData[0].px}
                 y2={H - padB}
-                stroke="rgba(255,255,255,0.18)"
+                stroke="rgba(240,221,176,0.18)"
                 strokeWidth="1"
                 strokeDasharray="2 3"
               />
               {hoverData.map((h) => (
                 <g key={h.name}>
-                  <circle cx={h.px} cy={h.py} r="5" fill="#0A0A0A" />
+                  <circle cx={h.px} cy={h.py} r="5" fill="#3A2610" />
                   <circle cx={h.px} cy={h.py} r="4" fill={h.color} />
                 </g>
               ))}
@@ -352,7 +352,7 @@ export function EquityCurve({
             x={padL}
             y={H - 10}
             fontSize="10"
-            fill="rgba(244,244,247,0.4)"
+            fill="rgba(240,221,176,0.4)"
             fontFamily="JetBrains Mono, monospace"
           >
             {fmtDate(new Date(xMin))}
@@ -362,7 +362,7 @@ export function EquityCurve({
             y={H - 10}
             fontSize="10"
             textAnchor="end"
-            fill="rgba(244,244,247,0.4)"
+            fill="rgba(240,221,176,0.4)"
             fontFamily="JetBrains Mono, monospace"
           >
             {fmtDate(new Date(xMax))}
@@ -389,7 +389,7 @@ export function EquityCurve({
                   y={y + 4}
                   fontSize="10"
                   textAnchor="middle"
-                  fill="#0A0A0A"
+                  fill="#3A2610"
                   fontFamily="JetBrains Mono, monospace"
                   fontWeight="600"
                 >
@@ -402,7 +402,7 @@ export function EquityCurve({
 
         {hoverData && tooltipDate && (
           <div
-            className="pointer-events-none absolute top-2 rounded-md border border-white/10 bg-charcoal/95 px-2.5 py-2 text-xs backdrop-blur"
+            className="pointer-events-none absolute top-2 rounded-md border border-[#f0ddb0]/10 bg-charcoal/95 px-2.5 py-2 text-xs backdrop-blur"
             style={{
               left: `calc(${(hoverData[0].px / W) * 100}% + 12px)`,
               transform: hoverData[0].px > W * 0.7 ? "translateX(-110%)" : undefined,
