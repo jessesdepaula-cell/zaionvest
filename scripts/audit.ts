@@ -74,15 +74,14 @@ async function runAudit() {
     // 5. Verificação do Status do Site (Frontend)
     console.log("✔ Verificando status dos links do projeto:");
     const urls = [
-      "https://jessedepaula.com.br",
-      "https://trade-vision-ai-zaionvest-7062s-projects.vercel.app"
+      "https://zaionvest.com.br"
     ];
     for (const url of urls) {
       try {
         const res = await fetch(url);
         if (res.ok) {
           const html = await res.text();
-          if (html.includes("Trade Vision") && (html.includes("Instituições") || html.includes("Smart Money"))) {
+          if (html.includes("ZaionVest") && (html.includes("Instituições") || html.includes("Smart Money"))) {
             console.log(`   └─ ${url} - ONLINE e CORRETO (OK)`);
           } else {
             console.log(`   └─ ${url} - ONLINE mas CONTEÚDO INCORRETO/ANTIGO (FALHA)`);

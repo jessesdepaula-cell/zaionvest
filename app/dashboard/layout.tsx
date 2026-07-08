@@ -51,7 +51,7 @@ export default async function DashboardLayout({
               <Crosshair className="h-3.5 w-3.5 text-emerald-500" />
             </div>
             <span className="text-sm font-medium tracking-tight">
-              Trade Vision<span className="text-zinc-500">.ai</span>
+              Zaion<span className="text-zinc-500">Vest</span>
             </span>
             <span className="ml-auto rounded-md border border-emerald-500/30 bg-emerald-500/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-widest text-emerald-400">
               Pro
@@ -94,7 +94,7 @@ export default async function DashboardLayout({
               <Crosshair className="h-3.5 w-3.5 text-emerald-500" />
             </div>
             <span className="text-sm font-medium tracking-tight">
-              Trade Vision<span className="text-zinc-500">.ai</span>
+              Zaion<span className="text-zinc-500">Vest</span>
             </span>
           </Link>
           <div className="flex items-center gap-2">

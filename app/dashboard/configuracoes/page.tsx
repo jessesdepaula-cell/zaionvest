@@ -62,7 +62,7 @@ export default async function ConfiguracoesPage() {
           }
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Plano" value="Trade Vision Pro" />
+            <Field label="Plano" value="ZaionVest Pro" />
             <Field label="Status" value={statusText(status)} />
             <Field
               label="Próxima cobrança"

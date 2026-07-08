@@ -75,7 +75,7 @@ export async function createAsaasSubscriptionCheckout(
       cycle: input.cycle,
       value: input.value,
       nextDueDate: input.nextDueDate,
-      description: "Assinatura Trade Vision AI",
+      description: "Assinatura ZaionVest",
     },
     callback: {
       successUrl: input.successUrl,

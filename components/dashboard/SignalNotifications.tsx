@@ -316,7 +316,7 @@ function fireNotification(s: SignalLite) {
   try {
     if (Notification.permission === "granted") {
       const dirText = directionText(s.direction);
-      new Notification(`Trade Vision · ${s.symbol}`, {
+      new Notification(`ZaionVest · ${s.symbol}`, {
         body: `${dirText} · Modo ${s.mode === "SMC" ? "SMC" : "Clássico"} · ${s.probability}% prob · ${s.confidence ?? ""}`,
         tag: s.id,
         silent: false,

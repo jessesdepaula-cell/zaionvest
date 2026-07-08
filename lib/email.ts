@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "re_Trdmvcjr_PrNwXRie28ekakSe3vJ8Jajy";
-const SENDER_EMAIL = "Trade Vision AI <sinais@jessedepaula.com.br>";
+const SENDER_EMAIL = "ZaionVest <sinais@jessedepaula.com.br>";
 const BACKUP_EMAIL = "JESSESDEPAULA@GMAIL.COM";
 
 export type EmailSignalData = {
@@ -178,7 +178,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
       <body>
         <div class="container">
           <div class="header">
-            <h1 class="logo">TRADE VISION<span>.AI</span></h1>
+            <h1 class="logo">ZAION<span>VEST</span></h1>
           </div>
           <div class="content">
             <div class="badge-container">
@@ -217,12 +217,12 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             </div>
             
             <div class="btn-container">
-              <a href="https://jessedepaula.com.br/dashboard" class="btn" target="_blank">Acessar Dashboard</a>
+              <a href="https://zaionvest.com.br/dashboard" class="btn" target="_blank">Acessar Dashboard</a>
             </div>
           </div>
           <div class="footer">
-            Você está recebendo este e-mail porque é um assinante ativo do Trade Vision AI.<br>
-            © ${new Date().getFullYear()} Trade Vision AI. Todos os direitos reservados.
+            Você está recebendo este e-mail porque é um assinante ativo da ZaionVest.<br>
+            © ${new Date().getFullYear()} ZaionVest. Todos os direitos reservados.
           </div>
         </div>
       </body>

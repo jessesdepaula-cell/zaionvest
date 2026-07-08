@@ -17,10 +17,10 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trade Vision — Análise Institucional em Segundos",
+  title: "ZaionVest — Análise Institucional em Segundos",
   description:
     "Plataforma de análise de gráficos com IA institucional. SMC, Price Action, planos de trade com R:R em segundos.",
-  metadataBase: new URL("https://trade-vision.app"),
+  metadataBase: new URL("https://zaionvest.com.br"),
 };
 
 export default function RootLayout({

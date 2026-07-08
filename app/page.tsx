@@ -18,7 +18,7 @@ import {
 export const revalidate = 300;
 
 export const metadata = {
-  title: "Trade Vision AI — Sinais SMC e Price Action com IA | 3 Dias Grátis",
+  title: "ZaionVest — Sinais SMC e Price Action com IA | 3 Dias Grátis",
   description:
     "A única plataforma brasileira com scanner automático multiativo, alertas por e-mail e histórico de assertividade auditável. Opere como os grandes com precisão de IA.",
 };
@@ -36,7 +36,7 @@ export default function LandingPage() {
             <Target className="h-4 w-4 text-emerald-500" />
           </div>
           <span className="text-sm font-semibold tracking-tight text-white">
-            Trade Vision<span className="text-zinc-500">.ai</span>
+            Zaion<span className="text-zinc-500">Vest</span>
           </span>
         </div>
         <nav className="flex items-center gap-4 text-xs">
@@ -68,7 +68,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
-          Pare de ser o stop dos grandes bancos. O Trade Vision AI traduz gráficos complexos em
+          Pare de ser o stop dos grandes bancos. A ZaionVest traduz gráficos complexos em
           planos de trade claros com Entrada, Stop Loss e Alvos objetivos — e te avisa por{" "}
           <span className="text-emerald-400 font-medium">e-mail</span> quando a hora certa chega.
         </p>
@@ -189,7 +189,7 @@ export default function LandingPage() {
               🛡️ A Vantagem de Operar com Estrutura
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              O Trade Vision AI rastreia o fluxo institucional mapeando Fair Value Gaps, Order
+              A ZaionVest rastreia o fluxo institucional mapeando Fair Value Gaps, Order
               Blocks ativos e confirmando quebras de estrutura (BOS/CHoCH) — e te avisa{" "}
               <strong className="text-emerald-400">antes do movimento acontecer</strong>.
             </p>
@@ -256,7 +256,7 @@ export default function LandingPage() {
             Por que nos escolher?
           </h2>
           <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
-            Analisamos as alternativas disponíveis no mercado. Veja onde o Trade Vision AI se
+            Analisamos as alternativas disponíveis no mercado. Veja onde a ZaionVest se
             destaca.
           </p>
         </div>
@@ -268,7 +268,7 @@ export default function LandingPage() {
                 <th className="px-5 py-3 text-left text-zinc-400 font-medium">Recurso</th>
                 <th className="px-5 py-3 text-center text-zinc-400 font-medium">Plataforma A<br /><span className="text-zinc-600 text-[10px]">R$ 220/mês</span></th>
                 <th className="px-5 py-3 text-center text-zinc-400 font-medium">Plataforma B<br /><span className="text-zinc-600 text-[10px]">R$ 44,90/mês</span></th>
-                <th className="px-5 py-3 text-center font-bold text-emerald-400">Trade Vision AI<br /><span className="text-emerald-300 text-[10px]">R$ 47,90/mês</span></th>
+                <th className="px-5 py-3 text-center font-bold text-emerald-400">ZaionVest<br /><span className="text-emerald-300 text-[10px]">R$ 47,90/mês</span></th>
               </tr>
             </thead>
             <tbody>
@@ -424,7 +424,7 @@ export default function LandingPage() {
           />
           <FaqItem
             q="Eu preciso instalar algum robô ou indicador?"
-            a="Não. O Trade Vision AI roda 100% em nuvem e através do seu navegador. Basta abrir o site e aguardar os sinais chegarem por e-mail e no painel."
+            a="Não. A ZaionVest roda 100% em nuvem e através do seu navegador. Basta abrir o site e aguardar os sinais chegarem por e-mail e no painel."
           />
           <FaqItem
             q="Qual a assertividade média dos setups?"
@@ -469,9 +469,9 @@ export default function LandingPage() {
             <a href="#" className="hover:text-zinc-400 transition">Aviso de Risco</a>
             <a href="mailto:contato@jessedepaula.com.br" className="hover:text-zinc-400 transition">Contato</a>
           </div>
-          <p>© 2026 Trade Vision AI. Todos os direitos reservados.</p>
+          <p>© 2026 ZaionVest. Todos os direitos reservados.</p>
           <p className="mt-1.5 text-[10px] text-zinc-600 max-w-lg mx-auto leading-relaxed">
-            O Trade Vision AI fornece ferramentas de análise de padrões técnicos. Todo conteúdo
+            A ZaionVest fornece ferramentas de análise de padrões técnicos. Todo conteúdo
             disponibilizado tem caráter exclusivamente educacional e informativo. Não realizamos
             recomendações de investimentos nem promessas de lucros. Investir em mercados
             financeiros envolve riscos significativos de perda de capital.

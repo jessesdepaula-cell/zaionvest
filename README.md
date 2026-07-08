@@ -1,4 +1,4 @@
-# Trade Vision AI
+# ZaionVest
 
 > Análise institucional de gráficos financeiros em segundos, movida a IA.
 

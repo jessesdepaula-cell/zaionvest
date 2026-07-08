@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     let asaasCustomerId = user.stripeCustomerId;
     if (!asaasCustomerId) {
       asaasCustomerId = await createAsaasCustomer({
-        name: user.name ?? "Cliente Trade Vision",
+        name: user.name ?? "Cliente ZaionVest",
         email: user.email,
       });
       await prisma.user.update({

@@ -19,7 +19,7 @@ export default async function BillingPage({
           <div className="grid h-7 w-7 place-items-center rounded-md border border-emerald-500/20 bg-emerald-500/5">
             <Target className="h-4 w-4 text-emerald-500" />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-offwhite">Trade Vision<span className="text-zinc-500">.ai</span></span>
+          <span className="text-sm font-semibold tracking-tight text-offwhite">Zaion<span className="text-zinc-500">Vest</span></span>
         </div>
         <Link
           href="/dashboard"
@@ -42,7 +42,7 @@ export default async function BillingPage({
           </span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
-          Pare de ser liquidez para o mercado. O Trade Vision AI utiliza visão computacional e algoritmos inteligentes para identificar setups de alta probabilidade baseados em SMC (Smart Money Concepts) e Price Action Puro.
+          Pare de ser liquidez para o mercado. A ZaionVest utiliza visão computacional e algoritmos inteligentes para identificar setups de alta probabilidade baseados em SMC (Smart Money Concepts) e Price Action Puro.
         </p>
 
         {/* Mensagem de Erro se houver */}
@@ -102,10 +102,10 @@ export default async function BillingPage({
           <div className="rounded-2xl border border-emerald-500/10 bg-[#090b0a] p-6 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-500/[0.02] blur-xl" />
             <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-              🛡️ A Vantagem Profissional do Trade Vision
+              🛡️ A Vantagem Profissional da ZaionVest
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              O Trade Vision ignora o ruído e mapeia o mercado conforme o Smart Money. Identificamos Fair Value Gaps (desequilíbrio de ordens), Order Blocks (onde os grandes bancos se posicionam), e calculamos planos com Risco/Retorno matemáticos favoráveis.
+              A ZaionVest ignora o ruído e mapeia o mercado conforme o Smart Money. Identificamos Fair Value Gaps (desequilíbrio de ordens), Order Blocks (onde os grandes bancos se posicionam), e calculamos planos com Risco/Retorno matemáticos favoráveis.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-emerald-500/80">
               <li className="flex items-center gap-2">✔ Mapeamento inteligente de BOS e CHoCH</li>
@@ -234,11 +234,11 @@ export default async function BillingPage({
           <div>
             <h4 className="text-sm font-semibold text-offwhite">O sistema realiza operações sozinho (Robô)?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              Não. O Trade Vision AI é uma ferramenta de auxílio analítico. Ele mapeia os pontos ideais de entrada, alvo e stop, mas você executa as ordens na sua corretora favorita.
+              Não. A ZaionVest é uma ferramenta de auxílio analítico. Ela mapeia os pontos ideais de entrada, alvo e stop, mas você executa as ordens na sua corretora favorita.
             </p>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-offwhite">Quais mercados o Trade Vision suporta?</h4>
+            <h4 className="text-sm font-semibold text-offwhite">Quais mercados a ZaionVest suporta?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
               Qualquer par de moedas Forex (principais e cruzados) e as maiores Criptomoedas do mercado (Bitcoin, Ethereum, etc.).
             </p>
@@ -254,9 +254,9 @@ export default async function BillingPage({
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 py-10 text-center text-xs text-zinc-500">
-        <p>© 2026 Trade Vision. Todos os direitos reservados.</p>
+        <p>© 2026 ZaionVest. Todos os direitos reservados.</p>
         <p className="mt-1.5 text-[10px] text-zinc-600 max-w-lg mx-auto leading-relaxed">
-          O Trade Vision AI fornece ferramentas de análise de padrões técnicos. Todo conteúdo disponibilizado tem caráter exclusivamente educacional. Não realizamos recomendações de investimentos ou promessas de lucros.
+          A ZaionVest fornece ferramentas de análise de padrões técnicos. Todo conteúdo disponibilizado tem caráter exclusivamente educacional. Não realizamos recomendações de investimentos ou promessas de lucros.
         </p>
       </footer>
     </main>
