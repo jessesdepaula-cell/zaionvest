@@ -39,6 +39,8 @@ export function EAFilters({ total }: EAFiltersProps) {
   const timeframe = searchParams.get("timeframe") ?? "";
   const style = searchParams.get("style") ?? "";
   const sort = searchParams.get("sort") ?? "wfe_desc";
+  const top25 = searchParams.get("top") === "25";
+  const corr = parseFloat(searchParams.get("corr") ?? "1");
 
   const setParam = useCallback(
     (key: string, value: string) => {
@@ -126,6 +128,43 @@ export function EAFilters({ total }: EAFiltersProps) {
             Limpar filtros
           </button>
         )}
+      </div>
+
+      {/* Segunda linha: TOP 25% + correlação máxima */}
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          onClick={() => setParam("top", top25 ? "" : "25")}
+          aria-pressed={top25}
+          className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+            top25
+              ? "border-[#DC1F2E]/50 bg-[#DC1F2E]/[0.08] text-[#DC1F2E]"
+              : "border-[#f5f5f5]/10 text-zinc-400 hover:text-zinc-200"
+          }`}
+        >
+          TOP 25%
+        </button>
+
+        <div className="flex items-center gap-2">
+          <label htmlFor="corr" className="text-[11px] text-zinc-500 whitespace-nowrap">
+            Correlação máx
+          </label>
+          <input
+            id="corr"
+            type="range"
+            min={0.1}
+            max={1}
+            step={0.1}
+            value={corr}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              setParam("corr", v >= 1 ? "" : v.toFixed(1));
+            }}
+            className="h-1 w-40 cursor-pointer accent-[#DC1F2E]"
+          />
+          <span className="w-8 text-[11px] tabular-nums text-zinc-400">
+            {corr >= 1 ? "off" : corr.toFixed(1)}
+          </span>
+        </div>
       </div>
 
       {/* Contador */}

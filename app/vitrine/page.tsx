@@ -3,6 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { EACard } from "@/components/vitrine/EACard";
 import { EAFilters } from "@/components/vitrine/EAFilters";
+import { PortfolioSection } from "@/components/vitrine/PortfolioSection";
+import {
+  greedyDiversified,
+  buildPortfolios,
+  type CorrelatableEA,
+  type EquityPoint,
+} from "@/lib/correlation";
 import { Suspense } from "react";
 import { Bot, ArrowRight } from "lucide-react";
 
@@ -19,6 +26,31 @@ interface SearchParams {
   timeframe?: string;
   style?: string;
   sort?: string;
+  top?: string;   // "25" → só o TOP 25% pela métrica de ordenação
+  corr?: string;  // correlação máxima (0..1); < 1 aplica filtro de diversificação
+}
+
+const EA_SELECT = {
+  id: true,
+  slug: true,
+  name: true,
+  symbol: true,
+  timeframe: true,
+  style: true,
+  exitMode: true,
+  status: true,
+  wfe: true,
+  profitFactor: true,
+  maxDrawdown: true,
+  totalTrades: true,
+  oosWins: true,
+  oosTotalWindows: true,
+  equityCurveOos: true,
+} as const;
+
+/** Normaliza o campo Json equityCurveOos pro tipo usado na correlação. */
+function withCurve<T extends { equityCurveOos: unknown }>(e: T) {
+  return { ...e, equityCurveOos: e.equityCurveOos as EquityPoint[] | null };
 }
 
 async function getEAs(params: SearchParams) {
@@ -42,27 +74,29 @@ async function getEAs(params: SearchParams) {
       orderBy.push({ wfe: "desc" });
   }
 
-  return prisma.eA.findMany({
-    where,
-    orderBy,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      symbol: true,
-      timeframe: true,
-      style: true,
-      exitMode: true,
-      status: true,
-      wfe: true,
-      profitFactor: true,
-      maxDrawdown: true,
-      totalTrades: true,
-      oosWins: true,
-      oosTotalWindows: true,
-      equityCurveOos: true,
-    },
-  });
+  let eas = (await prisma.eA.findMany({ where, orderBy, select: EA_SELECT })).map(withCurve);
+
+  // TOP 25% pela métrica de ordenação (a lista já vem ordenada).
+  if (params.top === "25" && eas.length > 0) {
+    eas = eas.slice(0, Math.max(1, Math.ceil(eas.length * 0.25)));
+  }
+
+  // Filtro de correlação: esconde EAs muito parecidos (mantém os melhores).
+  const corr = params.corr ? parseFloat(params.corr) : 1;
+  if (corr < 1) {
+    eas = greedyDiversified(eas as unknown as (typeof eas[number] & CorrelatableEA)[], corr);
+  }
+
+  return eas;
+}
+
+/** Portfólios prontos a partir de TODOS os EAs aprovados (ignora filtros da grade). */
+async function getPortfolios() {
+  const all = (await prisma.eA.findMany({
+    where: { status: "APPROVED" },
+    select: EA_SELECT,
+  })).map(withCurve);
+  return buildPortfolios(all as unknown as (typeof all[number] & CorrelatableEA)[]);
 }
 
 export default async function VitrinePage({
@@ -71,7 +105,7 @@ export default async function VitrinePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const eas = await getEAs(params);
+  const [eas, portfolios] = await Promise.all([getEAs(params), getPortfolios()]);
 
   return (
     <main className="min-h-screen bg-[#000000] text-zinc-300">
@@ -142,6 +176,9 @@ export default async function VitrinePage({
             </Link>
           </div>
         </div>
+
+        {/* Portfólios prontos */}
+        <PortfolioSection portfolios={portfolios} />
 
         {/* Filtros */}
         <Suspense fallback={null}>
