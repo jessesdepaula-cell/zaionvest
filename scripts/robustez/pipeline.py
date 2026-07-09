@@ -1,244 +1,221 @@
 """
-Pipeline de Robustez ZaionVest — Integração com o Next.js API
-=============================================================
-Este módulo é chamado pela rota /api/ea/[id]/validate via subprocess.
-Recebe parâmetros do EA via stdin (JSON) e retorna resultado via stdout (JSON).
+Pipeline de Robustez ZaionVest (DQ Labs) — orquestrador.
+=========================================================
+dados reais do MT5 → backtest → WFA + gates + Monte Carlo → veredito + relatório.
 
-Uso como subprocess:
-    echo '{"ea_id": "...", "ea_name": "T3 Velocity", ...}' | python pipeline.py
+Chamado pelo worker (stdin JSON) ou via CLI. Se o MT5 não estiver disponível,
+cai num fallback de trades sintéticos pra o pipeline seguir rodando.
 
-Uso direto:
-    python pipeline.py --ea-id cuid123 --ea-name "T3 Velocity" --symbol USDJPY ...
+Gates de aprovação (DQ Labs):
+  - mínimo de trades IS = 50 + 50 * nº de params
+  - WFE médio > 50%
+  - janelas OOS negativas < 50%
+  - Profit Factor > 1.0
+  - lucro líquido > 0
+Monte Carlo define o capital recomendado por perfil de risco (20/40/60% DD).
 """
-
 from __future__ import annotations
 
-import json
-import sys
-import os
 import argparse
+import json
+import os
+import sys
 from datetime import datetime
 
-# Adiciona o diretório pai ao path para importar wfa.py
 sys.path.insert(0, os.path.dirname(__file__))
-from wfa import walk_forward_analysis, generate_report_md, Trade
+
+from wfa import Trade, walk_forward_analysis, generate_report_md
+from metrics import compute_metrics, min_trades_required
+from montecarlo import monte_carlo, RISK_PROFILES
+from backtest import run_backtest, count_params
+
+# Params default por família (ponto de partida; a otimização refina depois).
+DEFAULT_PARAMS = {
+    "trend": {"ema_fast": 12, "ema_slow": 48, "ema_filter": 200, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
+    "mean_reversion": {"rsi_period": 14, "rsi_os": 30, "rsi_ob": 70, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
+    "breakout": {"lookback": 20, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
+}
 
 
-# ─── Geração de Trades Sintéticos para Teste ──────────────────────────────────
-
-def generate_stub_trades(
-    ea_name: str,
-    symbol: str,
-    n_trades: int = 500,
-    base_edge: float = 0.55,  # edge % (0.5 = sem edge, > 0.5 = lucrativo)
-    seed: int = 42,
-) -> list[Trade]:
-    """
-    Gera trades sintéticos para validação.
-    
-    ATENÇÃO: Isso é um stub para desenvolvimento.
-    Em produção, substitua por:
-    1. Importar histórico real de operações do MetaTrader 5
-    2. Rodar backtest via MetaTrader (chamando o terminal via subprocess)
-    3. Parsear o relatório HTML/XML exportado pelo MT5
-    """
+def _stub_trades(ea_id: str, n: int = 500) -> list[Trade]:
     import random
-    random.seed(seed)
-
-    trades = []
-    for i in range(n_trades):
-        # Simula trades com edge positivo ou negativo baseado em base_edge
-        win = random.random() < base_edge
-        if win:
-            profit = random.uniform(10.0, 150.0)
-        else:
-            profit = -random.uniform(8.0, 80.0)  # Stop menor que alvo (RR > 1)
-        trades.append(Trade(profit=round(profit, 2)))
-
-    return trades
+    rng = random.Random(sum(ord(c) for c in ea_id) % 10000)
+    out = []
+    for _ in range(n):
+        win = rng.random() < 0.55
+        out.append(Trade(profit=round(rng.uniform(10, 150) if win else -rng.uniform(8, 80), 2)))
+    return out
 
 
-# ─── Pipeline Principal ────────────────────────────────────────────────────────
+def _get_trades(symbol: str, timeframe: str, family: str, params: dict,
+                exit_mode: str, years: float) -> tuple[list[Trade], str]:
+    """Tenta backtest real no MT5; retorna (trades, fonte)."""
+    try:
+        import mt5_data
+        mt5_data.connect()
+        df, resolved = mt5_data.get_candles(symbol, timeframe, years=years)
+        info = mt5_data.symbol_info(resolved)
+        trades = run_backtest(
+            df, family, params,
+            exit_mode=exit_mode,
+            point=info.point,
+            contract_size=info.contract_size,
+        )
+        mt5_data.shutdown()
+        return trades, f"MT5:{resolved}"
+    except Exception as e:  # noqa: BLE001 — fallback consciente
+        print(f"[Pipeline] MT5 indisponível ({e}); usando stub.", file=sys.stderr)
+        return _stub_trades(family + symbol), "stub"
+
 
 def run_pipeline(
     ea_id: str,
     ea_name: str,
     symbol: str,
     timeframe: str,
+    family: str = "trend",
     exit_mode: str = "reversal",
+    params: dict | None = None,
     n_windows: int = 6,
-    is_ratio: float = 0.7,
-    trades_file: str | None = None,
+    years: float = 2.0,
 ) -> dict:
-    """
-    Executa o pipeline completo de robustez DQ Labs.
-    
-    Stages:
-    1. Carrega ou gera trades (backtest data)
-    2. Walk Forward Analysis (6 janelas)
-    3. Critérios de aprovação
-    4. Gera relatório .md
-    5. Retorna dict para a API Next.js
-    
-    Args:
-        ea_id:       ID do EA no banco de dados
-        ea_name:     Nome do EA
-        symbol:      Par de moedas (ex: "USDJPY")
-        timeframe:   Timeframe (ex: "H1")
-        exit_mode:   "reversal" | "fixed_sltp"
-        n_windows:   Número de janelas WFA
-        is_ratio:    Proporção IS/total por janela
-        trades_file: Caminho para arquivo de trades (CSV/JSON)
-                     Se None, usa trades sintéticos (stub)
-    
-    Returns:
-        Dict com: wfe, oosWins, oosTotalWin, approved, reportMd, windowsJson
-    """
-    print(f"[Pipeline] Iniciando validação: {ea_name} ({symbol} {timeframe})", file=sys.stderr)
+    params = {**DEFAULT_PARAMS.get(family, {}), **(params or {})}
+    trades, source = _get_trades(symbol, timeframe, family, params, exit_mode, years)
+    print(f"[Pipeline] {len(trades)} trades ({source}) — {ea_name} {symbol} {timeframe}", file=sys.stderr)
 
-    # Stage 1: Carrega trades
-    if trades_file:
-        import csv
-        trades = []
-        with open(trades_file, newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                try:
-                    profit = float(row.get("profit", row.get("Profit", 0)))
-                    trades.append(Trade(profit=profit))
-                except ValueError:
-                    continue
-        print(f"[Pipeline] {len(trades)} trades carregados de '{trades_file}'", file=sys.stderr)
-    else:
-        # Stub: usa seed baseada no ea_id para resultados reproduzíveis
-        seed = sum(ord(c) for c in ea_id) % 10000
-        trades = generate_stub_trades(ea_name, symbol, n_trades=500, seed=seed)
-        print(f"[Pipeline] Usando {len(trades)} trades sintéticos (stub)", file=sys.stderr)
+    profits = [t.profit for t in trades]
+    m = compute_metrics(profits)
+    n_params = count_params(family)
+    min_trades = min_trades_required(n_params)
 
-    # Stage 2: Walk Forward Analysis
-    result = walk_forward_analysis(trades, n_windows=n_windows, is_ratio=is_ratio)
-    print(
-        f"[Pipeline] WFA: WFE={result.wfe_avg:.1f}% | OOS Negativas={result.oos_negative_pct:.1f}%",
-        file=sys.stderr,
-    )
+    # WFA (precisa de trades suficientes por janela)
+    try:
+        wfa = walk_forward_analysis(trades, n_windows=n_windows)
+    except ValueError as e:
+        # trades insuficientes → reprovado por significância
+        return {
+            "ea_id": ea_id, "wfe": 0.0, "oosWins": 0, "oosTotalWin": n_windows,
+            "approved": False, "reportMd": f"# {ea_name}\n\nReprovado: {e}",
+            "windowsJson": [], "metrics": m.__dict__, "source": source,
+            "validated_at": datetime.now().isoformat(),
+        }
 
-    # Stage 3: Gera relatório
-    report_md = generate_report_md(
-        result,
-        ea_name=ea_name,
-        symbol=symbol,
-        timeframe=timeframe,
-        exit_mode=exit_mode,
-    )
-    result.report_md = report_md
+    mc = monte_carlo(profits)
 
-    # Stage 4: Prepara output JSON para a API Next.js
-    output = {
+    # ── Gates DQ Labs ─────────────────────────────────────────────────────────
+    pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
+    gates = {
+        "min_trades": (m.total_trades >= min_trades, f"{m.total_trades} ≥ {min_trades}"),
+        "wfe_gt_50": (wfa.wfe_avg > 50.0, f"{wfa.wfe_avg:.1f}%"),
+        "oos_neg_lt_50": (wfa.oos_negative_pct < 50.0, f"{wfa.oos_negative_pct:.1f}%"),
+        "pf_gt_1": (pf > 1.0, f"{pf:.2f}"),
+        "net_positive": (m.net_profit > 0, f"${m.net_profit:.2f}"),
+    }
+    approved = all(ok for ok, _ in gates.values())
+
+    report_md = _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved)
+
+    return {
         "ea_id": ea_id,
-        "ea_name": ea_name,
-        "symbol": symbol,
-        "timeframe": timeframe,
-        "wfe": result.wfe_avg,
-        "oosWins": result.oos_wins,
-        "oosTotalWin": result.oos_total,
-        "oos_negative_pct": result.oos_negative_pct,
-        "approved": result.approved,
+        "wfe": wfa.wfe_avg,
+        "oosWins": wfa.oos_wins,
+        "oosTotalWin": wfa.oos_total,
+        "approved": approved,
         "reportMd": report_md,
         "windowsJson": [
-            {
-                "window": w.window,
-                "isProfit": w.is_profit,
-                "oosProfit": w.oos_profit,
-                "wfe": w.wfe,
-                "approved": w.approved,
-                "is_trades": w.is_trades,
-                "oos_trades": w.oos_trades,
-            }
-            for w in result.windows
+            {"window": w.window, "isProfit": w.is_profit, "oosProfit": w.oos_profit,
+             "wfe": w.wfe, "approved": w.approved} for w in wfa.windows
         ],
+        "metrics": m.__dict__,
+        "montecarlo": {"dd_p95_abs": mc.dd_p95_abs, "recommended_capital": mc.recommended_capital},
+        "gates": {k: ok for k, (ok, _) in gates.items()},
+        "source": source,
         "validated_at": datetime.now().isoformat(),
     }
 
-    status = "APROVADO ✅" if result.approved else "REPROVADO ❌"
-    print(f"[Pipeline] Veredito: {status}", file=sys.stderr)
 
-    return output
+def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved) -> str:
+    base = generate_report_md(wfa, ea_name=ea_name, symbol=symbol, timeframe=timeframe, exit_mode=exit_mode)
+    cap = mc.recommended_capital
+    extra = f"""
+
+---
+
+## 3. Backtest 2 anos — Métricas
+
+- **Profit Factor:** {m.profit_factor}
+- **Drawdown máx:** {m.max_drawdown_pct:.2f}% (${m.max_drawdown_abs:.2f})
+- **Trades:** {m.total_trades} · **Win rate:** {m.win_rate*100:.1f}% · **Payoff:** {m.payoff}
+- **Expectativa/trade:** ${m.expectancy:.2f} · **Lucro líquido:** ${m.net_profit:.2f}
+
+## 4. Monte Carlo — Capital recomendado por perfil (DD p95 = ${mc.dd_p95_abs:.2f})
+
+- **Conservador (≤{RISK_PROFILES['conservador']:.0f}% DD):** ${cap.get('conservador', 0):,.2f}
+- **Moderado (≤{RISK_PROFILES['moderado']:.0f}% DD):** ${cap.get('moderado', 0):,.2f}
+- **Agressivo (≤{RISK_PROFILES['agressivo']:.0f}% DD):** ${cap.get('agressivo', 0):,.2f}
+
+## 5. Checklist completo DQ Labs
+
+- **Mín. trades ({min_trades}):** {'✅' if gates['min_trades'][0] else '❌'} ({gates['min_trades'][1]})
+- **WFE médio > 50%:** {'✅' if gates['wfe_gt_50'][0] else '❌'} ({gates['wfe_gt_50'][1]})
+- **OOS negativas < 50%:** {'✅' if gates['oos_neg_lt_50'][0] else '❌'} ({gates['oos_neg_lt_50'][1]})
+- **Profit Factor > 1.0:** {'✅' if gates['pf_gt_1'][0] else '❌'} ({gates['pf_gt_1'][1]})
+- **Lucro líquido > 0:** {'✅' if gates['net_positive'][0] else '❌'} ({gates['net_positive'][1]})
+
+### Veredito final: {'✅ ROBUSTA — publicável' if approved else '⚠️ REPROVADA'}
+"""
+    return base + extra
 
 
-# ─── Entry Points ──────────────────────────────────────────────────────────────
+# ─── Entry points ─────────────────────────────────────────────────────────────
 
 def main_stdin():
-    """Lê parâmetros do stdin (JSON) e escreve resultado no stdout (JSON)."""
     raw = sys.stdin.read().strip()
     if not raw:
-        print(json.dumps({"error": "Empty stdin"}), file=sys.stdout)
-        sys.exit(1)
-
-    try:
-        params = json.loads(raw)
-    except json.JSONDecodeError as e:
-        print(json.dumps({"error": f"JSON parse error: {e}"}), file=sys.stdout)
-        sys.exit(1)
-
-    result = run_pipeline(
-        ea_id=params.get("ea_id", "unknown"),
-        ea_name=params.get("ea_name", "EA"),
-        symbol=params.get("symbol", "EURUSD"),
-        timeframe=params.get("timeframe", "H1"),
-        exit_mode=params.get("exit_mode", "reversal"),
-        n_windows=params.get("n_windows", 6),
-        is_ratio=params.get("is_ratio", 0.7),
-        trades_file=params.get("trades_file"),
+        print(json.dumps({"error": "Empty stdin"})); sys.exit(1)
+    p = json.loads(raw)
+    out = run_pipeline(
+        ea_id=p.get("ea_id", "unknown"), ea_name=p.get("ea_name", "EA"),
+        symbol=p.get("symbol", "EURUSD"), timeframe=p.get("timeframe", "H1"),
+        family=p.get("family", "trend"), exit_mode=p.get("exit_mode", "reversal"),
+        params=p.get("params"), years=p.get("years", 2.0),
     )
-
-    print(json.dumps(result, ensure_ascii=False))
+    print(json.dumps(out, ensure_ascii=False))
 
 
 def main_cli():
-    """CLI para rodar diretamente via terminal."""
-    parser = argparse.ArgumentParser(description="Pipeline de Robustez ZaionVest (DQ Labs)")
-    parser.add_argument("--ea-id", required=True, help="ID do EA")
-    parser.add_argument("--ea-name", required=True, help="Nome do EA")
-    parser.add_argument("--symbol", default="EURUSD", help="Par de moedas")
-    parser.add_argument("--timeframe", default="H1", help="Timeframe")
-    parser.add_argument("--exit-mode", default="reversal", help="Modo de saída")
-    parser.add_argument("--windows", type=int, default=6, help="Janelas WFA")
-    parser.add_argument("--is-ratio", type=float, default=0.7, help="Proporção IS")
-    parser.add_argument("--trades-file", help="Arquivo de trades (CSV/JSON)")
-    parser.add_argument("--output-json", help="Salvar resultado em .json")
-    parser.add_argument("--output-md", help="Salvar relatório em .md")
-    args = parser.parse_args()
+    ap = argparse.ArgumentParser(description="Pipeline de Robustez ZaionVest (DQ Labs)")
+    ap.add_argument("--ea-id", default="cli-test")
+    ap.add_argument("--ea-name", default="EA")
+    ap.add_argument("--symbol", default="EURUSD")
+    ap.add_argument("--timeframe", default="H1")
+    ap.add_argument("--family", default="trend", choices=["trend", "mean_reversion", "breakout"])
+    ap.add_argument("--exit-mode", default="reversal", choices=["reversal", "fixed_sltp"])
+    ap.add_argument("--years", type=float, default=2.0)
+    ap.add_argument("--output-md")
+    args = ap.parse_args()
 
-    result = run_pipeline(
-        ea_id=args.ea_id,
-        ea_name=args.ea_name,
-        symbol=args.symbol,
-        timeframe=args.timeframe,
-        exit_mode=args.exit_mode,
-        n_windows=args.windows,
-        is_ratio=args.is_ratio,
-        trades_file=args.trades_file,
+    out = run_pipeline(
+        ea_id=args.ea_id, ea_name=args.ea_name, symbol=args.symbol,
+        timeframe=args.timeframe, family=args.family, exit_mode=args.exit_mode, years=args.years,
     )
-
-    if args.output_json:
-        with open(args.output_json, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-        print(f"[Pipeline] JSON salvo: {args.output_json}", file=sys.stderr)
-
+    print(f"\nFonte: {out['source']} | Trades: {out['metrics']['total_trades']}")
+    print(f"WFE: {out['wfe']:.1f}% | OOS wins: {out['oosWins']}/{out['oosTotalWin']} | PF: {out['metrics']['profit_factor']}")
+    print(f"Veredito: {'✅ ROBUSTA' if out['approved'] else '❌ REPROVADA'}")
+    print(f"Capital recomendado: {out.get('montecarlo', {}).get('recommended_capital')}")
     if args.output_md:
         with open(args.output_md, "w", encoding="utf-8") as f:
-            f.write(result["reportMd"])
-        print(f"[Pipeline] Relatório salvo: {args.output_md}", file=sys.stderr)
-
-    # Imprime resultado resumido
-    status = "APROVADO ✅" if result["approved"] else "REPROVADO ❌"
-    print(f"\nResultado: {status}")
-    print(f"WFE Médio: {result['wfe']:.2f}%")
-    print(f"OOS Wins: {result['oosWins']}/{result['oosTotalWin']}")
+            f.write(out["reportMd"])
+        print(f"Relatório salvo: {args.output_md}")
 
 
 if __name__ == "__main__":
-    # Se há argumentos CLI, usa CLI; senão, lê stdin (modo subprocess)
+    # Console Windows é cp1252; força UTF-8 pra emoji/acentos e pro JSON do worker.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
     if len(sys.argv) > 1 and sys.argv[1].startswith("--"):
         main_cli()
     else:

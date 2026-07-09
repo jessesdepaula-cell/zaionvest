@@ -1,0 +1,5 @@
+# Motor de robustez / mineração — roda no worker Windows com MT5.
+# Instalar: py -m pip install -r requirements.txt
+MetaTrader5>=5.0.45
+pandas>=2.0
+numpy>=1.24
