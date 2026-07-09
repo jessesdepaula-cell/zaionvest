@@ -7,10 +7,18 @@ EURUSDm, ...). resolve_symbol() acha o nome real a partir da base "EURUSD".
 from __future__ import annotations
 
 import datetime as dt
+import os
 from dataclasses import dataclass
 
 import MetaTrader5 as mt5
 import pandas as pd
+
+# Terminal alvo: RoboForex (único broker do projeto). Sobrescreve com env
+# MT5_TERMINAL_PATH se o exe estiver noutro lugar.
+DEFAULT_TERMINAL = os.environ.get(
+    "MT5_TERMINAL_PATH",
+    r"C:\Program Files\RoboForex MT5 Terminal\terminal64.exe",
+)
 
 TIMEFRAMES = {
     "M15": mt5.TIMEFRAME_M15,
@@ -29,10 +37,11 @@ class MT5Error(RuntimeError):
 
 
 def connect(path: str | None = None) -> None:
-    """Inicializa o terminal (idempotente). path aponta pra um terminal específico."""
-    ok = mt5.initialize(path) if path else mt5.initialize()
+    """Inicializa o terminal RoboForex (idempotente). path sobrescreve o default."""
+    target = path or DEFAULT_TERMINAL
+    ok = mt5.initialize(target)
     if not ok:
-        raise MT5Error(f"initialize falhou: {mt5.last_error()}")
+        raise MT5Error(f"initialize falhou ({target}): {mt5.last_error()}")
 
 
 def resolve_symbol(base: str) -> str:
