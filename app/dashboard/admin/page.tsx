@@ -37,7 +37,7 @@ export default async function AdminPage() {
       subscriptionStatus: true,
       currentPeriodEnd: true,
       createdAt: true,
-      asaasCustomerId: true,
+      stripeCustomerId: true,
     },
   });
 
@@ -64,11 +64,11 @@ export default async function AdminPage() {
         <Kpi icon={<XCircle className="h-3.5 w-3.5" />} label="Inativos" value={inactive} tone="rose" />
       </section>
 
-      <div className="overflow-hidden rounded-xl border border-[#f5f5f5]/10">
+      <div className="overflow-hidden rounded-xl border border-white/10">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] text-left text-[10px] uppercase tracking-widest text-zinc-500">
+              <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase tracking-widest text-zinc-500">
                 <th className="px-4 py-3 font-medium">Assinante</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Cadastro</th>
@@ -80,7 +80,7 @@ export default async function AdminPage() {
               {users.map((u) => {
                 const s = statusMeta(u.subscriptionStatus);
                 return (
-                  <tr key={u.id} className="border-b border-[#f5f5f5]/5 last:border-0 hover:bg-[#f5f5f5]/[0.02]">
+                  <tr key={u.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
                     <td className="px-4 py-3">
                       <div className="font-medium text-offwhite">{u.name || "—"}</div>
                       <div className="text-[11px] text-zinc-500">{u.email}</div>
@@ -92,7 +92,7 @@ export default async function AdminPage() {
                           s.tone === "emerald" && "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300",
                           s.tone === "amber" && "border-amber-500/30 bg-amber-500/[0.08] text-amber-300",
                           s.tone === "rose" && "border-rose-500/30 bg-rose-500/[0.08] text-rose-300",
-                          s.tone === "zinc" && "border-[#f5f5f5]/15 bg-[#f5f5f5]/[0.04] text-zinc-400",
+                          s.tone === "zinc" && "border-white/15 bg-white/[0.04] text-zinc-400",
                         )}
                       >
                         {s.label}
@@ -101,8 +101,8 @@ export default async function AdminPage() {
                     <td className="px-4 py-3 num text-zinc-300">{fmtDate(u.createdAt)}</td>
                     <td className="px-4 py-3 num text-zinc-300">{fmtDate(u.currentPeriodEnd)}</td>
                     <td className="px-4 py-3">
-                      {u.asaasCustomerId ? (
-                        <span className="num text-[11px] text-zinc-400">{u.asaasCustomerId}</span>
+                      {u.stripeCustomerId ? (
+                        <span className="num text-[11px] text-zinc-400">{u.stripeCustomerId}</span>
                       ) : (
                         <span className="text-[11px] text-zinc-600">não gerado</span>
                       )}
