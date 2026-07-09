@@ -41,7 +41,23 @@ export async function POST(req: NextRequest) {
     });
 
     if (claimed.count === 1) {
-      const job = await prisma.job.findUnique({ where: { id: candidate.id } });
+      const job = await prisma.job.findUnique({
+        where: { id: candidate.id },
+        include: {
+          // Def. interna da estratégia pro worker re-rodar a revalidação.
+          ea: {
+            select: {
+              id: true,
+              name: true,
+              symbol: true,
+              timeframe: true,
+              style: true,
+              exitMode: true,
+              strategyDef: true,
+            },
+          },
+        },
+      });
       return NextResponse.json({ job });
     }
     // Outro worker pegou primeiro — tenta o próximo.

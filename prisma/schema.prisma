@@ -177,6 +177,11 @@ model EA {
   // Caminho do .ex5 compilado no storage (Modelo A: params baked-in no binário)
   fileUrl         String?  @db.Text
 
+  // Definição INTERNA da estratégia (family, exit_mode e params numéricos).
+  // Necessária pro worker re-rodar a revalidação e recompilar. NUNCA é
+  // retornada pelo /status público (que só seleciona id/slug/name/status).
+  strategyDef     Json?
+
   // Curva de capital OOS (array de {date, value})
   equityCurveOos  Json?
 
