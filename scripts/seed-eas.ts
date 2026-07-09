@@ -37,14 +37,6 @@ async function main() {
       oosWins: 6,
       oosTotalWindows: 6,
       lastValidatedAt: new Date(),
-      paramsJson: {
-        t3_period: 14,
-        t3_vfactor: 0.7,
-        ema_filter: 200,
-        atr_multiplier: 2.0,
-        risk_percent: 1.0,
-      },
-      paramsVersion: 1,
       equityCurveOos: [
         { date: "2022-01", value: 1000 },
         { date: "2022-04", value: 1340 },

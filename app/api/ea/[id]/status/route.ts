@@ -1,44 +1,107 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// Endpoint público — o EA MQL5 faz polling aqui a cada 30 min.
-// Não requer autenticação para que o EA funcione mesmo sem login do usuário.
-export async function GET(
-  _req: NextRequest,
+/**
+ * Endpoint de licença consultado pelo EA no MT5 do cliente (WebRequest, ~30min).
+ *
+ * Modelo A: o .ex5 tem os parâmetros embutidos (baked-in). Este endpoint NÃO
+ * expõe parâmetros/estratégia — só devolve um veredito de licença. Assim a
+ * lógica do robô fica protegida no binário.
+ *
+ * POST (corpo JSON, para não trafegar e-mail na URL):
+ *   { email, account, company }
+ *
+ * Resposta (sempre 200 quando é um veredito; o EA interpreta `valid`/`reason`):
+ *   { valid: boolean, status, reason }
+ *     reason: "ok" | "ea_rejected" | "ea_pending" | "ea_not_found"
+ *           | "unknown_client" | "no_subscription" | "wrong_broker"
+ */
+export async function POST(
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
+  const body = (await req.json().catch(() => ({}))) as {
+    email?: string;
+    account?: string | number;
+    company?: string;
+  };
+
   const ea = await prisma.eA.findUnique({
     where: { id },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      status: true,
-      paramsJson: true,
-      paramsVersion: true,
-      lastValidatedAt: true,
-      updatedAt: true,
-    },
+    select: { id: true, slug: true, name: true, status: true },
   });
 
   if (!ea) {
-    return NextResponse.json({ error: "EA not found" }, { status: 404 });
+    return NextResponse.json({ valid: false, reason: "ea_not_found" });
   }
 
-  // O EA MQL5 interpreta o campo "status":
-  //   "APPROVED"  → continua operando, aplica paramsJson se paramsVersion mudou
-  //   "REJECTED"  → para novas ordens, exibe alerta no chart
-  //   "PENDING"   → aguarda validação, mantém comportamento atual
-  return NextResponse.json({
-    id: ea.id,
-    slug: ea.slug,
-    name: ea.name,
-    status: ea.status,
-    params: ea.paramsJson ?? {},
-    paramsVersion: ea.paramsVersion,
-    lastValidatedAt: ea.lastValidatedAt,
-    updatedAt: ea.updatedAt,
+  // Estratégia reprovada → EA trava independentemente da assinatura.
+  if (ea.status === "REJECTED") {
+    return NextResponse.json({
+      valid: false,
+      status: ea.status,
+      reason: "ea_rejected",
+    });
+  }
+  if (ea.status !== "APPROVED") {
+    return NextResponse.json({
+      valid: false,
+      status: ea.status,
+      reason: "ea_pending",
+    });
+  }
+
+  // Identifica o cliente pelo e-mail informado no input do EA.
+  const email = body.email?.trim().toLowerCase();
+  if (!email) {
+    return NextResponse.json({
+      valid: false,
+      status: ea.status,
+      reason: "unknown_client",
+    });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { subscriptionStatus: true, currentPeriodEnd: true },
   });
+
+  if (!user) {
+    return NextResponse.json({
+      valid: false,
+      status: ea.status,
+      reason: "unknown_client",
+    });
+  }
+
+  const activeStatus =
+    user.subscriptionStatus === "active" ||
+    user.subscriptionStatus === "trialing";
+  const notExpired =
+    !user.currentPeriodEnd || user.currentPeriodEnd.getTime() > Date.now();
+
+  if (!activeStatus || !notExpired) {
+    return NextResponse.json({
+      valid: false,
+      status: ea.status,
+      reason: "no_subscription",
+    });
+  }
+
+  // Amarração RoboForex — dureza configurável (decisão em aberto da spec).
+  // REQUIRE_ROBOFOREX=true → bloqueia contas de outras corretoras.
+  if (process.env.REQUIRE_ROBOFOREX === "true") {
+    const company = (body.company ?? "").toLowerCase();
+    if (!company.includes("roboforex")) {
+      return NextResponse.json({
+        valid: false,
+        status: ea.status,
+        reason: "wrong_broker",
+      });
+    }
+  }
+
+  return NextResponse.json({ valid: true, status: ea.status, reason: "ok" });
 }

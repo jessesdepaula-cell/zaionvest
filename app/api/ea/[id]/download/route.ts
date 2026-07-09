@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createSignedUrl } from "@/lib/storage";
 
+/**
+ * Download do .ex5 licenciado. Exige login (Clerk) + assinatura ativa.
+ * Serve via URL assinada temporária (não um link cru compartilhável).
+ */
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,7 +18,6 @@ export async function GET(
     return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
   }
 
-  // Busca o usuário pelo clerkId para obter o status de assinatura
   const user = await prisma.user.findUnique({
     where: { clerkId },
     select: { id: true, subscriptionStatus: true, currentPeriodEnd: true },
@@ -24,14 +28,9 @@ export async function GET(
   }
 
   const isActive =
-    user.subscriptionStatus === "active" ||
-    user.subscriptionStatus === "trialing";
-
-  const isOwner =
-    (process.env.OWNER_EMAIL ?? "jessesdepaula@gmail.com") ===
-    undefined
-      ? false
-      : true; // simplificado — checagem real via email abaixo
+    (user.subscriptionStatus === "active" ||
+      user.subscriptionStatus === "trialing") &&
+    (!user.currentPeriodEnd || user.currentPeriodEnd.getTime() > Date.now());
 
   if (!isActive) {
     return NextResponse.json(
@@ -48,29 +47,36 @@ export async function GET(
   if (!ea) {
     return NextResponse.json({ error: "EA not found" }, { status: 404 });
   }
-
   if (ea.status !== "APPROVED") {
     return NextResponse.json(
       { error: "EA is not approved for download" },
       { status: 403 }
     );
   }
-
   if (!ea.fileUrl) {
-    return NextResponse.json(
-      { error: "File not available yet" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "File not available yet" }, { status: 404 });
   }
 
-  // Registra o download (upsert — não duplica se já baixou)
+  // Registra o download (upsert idempotente — duplo clique não duplica).
   await prisma.eADownload.upsert({
     where: { eaId_userId: { eaId: id, userId: user.id } },
     create: { eaId: id, userId: user.id },
-    update: {}, // já existe, não faz nada
+    update: {},
   });
 
-  // Redireciona para a URL do arquivo .ex5
-  // Em produção, aqui pode gerar uma URL assinada temporária (Supabase Storage, S3, etc.)
-  return NextResponse.redirect(ea.fileUrl);
+  // Se fileUrl já é uma URL completa (legado), redireciona direto.
+  // Senão, trata como caminho no Storage e gera uma URL assinada temporária.
+  if (/^https?:\/\//.test(ea.fileUrl)) {
+    return NextResponse.redirect(ea.fileUrl);
+  }
+
+  const signed = await createSignedUrl(ea.fileUrl, 300);
+  if (!signed) {
+    return NextResponse.json(
+      { error: "Storage not configured or file missing" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.redirect(signed);
 }
