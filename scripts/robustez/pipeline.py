@@ -82,17 +82,31 @@ def run_pipeline(
     params = {**DEFAULT_PARAMS.get(family, {}), **(params or {})}
     trades, source = _get_trades(symbol, timeframe, family, params, exit_mode, years)
     print(f"[Pipeline] {len(trades)} trades ({source}) — {ea_name} {symbol} {timeframe}", file=sys.stderr)
+    return evaluate(trades, ea_id, ea_name, symbol, timeframe, family, exit_mode,
+                    n_windows=n_windows, source=source)
 
+
+def evaluate(
+    trades: list[Trade],
+    ea_id: str,
+    ea_name: str,
+    symbol: str,
+    timeframe: str,
+    family: str,
+    exit_mode: str,
+    n_windows: int = 6,
+    source: str = "backtest",
+) -> dict:
+    """Aplica os gates DQ Labs a uma lista de trades JÁ obtida (sem buscar MT5).
+    Reusado pelo minerador (que já rodou o backtest) e pelo run_pipeline."""
     profits = [t.profit for t in trades]
     m = compute_metrics(profits)
     n_params = count_params(family)
     min_trades = min_trades_required(n_params)
 
-    # WFA (precisa de trades suficientes por janela)
     try:
         wfa = walk_forward_analysis(trades, n_windows=n_windows)
     except ValueError as e:
-        # trades insuficientes → reprovado por significância
         return {
             "ea_id": ea_id, "wfe": 0.0, "oosWins": 0, "oosTotalWin": n_windows,
             "approved": False, "reportMd": f"# {ea_name}\n\nReprovado: {e}",
