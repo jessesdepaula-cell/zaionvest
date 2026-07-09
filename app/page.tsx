@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { TrackRecordSection } from "@/components/landing/TrackRecordSection";
 import {
   ArrowRight,
@@ -31,14 +32,17 @@ export default function LandingPage() {
 
       {/* Header Fixo Simples */}
       <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-[#f5f5f5]/5">
-        <div className="flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-md border border-[#DC1F2E]/40 bg-[#DC1F2E]/[0.12]">
-            <Target className="h-4 w-4 text-[#DC1F2E]" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-[#F5F5F5]">
-            Zaion<span className="text-[#DC1F2E]">Vest</span>
-          </span>
-        </div>
+        <Link href="/" aria-label="ZaionVest" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="ZaionVest"
+            width={785}
+            height={145}
+            priority
+            className="h-9 w-auto"
+            style={{ mixBlendMode: "lighten" }}
+          />
+        </Link>
         <nav className="flex items-center gap-4 text-xs">
           <Link href="/sign-in" className="text-zinc-400 hover:text-zinc-200 transition">
             Entrar
