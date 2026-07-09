@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Crosshair, Eye, Radar, Settings, Users } from "lucide-react";
+import { BarChart3, Bot, Crosshair, Eye, Radar, Settings, Users } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/dashboard", icon: Crosshair, label: "Análise" },
   { href: "/dashboard/sinais", icon: Radar, label: "Sinais ao vivo" },
+  { href: "/dashboard/vitrine", icon: Bot, label: "Vitrine de EAs" },
   { href: "/dashboard/estatisticas", icon: BarChart3, label: "Estatísticas" },
   { href: "/dashboard/configuracoes", icon: Settings, label: "Configurações" },
+
 ];
 
 // Itens exclusivos do administrador (dono): gestão de assinantes e a watchlist
@@ -17,7 +20,9 @@ const NAV = [
 // comuns não veem nenhum dos dois.
 const ADMIN_NAV = [
   { href: "/dashboard/admin", icon: Users, label: "Assinantes" },
+  { href: "/dashboard/admin/eas", icon: Bot, label: "Admin — EAs" },
   { href: "/dashboard/watchlist", icon: Eye, label: "Watchlist (mestra)" },
+
 ];
 
 export function SidebarNav({ owner = false }: { owner?: boolean }) {

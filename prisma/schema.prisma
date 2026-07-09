@@ -26,6 +26,7 @@ model User {
   watchlist          Watchlist[]
   signals            Signal[]
   ticks              MarketTick[]
+  eaDownloads        EADownload[]
 }
 
 model Analysis {
@@ -148,4 +149,114 @@ model MarketTick {
   updatedAt DateTime @default(now())
 
   @@id([userId, symbol])
+}
+
+// ─── EA Marketplace ──────────────────────────────────────────────────────────
+
+model EA {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  symbol          String
+  timeframe       String
+  style           String   // "trend" | "reversal" | "breakout" | "range"
+  exitMode        String   // "reversal" | "fixed_sltp"
+
+  // Métricas WFA (pipeline DQ Labs)
+  wfe             Float?
+  profitFactor    Float?
+  maxDrawdown     Float?
+  totalTrades     Int?
+  oosWins         Int?
+  oosTotalWindows Int?
+
+  // Status de aprovação
+  status          String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  lastValidatedAt DateTime?
+
+  // Arquivo .ex5 compilado (URL do storage)
+  fileUrl         String?  @db.Text
+
+  // Parâmetros atuais em JSON (EA MQL5 faz polling)
+  paramsJson      Json?
+
+  // Curva de capital OOS (array de {date, value})
+  equityCurveOos  Json?
+
+  // Versão do parâmetro (incrementada a cada revalidação aprovada)
+  paramsVersion   Int      @default(1)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  downloads       EADownload[]
+  validations     EAValidation[]
+  jobs            Job[]
+
+  @@index([status])
+  @@index([symbol, timeframe])
+}
+
+model EADownload {
+  id        String   @id @default(cuid())
+  eaId      String
+  ea        EA       @relation(fields: [eaId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eaId, userId])
+  @@index([userId])
+  @@index([eaId])
+}
+
+model EAValidation {
+  id            String   @id @default(cuid())
+  eaId          String
+  ea            EA       @relation(fields: [eaId], references: [id], onDelete: Cascade)
+
+  // Resultado consolidado da revalidação
+  wfe           Float
+  oosWins       Int
+  oosTotalWin   Int
+  approved      Boolean
+  reportMd      String?  @db.Text
+
+  // Janelas individuais da WFA (JSON array)
+  windowsJson   Json?
+
+  validatedAt   DateTime @default(now())
+
+  @@index([eaId, validatedAt])
+}
+
+// ─── Fila de jobs (consumida pelo worker Windows/MT5) ────────────────────────
+// A Vercel só ENFILEIRA (mineração/revalidação). O trabalho pesado — backtest
+// no MT5, WFA, Monte Carlo, compilação do .ex5 — roda no worker, que reclama
+// jobs PENDING, executa e devolve o resultado.
+
+model Job {
+  id          String   @id @default(cuid())
+  type        String   // "REVALIDATE" | "MINE"
+  status      String   @default("PENDING") // PENDING | RUNNING | DONE | ERROR
+
+  // Alvo (REVALIDATE aponta pra um EA; MINE não tem eaId ainda)
+  eaId        String?
+  ea          EA?      @relation(fields: [eaId], references: [id], onDelete: Cascade)
+
+  payloadJson Json?    // parâmetros do job (símbolo, TF, família, etc.)
+  resultJson  Json?    // saída do pipeline
+  error       String?  @db.Text
+  attempts    Int      @default(0)
+
+  // Claim atômico pelo worker
+  lockedBy    String?  // id/nome da máquina worker
+  lockedAt    DateTime?
+
+  createdAt   DateTime @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  @@index([status, type])
+  @@index([eaId])
 }

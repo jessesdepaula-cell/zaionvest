@@ -261,3 +261,150 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
     console.error("[Resend Email Exception]", error);
   }
 }
+
+// ─── EA Marketplace ───────────────────────────────────────────────────────────
+
+export interface EARejectedEmailData {
+  to: string;
+  userName: string;
+  eaName: string;
+  eaSymbol: string;
+  eaTimeframe: string;
+}
+
+/**
+ * Notifica o assinante quando um EA que ele baixou foi reprovado na revalidação.
+ */
+export async function sendEARejectedEmail({
+  to,
+  userName,
+  eaName,
+  eaSymbol,
+  eaTimeframe,
+}: EARejectedEmailData) {
+  const subject = `⚠️ Atenção: EA "${eaName}" reprovado na revalidação`;
+
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${subject}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#000000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#000000;padding:40px 20px;">
+        <tr><td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#0A0A0A;border:1px solid rgba(245,245,245,0.08);border-radius:16px;overflow:hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="background:#0A0A0A;border-bottom:1px solid rgba(245,245,245,0.06);padding:24px 32px;">
+                <span style="font-size:18px;font-weight:700;color:#F5F5F5;letter-spacing:-0.01em;">
+                  Zaion<span style="color:#DC1F2E;">Vest</span>
+                </span>
+              </td>
+            </tr>
+
+            <!-- Alerta -->
+            <tr>
+              <td style="padding:32px 32px 24px;">
+                <div style="background:rgba(220,31,46,0.08);border:1px solid rgba(220,31,46,0.25);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#DC1F2E;text-transform:uppercase;letter-spacing:0.08em;">
+                    ⚠️ EA Reprovado na Revalidação
+                  </p>
+                </div>
+
+                <p style="margin:0 0 16px;font-size:14px;color:#A1A1AA;">
+                  Olá, <strong style="color:#F5F5F5;">${userName}</strong>
+                </p>
+
+                <p style="margin:0 0 20px;font-size:14px;color:#A1A1AA;line-height:1.6;">
+                  O Expert Advisor que você baixou não passou nos critérios mínimos
+                  de robustez da nossa <strong style="color:#F5F5F5;">Esteira DQ Labs</strong>
+                  neste ciclo de revalidação:
+                </p>
+
+                <div style="background:#050505;border:1px solid rgba(245,245,245,0.06);border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+                  <p style="margin:0 0 4px;font-size:10px;color:#52525B;text-transform:uppercase;letter-spacing:0.16em;">
+                    EA Reprovado
+                  </p>
+                  <p style="margin:0;font-size:18px;font-weight:700;color:#F5F5F5;">
+                    ${eaName}
+                  </p>
+                  <p style="margin:4px 0 0;font-size:12px;color:#71717A;font-family:monospace;">
+                    ${eaSymbol} · ${eaTimeframe}
+                  </p>
+                </div>
+
+                <p style="margin:0 0 20px;font-size:14px;color:#A1A1AA;line-height:1.6;">
+                  O robô já foi instruído a <strong style="color:#F5F5F5;">parar de abrir novas ordens</strong>
+                  automaticamente. Operações já abertas continuarão sendo gerenciadas
+                  normalmente até o fechamento.
+                </p>
+
+                <p style="margin:0 0 24px;font-size:14px;color:#A1A1AA;line-height:1.6;">
+                  Acesse a vitrine e escolha outro EA aprovado para substituí-lo:
+                </p>
+
+                <a href="https://zaionvest.com.br/dashboard/vitrine"
+                   style="display:inline-block;background:#DC1F2E;color:#FFFFFF;padding:14px 28px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:0.02em;">
+                  Ver Vitrine de EAs →
+                </a>
+              </td>
+            </tr>
+
+            <!-- Info técnica -->
+            <tr>
+              <td style="border-top:1px solid rgba(245,245,245,0.06);padding:20px 32px;background:#050505;">
+                <p style="margin:0;font-size:11px;color:#52525B;line-height:1.6;">
+                  <strong style="color:#71717A;">Critérios de reprovação (DQ Labs):</strong><br>
+                  WFE médio abaixo de 50% ou mais de 50% das janelas OOS negativas.
+                  A revalidação é executada mensalmente com dados atualizados do mercado.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:20px 32px;border-top:1px solid rgba(245,245,245,0.04);">
+                <p style="margin:0;font-size:10px;color:#3F3F46;text-align:center;">
+                  ZaionVest · Você recebeu este e-mail porque baixou este EA.<br>
+                  <a href="https://zaionvest.com.br/dashboard/configuracoes"
+                     style="color:#52525B;text-decoration:underline;">
+                    Gerenciar preferências de e-mail
+                  </a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: SENDER_EMAIL,
+        to: [to],
+        subject,
+        html: htmlBody,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[EA Email Error] HTTP ${response.status}: ${errText}`);
+    } else {
+      console.log(`[EA Email] Notificação enviada para ${to}`);
+    }
+  } catch (error) {
+    console.error("[EA Email Exception]", error);
+  }
+}

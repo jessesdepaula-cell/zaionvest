@@ -1,0 +1,190 @@
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import Image from "next/image";
+import { EACard } from "@/components/vitrine/EACard";
+import { EAFilters } from "@/components/vitrine/EAFilters";
+import { Suspense } from "react";
+import { Bot, ArrowRight } from "lucide-react";
+
+export const revalidate = 300;
+
+export const metadata = {
+  title: "Vitrine de EAs — ZaionVest | Expert Advisors Validados",
+  description:
+    "Marketplace de Expert Advisors validados estatisticamente pela metodologia DQ Labs. Walk Forward Analysis, WFE > 50%, Monte Carlo — só os melhores passam.",
+};
+
+interface SearchParams {
+  symbol?: string;
+  timeframe?: string;
+  style?: string;
+  sort?: string;
+}
+
+async function getEAs(params: SearchParams) {
+  const where: Record<string, unknown> = { status: "APPROVED" };
+  if (params.symbol) where.symbol = params.symbol;
+  if (params.timeframe) where.timeframe = params.timeframe;
+  if (params.style) where.style = params.style;
+
+  const orderBy: Record<string, string>[] = [];
+  switch (params.sort ?? "wfe_desc") {
+    case "pf_desc":
+      orderBy.push({ profitFactor: "desc" });
+      break;
+    case "dd_asc":
+      orderBy.push({ maxDrawdown: "asc" });
+      break;
+    case "newest":
+      orderBy.push({ createdAt: "desc" });
+      break;
+    default:
+      orderBy.push({ wfe: "desc" });
+  }
+
+  return prisma.eA.findMany({
+    where,
+    orderBy,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      symbol: true,
+      timeframe: true,
+      style: true,
+      exitMode: true,
+      status: true,
+      wfe: true,
+      profitFactor: true,
+      maxDrawdown: true,
+      totalTrades: true,
+      oosWins: true,
+      oosTotalWindows: true,
+      equityCurveOos: true,
+    },
+  });
+}
+
+export default async function VitrinePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const eas = await getEAs(params);
+
+  return (
+    <main className="min-h-screen bg-[#000000] text-zinc-300">
+      {/* Header */}
+      <header className="border-b border-[#f5f5f5]/5 bg-[#000]/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="ZaionVest"
+              width={785}
+              height={145}
+              priority
+              className="h-7 w-auto"
+              style={{ mixBlendMode: "lighten" }}
+            />
+          </Link>
+          <nav className="flex items-center gap-3 text-xs">
+            <Link
+              href="/sign-in"
+              className="text-zinc-400 hover:text-zinc-200 transition"
+            >
+              Entrar
+            </Link>
+            <Link
+              href="/sign-up"
+              className="rounded-lg bg-[#DC1F2E] px-4 py-2 font-semibold text-white transition hover:bg-[#B01623]"
+            >
+              Começar grátis
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-6xl px-6 py-12">
+        {/* Hero da vitrine */}
+        <div className="mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#DC1F2E]/30 bg-[#DC1F2E]/[0.06] px-3.5 py-1.5 text-xs text-[#DC1F2E] font-medium mb-4">
+            <Bot className="h-3.5 w-3.5" />
+            Esteira de Robustez DQ Labs
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5] mb-3">
+            Vitrine de Expert Advisors
+          </h1>
+          <p className="text-sm text-zinc-400 max-w-xl">
+            Todos os EAs passam pela esteira de robustez:{" "}
+            <strong className="text-zinc-200">
+              Walk Forward Analysis (6 janelas)
+            </strong>
+            , critério{" "}
+            <strong className="text-zinc-200">WFE &gt; 50%</strong> e{" "}
+            <strong className="text-zinc-200">
+              janelas OOS negativas &lt; 50%
+            </strong>
+            . Só os aprovados aparecem aqui.
+          </p>
+
+          {/* CTA para assinar */}
+          <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-[#DC1F2E]/20 bg-[#DC1F2E]/[0.04] px-5 py-3">
+            <span className="text-xs text-zinc-400">
+              Faça download dos .ex5 com uma assinatura ativa
+            </span>
+            <Link
+              href="/sign-up"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#DC1F2E] px-4 py-2 text-xs font-bold text-white hover:bg-[#B01623] transition"
+            >
+              3 Dias Grátis <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <Suspense fallback={null}>
+          <div className="mb-6">
+            <EAFilters total={eas.length} />
+          </div>
+        </Suspense>
+
+        {/* Grid de EAs */}
+        {eas.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <Bot className="h-12 w-12 text-zinc-700 mb-4" />
+            <p className="text-zinc-500 text-sm">
+              Nenhuma estratégia aprovada{" "}
+              {params.symbol || params.timeframe || params.style
+                ? "com esses filtros"
+                : "no momento"}
+              .
+            </p>
+            <p className="text-zinc-700 text-xs mt-2">
+              O motor de revalidação roda continuamente — novas estratégias são
+              publicadas regularmente.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {eas.map((ea) => (
+              <EACard
+                key={ea.id}
+                {...ea}
+                status={ea.status as "APPROVED" | "REJECTED" | "PENDING"}
+                equityCurveOos={
+                  ea.equityCurveOos as
+                    | Array<{ date: string; value: number }>
+                    | null
+                }
+                canDownload={false} // página pública: sempre false
+                detailHref={`/vitrine/${ea.slug}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
