@@ -4,18 +4,21 @@
 
 :root {
   color-scheme: dark;
-  --bg: #3a2610;
-  --bg-deep: #2a1d0a;
-  --bg-elevated: #4a3418;
-  --surface: #55401e;
-  --cream: #f0ddb0;
-  --cream-70: rgba(240, 221, 176, 0.7);
-  --cream-50: rgba(240, 221, 176, 0.5);
-  --cream-20: rgba(240, 221, 176, 0.2);
-  --cream-10: rgba(240, 221, 176, 0.1);
-  --cream-06: rgba(240, 221, 176, 0.06);
-  --gold: #d4a03b;
-  --rust: #c86a4f;
+  --bg: #0a0a0a;
+  --bg-deep: #000000;
+  --bg-elevated: #141414;
+  --surface: #1f1f1f;
+  --cream: #f5f5f5;
+  --cream-70: rgba(245, 245, 245, 0.7);
+  --cream-50: rgba(245, 245, 245, 0.5);
+  --cream-20: rgba(245, 245, 245, 0.2);
+  --cream-10: rgba(245, 245, 245, 0.1);
+  --cream-06: rgba(245, 245, 245, 0.06);
+  --gold: #dc1f2e;
+  --rust: #b01623;
+  --brand-red: #dc1f2e;
+  --brand-white: #f5f5f5;
+  --brand-black: #0a0a0a;
 }
 
 html,
@@ -37,24 +40,24 @@ body {
   .glass {
     background: linear-gradient(
       180deg,
-      rgba(240, 221, 176, 0.04) 0%,
-      rgba(240, 221, 176, 0.015) 100%
+      rgba(245, 245, 245, 0.04) 0%,
+      rgba(245, 245, 245, 0.015) 100%
     );
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(240, 221, 176, 0.08);
+    border: 1px solid rgba(245, 245, 245, 0.08);
   }
 
   .hairline {
-    border: 1px solid rgba(240, 221, 176, 0.1);
+    border: 1px solid rgba(245, 245, 245, 0.1);
   }
 
   .shimmer-text {
     background: linear-gradient(
       90deg,
-      rgba(240, 221, 176, 0.45) 0%,
-      rgba(240, 221, 176, 1) 50%,
-      rgba(240, 221, 176, 0.45) 100%
+      rgba(245, 245, 245, 0.45) 0%,
+      rgba(245, 245, 245, 1) 50%,
+      rgba(245, 245, 245, 0.45) 100%
     );
     background-size: 200% 100%;
     -webkit-background-clip: text;
@@ -62,11 +65,15 @@ body {
     color: transparent;
     animation: shimmer 2.4s linear infinite;
   }
+
+  .brand-glow {
+    box-shadow: 0 0 60px -20px rgba(220, 31, 46, 0.55);
+  }
 }
 
 ::selection {
-  background: rgba(212, 160, 59, 0.3);
-  color: #f0ddb0;
+  background: rgba(220, 31, 46, 0.35);
+  color: #ffffff;
 }
 
 ::-webkit-scrollbar {
@@ -77,9 +84,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(240, 221, 176, 0.1);
+  background: rgba(245, 245, 245, 0.1);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(240, 221, 176, 0.2);
+  background: rgba(220, 31, 46, 0.35);
 }

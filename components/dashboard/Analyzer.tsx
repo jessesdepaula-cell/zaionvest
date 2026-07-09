@@ -179,7 +179,7 @@ export function Analyzer() {
           onDragLeave={() => setDragActive(false)}
           onDrop={onDrop}
           className={cn(
-            "relative grid min-h-[280px] place-items-center overflow-hidden rounded-xl border border-dashed border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-6 transition",
+            "relative grid min-h-[280px] place-items-center overflow-hidden rounded-xl border border-dashed border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] p-6 transition",
             dragActive && "border-emerald-500/50 bg-emerald-500/[0.04]",
           )}
         >
@@ -197,7 +197,7 @@ export function Analyzer() {
                   alt={fileName ?? "gráfico"}
                   width={1200}
                   height={700}
-                  className="mx-auto max-h-[420px] w-auto rounded-md border border-[#f0ddb0]/10 object-contain"
+                  className="mx-auto max-h-[420px] w-auto rounded-md border border-[#f5f5f5]/10 object-contain"
                   unoptimized
                 />
               )}
@@ -207,7 +207,7 @@ export function Analyzer() {
                   setFileName(null);
                   setResult(null);
                 }}
-                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md border border-[#f0ddb0]/10 bg-charcoal/70 text-zinc-300 hover:bg-charcoal"
+                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md border border-[#f5f5f5]/10 bg-charcoal/70 text-zinc-300 hover:bg-charcoal"
                 aria-label="Remover imagem"
               >
                 <X className="h-3.5 w-3.5" />
@@ -215,7 +215,7 @@ export function Analyzer() {
               {result?.status === "VALIDO" && (
                 <button
                   onClick={() => setShowAnnotations((s) => !s)}
-                  className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-md border border-[#f0ddb0]/10 bg-charcoal/70 px-2 py-1 text-[10px] uppercase tracking-widest text-zinc-300 hover:bg-charcoal"
+                  className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-md border border-[#f5f5f5]/10 bg-charcoal/70 px-2 py-1 text-[10px] uppercase tracking-widest text-zinc-300 hover:bg-charcoal"
                 >
                   {showAnnotations ? (
                     <>
@@ -238,7 +238,7 @@ export function Analyzer() {
             </div>
           ) : (
             <div className="text-center">
-              <div className="mx-auto grid h-10 w-10 place-items-center rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03]">
+              <div className="mx-auto grid h-10 w-10 place-items-center rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03]">
                 <ImageIcon className="h-4 w-4 text-zinc-400" />
               </div>
               <p className="mt-4 text-sm text-zinc-300">
@@ -249,7 +249,7 @@ export function Analyzer() {
               </p>
               <button
                 onClick={() => inputRef.current?.click()}
-                className="mt-5 inline-flex items-center gap-2 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-3 py-1.5 text-xs text-offwhite hover:bg-[#f0ddb0]/[0.08]"
+                className="mt-5 inline-flex items-center gap-2 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] px-3 py-1.5 text-xs text-offwhite hover:bg-[#f5f5f5]/[0.08]"
               >
                 <Upload className="h-3.5 w-3.5" />
                 Selecionar arquivo
@@ -274,7 +274,7 @@ export function Analyzer() {
           className={cn(
             "group inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-medium transition",
             !imageData || loading
-              ? "cursor-not-allowed bg-[#f0ddb0]/[0.04] text-zinc-500"
+              ? "cursor-not-allowed bg-[#f5f5f5]/[0.04] text-zinc-500"
               : "bg-emerald-500 text-charcoal hover:bg-emerald-400",
           )}
         >
@@ -314,7 +314,7 @@ function ModeToggle({
   onChange: (m: Mode) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-1">
+    <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] p-1">
       {(["CLASSICO", "SMC"] as Mode[]).map((m) => {
         const active = mode === m;
         return (
@@ -354,7 +354,7 @@ function Checklist({
               ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-300"
               : hasResult
                 ? "border-amber-500/30 bg-amber-500/[0.06] text-amber-300"
-                : "border-[#f0ddb0]/10 text-zinc-400",
+                : "border-[#f5f5f5]/10 text-zinc-400",
           )}
         >
           <CheckCircle2 className="h-3 w-3" />
@@ -543,7 +543,7 @@ function ResultPanel({
                   "rounded-xl border p-3 transition",
                   isRec
                     ? "border-emerald-500/40 bg-emerald-500/[0.07] shadow-glow"
-                    : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02]",
+                    : "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02]",
                 )}
               >
                 <div
@@ -633,8 +633,8 @@ function Pill({
         "rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-widest",
         tone === "emerald" &&
           "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300",
-        tone === "muted" && "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-400",
-        tone === "default" && "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] text-zinc-200",
+        tone === "muted" && "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] text-zinc-400",
+        tone === "default" && "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] text-zinc-200",
       )}
     >
       {children}
@@ -680,7 +680,7 @@ function DirectionSignal({
         </div>
       </div>
       {probShow !== null && (
-        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-[#f0ddb0]/5">
+        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-[#f5f5f5]/5">
           <div
             className={cn("h-full rounded-full transition-all", meta.bar)}
             style={{ width: `${Math.min(probShow, 100)}%` }}
@@ -730,8 +730,8 @@ function directionMeta(d?: Direcao) {
       return {
         label: d === "NEUTRO" ? "Neutro · Sem setup" : "—",
         text: "text-zinc-300",
-        border: "border-[#f0ddb0]/10",
-        bg: "bg-[#f0ddb0]/[0.02]",
+        border: "border-[#f5f5f5]/10",
+        bg: "bg-[#f5f5f5]/[0.02]",
         bar: "bg-zinc-500",
       };
   }

@@ -41,7 +41,7 @@ export function ModeAccuracyMeter({
 function verdict(wins: number, losses: number) {
   const decided = wins + losses;
   if (decided === 0)
-    return { label: "Sem trades fechados", cls: "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-400" };
+    return { label: "Sem trades fechados", cls: "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] text-zinc-400" };
   if (wins > losses)
     return { label: "✓ Operacional GANHADOR", cls: "border-emerald-500/40 bg-emerald-500/[0.10] text-emerald-300" };
   if (losses > wins)
@@ -106,7 +106,7 @@ function PerformanceCard({
       )}
 
       {stats.symbols && stats.symbols.length > 0 && (
-        <div className="mt-4 border-t border-[#f0ddb0]/5 pt-3">
+        <div className="mt-4 border-t border-[#f5f5f5]/5 pt-3">
           <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-1.5 font-medium">
             Ativos operados ({stats.symbols.length})
           </p>
@@ -114,7 +114,7 @@ function PerformanceCard({
             {stats.symbols.map((item) => (
               <span
                 key={item.symbol}
-                className="num inline-flex items-center gap-1 rounded bg-[#f0ddb0]/[0.03] border border-[#f0ddb0]/5 px-2 py-0.5 text-[10px] text-zinc-300 font-medium"
+                className="num inline-flex items-center gap-1 rounded bg-[#f5f5f5]/[0.03] border border-[#f5f5f5]/5 px-2 py-0.5 text-[10px] text-zinc-300 font-medium"
               >
                 <span>{item.symbol}</span>
                 <span className="text-zinc-500 text-[9px]">({item.count})</span>
@@ -137,7 +137,7 @@ function BigStat({
   tone?: "win" | "loss";
 }) {
   return (
-    <div className="rounded-lg border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] px-2 py-2.5 text-center">
+    <div className="rounded-lg border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] px-2 py-2.5 text-center">
       <p
         className={cn(
           "num text-2xl font-bold leading-none",

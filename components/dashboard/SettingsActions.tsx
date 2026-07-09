@@ -40,7 +40,7 @@ export function ExportButton({
     <button
       onClick={download}
       disabled={busy}
-      className="inline-flex w-full items-center justify-between gap-3 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-4 py-3 text-sm text-offwhite transition hover:bg-[#f0ddb0]/[0.05] disabled:opacity-50"
+      className="inline-flex w-full items-center justify-between gap-3 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] px-4 py-3 text-sm text-offwhite transition hover:bg-[#f5f5f5]/[0.05] disabled:opacity-50"
     >
       <span className="flex items-center gap-2">
         {busy ? (
@@ -94,7 +94,7 @@ export function DeleteAccountButton() {
         value={phrase}
         onChange={(e) => setPhrase(e.target.value)}
         placeholder="DELETAR"
-        className="num w-full rounded-md border border-[#f0ddb0]/10 bg-charcoal px-3 py-2 text-sm text-offwhite outline-none focus:border-rose-500/50"
+        className="num w-full rounded-md border border-[#f5f5f5]/10 bg-charcoal px-3 py-2 text-sm text-offwhite outline-none focus:border-rose-500/50"
       />
       <div className="flex gap-2">
         <button
@@ -111,7 +111,7 @@ export function DeleteAccountButton() {
             setConfirming(false);
             setPhrase("");
           }}
-          className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-4 py-2 text-sm text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
+          className="rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] px-4 py-2 text-sm text-zinc-300 hover:bg-[#f5f5f5]/[0.08]"
         >
           Cancelar
         </button>

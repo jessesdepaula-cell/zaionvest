@@ -25,7 +25,7 @@ export function PeriodFilter() {
   }
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-1">
+    <div className="inline-flex items-center gap-1 rounded-lg border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] p-1">
       {PERIODS.map((p) => {
         const isActive = active === p.value;
         return (

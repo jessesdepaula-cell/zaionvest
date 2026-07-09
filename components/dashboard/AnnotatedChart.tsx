@@ -89,7 +89,7 @@ export function AnnotatedChart({
         alt={alt}
         width={1400}
         height={800}
-        className="w-full rounded-md border border-[#f0ddb0]/10 object-contain"
+        className="w-full rounded-md border border-[#f5f5f5]/10 object-contain"
         unoptimized
       />
     );
@@ -126,7 +126,7 @@ export function AnnotatedChart({
         alt={alt}
         width={1400}
         height={800}
-        className="w-full rounded-md border border-[#f0ddb0]/10 object-contain"
+        className="w-full rounded-md border border-[#f5f5f5]/10 object-contain"
         unoptimized
       />
       <div className="pointer-events-none absolute inset-0">

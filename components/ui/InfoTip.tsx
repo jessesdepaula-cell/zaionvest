@@ -15,14 +15,14 @@ export function InfoTip({
   return (
     <span className="group/tip relative inline-flex align-middle">
       <span
-        className="flex h-3.5 w-3.5 cursor-help select-none items-center justify-center rounded-full border border-[#f0ddb0]/20 bg-[#f0ddb0]/[0.06] text-[9px] font-bold leading-none text-zinc-400 transition group-hover/tip:border-emerald-400/50 group-hover/tip:text-emerald-300"
+        className="flex h-3.5 w-3.5 cursor-help select-none items-center justify-center rounded-full border border-[#f5f5f5]/20 bg-[#f5f5f5]/[0.06] text-[9px] font-bold leading-none text-zinc-400 transition group-hover/tip:border-emerald-400/50 group-hover/tip:text-emerald-300"
         aria-label="Ajuda"
       >
         ?
       </span>
       <span
         className={cn(
-          "pointer-events-none invisible absolute top-full z-50 mt-1.5 w-64 rounded-lg border border-[#f0ddb0]/10 bg-[#2A1D0A] p-2.5 text-left text-[11px] font-normal normal-case leading-relaxed tracking-normal text-zinc-300 shadow-2xl group-hover/tip:visible",
+          "pointer-events-none invisible absolute top-full z-50 mt-1.5 w-64 rounded-lg border border-[#f5f5f5]/10 bg-[#000000] p-2.5 text-left text-[11px] font-normal normal-case leading-relaxed tracking-normal text-zinc-300 shadow-2xl group-hover/tip:visible",
           align === "right" ? "right-0" : "left-0",
         )}
       >

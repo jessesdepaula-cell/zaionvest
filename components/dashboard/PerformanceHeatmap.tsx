@@ -64,7 +64,7 @@ export function PerformanceHeatmap({ trades }: { trades: TradePoint[] }) {
             className="h-2 w-24 rounded-full"
             style={{
               background:
-                "linear-gradient(90deg, rgba(200,106,79,0.85), rgba(240,221,176,0.06) 50%, rgba(212,160,59,0.85))",
+                "linear-gradient(90deg, rgba(176,22,35,0.85), rgba(245,245,245,0.06) 50%, rgba(220,31,46,0.85))",
             }}
           />
           <span>+{maxAbsR.toFixed(1)}R</span>
@@ -98,19 +98,19 @@ export function PerformanceHeatmap({ trades }: { trades: TradePoint[] }) {
                 const ratio = empty ? 0 : Math.min(1, Math.abs(cell.rSum) / maxAbsR);
                 const isPos = cell.rSum > 0;
                 const bg = empty
-                  ? "rgba(240,221,176,0.025)"
+                  ? "rgba(245,245,245,0.025)"
                   : isPos
-                    ? `rgba(212,160,59,${0.12 + ratio * 0.6})`
+                    ? `rgba(220,31,46,${0.12 + ratio * 0.6})`
                     : cell.rSum < 0
-                      ? `rgba(200,106,79,${0.12 + ratio * 0.6})`
-                      : "rgba(240,221,176,0.06)";
+                      ? `rgba(176,22,35,${0.12 + ratio * 0.6})`
+                      : "rgba(245,245,245,0.06)";
                 return (
                   <div
                     key={h}
                     onMouseEnter={() => setHover(cell)}
                     onMouseLeave={() => setHover(null)}
                     className={cn(
-                      "aspect-square rounded-sm border border-[#f0ddb0]/[0.04] transition hover:border-[#f0ddb0]/30",
+                      "aspect-square rounded-sm border border-[#f5f5f5]/[0.04] transition hover:border-[#f5f5f5]/30",
                       cell.trades > 0 && "cursor-pointer",
                     )}
                     style={{ backgroundColor: bg }}
@@ -123,7 +123,7 @@ export function PerformanceHeatmap({ trades }: { trades: TradePoint[] }) {
       </div>
 
       {hover && hover.trades > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-4 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-3 py-2 text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-4 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] px-3 py-2 text-xs">
           <span className="num text-zinc-300">
             {DAYS[hover.day]} · {String(hover.hour).padStart(2, "0")}:00
           </span>

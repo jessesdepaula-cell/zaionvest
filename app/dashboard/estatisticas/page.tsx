@@ -191,8 +191,8 @@ export default async function EstatisticasPage({
       <section className="mb-8">
         <EquityCurve
           series={[
-            { name: "Total", color: "#F0DDB0", points: seriesAll },
-            { name: "SMC", color: "#D4A03B", points: seriesSmc },
+            { name: "Total", color: "#F5F5F5", points: seriesAll },
+            { name: "SMC", color: "#DC1F2E", points: seriesSmc },
             { name: "Clássico", color: "#C9911D", points: seriesClassico },
           ]}
         />
@@ -296,7 +296,7 @@ function ModeCard({ mode, stats }: { mode: Mode; stats: Stats }) {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#f0ddb0]/5 pt-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#f5f5f5]/5 pt-4">
         <Mini label="Trades" value={stats.total.toString()} />
         <Mini label="Média R" value={`${stats.avgR >= 0 ? "+" : ""}${stats.avgR.toFixed(2)}`} tone={stats.avgR >= 0 ? "emerald" : "rose"} />
       </div>
@@ -307,7 +307,7 @@ function ModeCard({ mode, stats }: { mode: Mode; stats: Stats }) {
         <Tile icon={<Activity className="h-3 w-3" />} label="Abertos" value={stats.open} tone="amber" />
       </div>
 
-      <div className="mt-4 border-t border-[#f0ddb0]/5 pt-3 text-xs text-zinc-400">
+      <div className="mt-4 border-t border-[#f5f5f5]/5 pt-3 text-xs text-zinc-400">
         Taxa de acerto:{" "}
         <span className={cn("num", stats.winRate >= 50 ? "text-emerald-400" : "text-rose-400")}>
           {stats.wins + stats.losses > 0 ? `${stats.winRate.toFixed(0)}%` : "—"}

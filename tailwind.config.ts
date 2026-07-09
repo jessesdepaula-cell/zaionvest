@@ -1,53 +1,59 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Paleta ZaionVest — cocoa profundo + creme com dourado suave.
+ * Paleta ZaionVest — preto profundo + branco puro + vermelho premium.
  *
- * Estratégia: sobrescrevemos as escalas `emerald` (accent/BUY/success),
- * `zinc` (texto/neutros), `rose` (danger/SELL/LOSS) e `amber` (warning)
- * para que os componentes existentes assumam o novo tema sem precisar
- * trocar todas as classes.
+ * Estratégia: sobrescrevemos as escalas `emerald` (accent/BUY), `zinc`
+ * (neutros/texto), `rose`/`red` (danger/SELL) e `amber` (warning) para que
+ * os componentes existentes assumam o novo tema sem precisar trocar todas
+ * as classes.
+ *
+ * Semântica:
+ *  - `emerald` (accent + BUY)  → escala clara off-white (positivo = luz)
+ *  - `zinc`    (neutros)       → grayscale puro preto → branco
+ *  - `rose`/`red` (SELL/danger) → escala vermelha premium (#DC1F2E)
+ *  - `amber`   (warning)        → vermelho apagado (urgência controlada)
  */
-const cream = {
-  50: "#FBF6E4",
-  100: "#F5E8B7",
-  200: "#F0DDB0", // creme da logo
-  300: "#E8CE83",
-  400: "#E0BC55",
-  500: "#D4A03B", // dourado suave — accent principal
-  600: "#B8871F",
-  700: "#8F6712",
-  800: "#664808",
-  900: "#3D2A02",
-  950: "#241902",
+const light = {
+  50: "#FFFFFF",
+  100: "#FAFAFA",
+  200: "#F5F5F5", // off-white principal
+  300: "#E5E5E5",
+  400: "#D4D4D4",
+  500: "#FFFFFF", // accent principal (CTA branco puro)
+  600: "#F5F5F5",
+  700: "#D4D4D4",
+  800: "#A3A3A3",
+  900: "#525252",
+  950: "#171717",
 };
 
-const cocoa = {
-  50: "#EFE3D4",
-  100: "#D4C0A0",
-  200: "#B49B70",
-  300: "#8F7A50",
-  400: "#6B5A38",
-  500: "#55401E",
-  600: "#4A3418", // fundo principal, cor da logo
-  700: "#3A2610",
-  800: "#2C1E0C",
-  900: "#1F1509",
-  950: "#120C05",
+const neutral = {
+  50: "#FAFAFA",
+  100: "#F5F5F5",
+  200: "#E5E5E5",
+  300: "#D4D4D4",
+  400: "#A3A3A3",
+  500: "#737373",
+  600: "#525252",
+  700: "#404040",
+  800: "#262626",
+  900: "#171717",
+  950: "#0A0A0A",
 };
 
-const rust = {
-  50: "#FBEBE3",
-  100: "#F5D2C2",
-  200: "#EDB49A",
-  300: "#E39F84",
-  400: "#D48468",
-  500: "#C86A4F", // danger principal / VENDA / LOSS
-  600: "#A85536",
-  700: "#833F26",
-  800: "#5E2C1B",
-  900: "#3D1D12",
-  950: "#241008",
+const red = {
+  50: "#FFF1F2",
+  100: "#FFE1E4",
+  200: "#FDBBC1",
+  300: "#F9868F",
+  400: "#F04A57",
+  500: "#DC1F2E", // danger / SELL / accent vermelho premium
+  600: "#B01623",
+  700: "#8C111C",
+  800: "#5F0B13",
+  900: "#3A070C",
+  950: "#1F0407",
 };
 
 const config: Config = {
@@ -59,52 +65,44 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Tokens de marca (nomes semânticos)
+        // Tokens semânticos de marca
         brand: {
-          bg: "#3A2610",
-          "bg-deep": "#2A1D0A",
-          "bg-elevated": "#4A3418",
-          surface: "#55401E",
-          cream: "#F0DDB0",
-          gold: "#D4A03B",
-          rust: "#C86A4F",
+          bg: "#0A0A0A",
+          "bg-deep": "#000000",
+          "bg-elevated": "#141414",
+          surface: "#1F1F1F",
+          white: "#F5F5F5",
+          red: "#DC1F2E",
+          "red-deep": "#B01623",
+          // aliases legados (mantêm compatibilidade com classes antigas)
+          cream: "#F5F5F5",
+          gold: "#DC1F2E",
+          rust: "#B01623",
         },
         charcoal: {
-          DEFAULT: "#3A2610",
-          50: cocoa[500],
-          100: cocoa[600],
-          900: cocoa[900],
+          DEFAULT: "#0A0A0A",
+          50: neutral[600],
+          100: neutral[700],
+          900: neutral[950],
         },
-        offwhite: "#F0DDB0",
+        offwhite: "#F5F5F5",
 
         // Remaps das escalas base do Tailwind
-        emerald: cream,
-        zinc: {
-          50: "#F0DDB0",
-          100: "#E5D0A0",
-          200: "#D4BE8A",
-          300: "#B8A170",
-          400: "#8F7B54",
-          500: "#6B5A38",
-          600: "#55401E",
-          700: "#3A2610",
-          800: "#2C1E0C",
-          900: "#1F1509",
-          950: "#0F0904",
-        },
-        rose: rust,
-        red: rust,
+        emerald: light,
+        zinc: neutral,
+        rose: red,
+        red,
         amber: {
-          50: "#FBF3DE",
-          100: "#F6E4B2",
-          200: "#EFD182",
-          300: "#E8BC55",
-          400: "#DEA82F",
-          500: "#C9911D", // gold-mustard, warning
-          600: "#A47415",
-          700: "#7E570F",
-          800: "#563B0A",
-          900: "#331F05",
+          50: "#FFF1F2",
+          100: "#FFE1E4",
+          200: "#FDBBC1",
+          300: "#F9868F",
+          400: "#F04A57",
+          500: "#DC1F2E",
+          600: "#B01623",
+          700: "#8C111C",
+          800: "#5F0B13",
+          900: "#3A070C",
         },
       },
       fontFamily: {
@@ -127,12 +125,12 @@ const config: Config = {
       },
       boxShadow: {
         terminal:
-          "0 1px 0 rgba(240,221,176,0.05) inset, 0 0 0 1px rgba(240,221,176,0.08)",
-        glow: "0 0 40px -10px rgba(212,160,59,0.35)",
+          "0 1px 0 rgba(245,245,245,0.05) inset, 0 0 0 1px rgba(245,245,245,0.08)",
+        glow: "0 0 40px -10px rgba(220,31,46,0.45)",
       },
       backgroundImage: {
         grid:
-          "linear-gradient(rgba(240,221,176,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(240,221,176,0.045) 1px, transparent 1px)",
+          "linear-gradient(rgba(245,245,245,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(245,245,245,0.04) 1px, transparent 1px)",
       },
       backgroundSize: {
         grid: "32px 32px",

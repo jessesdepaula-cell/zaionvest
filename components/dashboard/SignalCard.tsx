@@ -129,14 +129,14 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
         s.status === "WIN" && "border-emerald-500/30 bg-emerald-500/[0.04]",
         s.status === "LOSS" && "border-rose-500/30 bg-rose-500/[0.04]",
         s.status === "FILLED" && "border-amber-500/30 bg-amber-500/[0.04]",
-        s.status === "PENDING" && "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02]",
+        s.status === "PENDING" && "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02]",
       )}
     >
       {/* Header (clicável para expandir/colapsar) */}
       <button
         type="button"
         onClick={toggleExpanded}
-        className="flex w-full flex-wrap items-center justify-between gap-2 border-b border-[#f0ddb0]/5 px-4 py-3 text-left hover:bg-[#f0ddb0]/[0.02]"
+        className="flex w-full flex-wrap items-center justify-between gap-2 border-b border-[#f5f5f5]/5 px-4 py-3 text-left hover:bg-[#f5f5f5]/[0.02]"
       >
         <div className="flex items-center gap-2">
           {expanded ? (
@@ -196,7 +196,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
           Sinais ativos atualizam em tempo real.
           Sinais concluídos (WIN/LOSS/EXPIRED) mostram o gráfico histórico com as marcações de entrada e saída. */}
       {expanded && candles && candles.length > 0 && (
-        <div className="border-b border-[#f0ddb0]/5 p-4">
+        <div className="border-b border-[#f5f5f5]/5 p-4">
           <SignalChart
             candles={candles}
             symbol={s.symbol}
@@ -215,7 +215,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             defaultShowSmc={s.mode === "SMC"}
           />
           {isClosedSignal && (
-            <div className="mt-2.5 text-[10px] text-zinc-500 border-t border-[#f0ddb0]/5 pt-2 flex items-center gap-1.5">
+            <div className="mt-2.5 text-[10px] text-zinc-500 border-t border-[#f5f5f5]/5 pt-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 animate-pulse" />
               Sinal concluído. O par voltou ao radar, liberado para a próxima oportunidade.
             </div>
@@ -279,7 +279,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
 
           {/* Barra de probabilidade */}
           {s.probability !== null && (
-            <div className="h-1 w-full overflow-hidden rounded-full bg-[#f0ddb0]/5">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-[#f5f5f5]/5">
               <div
                 className={cn("h-full rounded-full transition-all", meta.bar)}
                 style={{ width: `${Math.min(s.probability, 100)}%` }}
@@ -292,9 +292,9 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
             <p className="mb-2 text-[10px] uppercase tracking-widest text-zinc-500">Plano de trade</p>
 
             {/* Entrada */}
-            <div className="mb-2 flex items-center justify-between rounded-lg border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] px-4 py-3">
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] px-4 py-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04]">
                   <Target className="h-3.5 w-3.5 text-zinc-300" />
                 </div>
                 <div>
@@ -302,7 +302,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
                   <p className="text-[11px] text-zinc-400">Ponto de execução</p>
                 </div>
               </div>
-              <p className="num text-base font-bold text-[#F0DDB0]">
+              <p className="num text-base font-bold text-[#F5F5F5]">
                 {s.entryPrice !== null ? s.entryPrice.toFixed(decimals(s.symbol)) : "—"}
               </p>
             </div>
@@ -325,10 +325,10 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
 
             {/* Divisor */}
             <div className="mb-3 flex items-center gap-2 text-[10px] text-zinc-600">
-              <div className="flex-1 border-t border-dashed border-[#f0ddb0]/[0.05]" />
+              <div className="flex-1 border-t border-dashed border-[#f5f5f5]/[0.05]" />
               <TrendingUp className="h-3 w-3" />
               <span className="uppercase tracking-widest">Alvos de saída</span>
-              <div className="flex-1 border-t border-dashed border-[#f0ddb0]/[0.05]" />
+              <div className="flex-1 border-t border-dashed border-[#f5f5f5]/[0.05]" />
             </div>
 
             {/* Alvo 1 */}
@@ -369,7 +369,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
 
             {/* R:R geral */}
             {s.riskReward && (
-              <div className="mt-3 flex items-center justify-between rounded-md border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] px-3 py-2">
+              <div className="mt-3 flex items-center justify-between rounded-md border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] px-3 py-2">
                 <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-zinc-500">
                   Risco : Retorno
                   <InfoTip text="Quanto se ganha em relação ao que se arrisca. 1:2 significa: se o stop custa R$100, o alvo paga R$200. Calculado da entrada ao Alvo 1 — os alvos 2 e 3 pagam múltiplos maiores." />
@@ -381,7 +381,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
 
           {/* ── ANÁLISE DA IA ── */}
           {s.justification && (
-            <div className="rounded-lg border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] p-3">
+            <div className="rounded-lg border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] p-3">
               <p className="mb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500">
                 <Radio className="h-3 w-3 text-emerald-400" />
                 Análise da IA
@@ -392,7 +392,7 @@ function ActiveCard({ signal: s, defaultExpanded }: { signal: SignalData; defaul
 
           {/* ── ESTRUTURA ── */}
           {s.structure && (
-            <div className="rounded-lg border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.015] px-3 py-2">
+            <div className="rounded-lg border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.015] px-3 py-2">
               <p className="mb-1 text-[10px] uppercase tracking-widest text-zinc-600">Estrutura do mercado</p>
               <p className="text-xs text-zinc-400 leading-relaxed">{s.structure}</p>
             </div>
@@ -491,7 +491,7 @@ function SignalTimeline({ signal: s }: { signal: SignalData }) {
   ];
 
   return (
-    <div className="rounded-lg border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] px-3 py-2.5">
+    <div className="rounded-lg border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] px-3 py-2.5">
       <p className="mb-2 flex items-center gap-1 text-[10px] uppercase tracking-widest text-zinc-500">
         Ciclo do sinal
         <InfoTip text="A linha do tempo prova a antecipação: o sinal é DETECTADO antes de o preço chegar; a ENTRADA executa quando o preço toca o nível programado; o RESULTADO fecha no alvo ou no stop. Cada etapa registra o horário real." />
@@ -686,11 +686,11 @@ function NoSetupRow({ signal: s }: { signal: SignalData }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.015] transition hover:border-[#f0ddb0]/10">
+    <div className="overflow-hidden rounded-md border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.015] transition hover:border-[#f5f5f5]/10">
       <button
         type="button"
         onClick={toggleExpanded}
-        className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-xs hover:bg-[#f0ddb0]/[0.02]"
+        className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-xs hover:bg-[#f5f5f5]/[0.02]"
       >
         <div className="flex items-center gap-2">
           {expanded ? (
@@ -726,7 +726,7 @@ function NoSetupRow({ signal: s }: { signal: SignalData }) {
       </button>
 
       {expanded && (
-        <div className="border-t border-[#f0ddb0]/5 p-4 space-y-3">
+        <div className="border-t border-[#f5f5f5]/5 p-4 space-y-3">
           {/* Banner de status da IA */}
           <div className="flex items-start gap-3 rounded-md border border-blue-500/15 bg-blue-500/[0.04] px-3 py-2.5">
             <Radio className="mt-0.5 h-4 w-4 shrink-0 animate-pulse text-blue-400" />
@@ -811,7 +811,7 @@ function statusBadge(status: string) {
     case "PENDING":
       return {
         label: "Aguardando",
-        cls: "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-300",
+        cls: "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] text-zinc-300",
         hint: "O sinal foi detectado ANTES de o preço chegar à entrada. É agora que você posiciona a ordem no preço indicado. Quando o preço tocar, o status muda para 'Em execução'.",
       };
     case "FILLED":
@@ -835,13 +835,13 @@ function statusBadge(status: string) {
     case "EXPIRED":
       return {
         label: "Expirado",
-        cls: "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-400",
+        cls: "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] text-zinc-400",
         hint: "O preço fugiu sem nunca tocar a entrada programada (o movimento aconteceu sem chance real de execução) ou o sinal passou 48h sem executar. NÃO conta como ganho nem como perda — isso mantém a estatística honesta.",
       };
     default:
       return {
         label: status,
-        cls: "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] text-zinc-400",
+        cls: "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] text-zinc-400",
         hint: undefined as string | undefined,
       };
   }

@@ -54,7 +54,7 @@ export default async function WatchlistPage() {
         }))}
       />
 
-      <div className="mt-6 rounded-xl border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.015] p-5">
+      <div className="mt-6 rounded-xl border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.015] p-5">
         <p className="text-[10px] uppercase tracking-widest text-zinc-500">
           Símbolos suportados
         </p>
@@ -62,7 +62,7 @@ export default async function WatchlistPage() {
           {SUPPORTED_SYMBOLS.map((s) => (
             <div
               key={s.symbol}
-              className="flex items-center justify-between rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] px-3 py-2 text-sm"
+              className="flex items-center justify-between rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] px-3 py-2 text-sm"
             >
               <div>
                 <span className="num text-offwhite">{s.symbol}</span>

@@ -69,7 +69,7 @@ export function MovingAveragesCard({ data }: { data: MovingAveragesData }) {
           return (
             <div
               key={m.key}
-              className="rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] p-3"
+              className="rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] p-3"
             >
               <div
                 className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest"

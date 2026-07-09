@@ -246,14 +246,14 @@ export default async function SinaisPage({
           <FilterChip param="status" value="fechados" label="Fechados" active={statusFilter === "fechados"} />
           {owner && (
             <>
-              <span className="ml-2 hidden h-4 w-px bg-[#f0ddb0]/10 sm:inline-block" />
+              <span className="ml-2 hidden h-4 w-px bg-[#f5f5f5]/10 sm:inline-block" />
               <ResetSignalsButton />
             </>
           )}
         </div>
       </div>
 
-      <div className="mb-6 border-b border-[#f0ddb0]/10">
+      <div className="mb-6 border-b border-[#f5f5f5]/10">
         <nav className="flex gap-1">
           <ModeTab href={buildModeHref(undefined, statusFilter)} active={!modoFilter} count={signals.length} label="Todos" />
           <ModeTab
@@ -511,8 +511,8 @@ function ModeTab({
           "num rounded-md border px-1.5 py-0.5 text-[10px] font-normal",
           active && tone === "emerald" && "border-emerald-500/40 bg-emerald-500/[0.10] text-emerald-300",
           active && tone === "amber" && "border-amber-500/40 bg-amber-500/[0.10] text-amber-300",
-          active && tone === "default" && "border-[#f0ddb0]/15 bg-[#f0ddb0]/[0.05] text-zinc-200",
-          !active && "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] text-zinc-500",
+          active && tone === "default" && "border-[#f5f5f5]/15 bg-[#f5f5f5]/[0.05] text-zinc-200",
+          !active && "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] text-zinc-500",
         )}
       >
         {count} {count === 1 ? "par" : "pares"}
@@ -550,7 +550,7 @@ function FilterChip({
         "rounded-md border px-2.5 py-1 text-[10px] uppercase tracking-widest transition",
         active
           ? "border-emerald-500/30 bg-emerald-500/[0.10] text-emerald-300"
-          : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02] text-zinc-400 hover:text-offwhite",
+          : "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02] text-zinc-400 hover:text-offwhite",
       )}
     >
       {label}

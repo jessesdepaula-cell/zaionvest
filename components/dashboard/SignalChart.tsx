@@ -391,7 +391,7 @@ export function SignalChart({
 
   if (candles.length === 0) {
     return (
-      <div className="grid h-[200px] place-items-center rounded-md border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.01] text-xs text-zinc-500">
+      <div className="grid h-[200px] place-items-center rounded-md border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.01] text-xs text-zinc-500">
         Sem dados de velas
       </div>
     );
@@ -475,8 +475,8 @@ export function SignalChart({
   })();
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.015]">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-500">
+    <div className="relative overflow-hidden rounded-lg border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.015]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-500">
         <span className="flex items-center gap-2">
           <span className="num text-zinc-300">{symbol}</span>
           <span className="text-zinc-600">·</span>
@@ -502,7 +502,7 @@ export function SignalChart({
                         ? "bg-emerald-500/30 text-emerald-200 ring-1 ring-emerald-400/50"
                         : disabled
                           ? "text-zinc-700 cursor-not-allowed"
-                          : "text-zinc-300 hover:bg-[#f0ddb0]/[0.05] hover:text-emerald-200",
+                          : "text-zinc-300 hover:bg-[#f5f5f5]/[0.05] hover:text-emerald-200",
                     )}
                   >
                     {opt}
@@ -515,17 +515,17 @@ export function SignalChart({
           <select
             value={tzMode}
             onChange={(e) => setTzMode(e.target.value as TzMode)}
-            className="rounded border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-300 outline-none hover:bg-[#f0ddb0]/[0.08]"
+            className="rounded border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-300 outline-none hover:bg-[#f5f5f5]/[0.08]"
           >
-            <option value="BROKER" className="bg-[#3A2610] text-zinc-300">EXCHANGE</option>
-            <option value="BRT" className="bg-[#3A2610] text-zinc-300">BRASIL (GMT-3)</option>
-            <option value="EST" className="bg-[#3A2610] text-zinc-300">NY (GMT-4)</option>
-            <option value="GMT" className="bg-[#3A2610] text-zinc-300">LONDRES (GMT+1)</option>
-            <option value="UTC" className="bg-[#3A2610] text-zinc-300">UTC (GMT+0)</option>
+            <option value="BROKER" className="bg-[#0A0A0A] text-zinc-300">EXCHANGE</option>
+            <option value="BRT" className="bg-[#0A0A0A] text-zinc-300">BRASIL (GMT-3)</option>
+            <option value="EST" className="bg-[#0A0A0A] text-zinc-300">NY (GMT-4)</option>
+            <option value="GMT" className="bg-[#0A0A0A] text-zinc-300">LONDRES (GMT+1)</option>
+            <option value="UTC" className="bg-[#0A0A0A] text-zinc-300">UTC (GMT+0)</option>
           </select>
 
           {/* Navegação Manual */}
-          <span className="inline-flex items-center rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] p-0.5 gap-0.5">
+          <span className="inline-flex items-center rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] p-0.5 gap-0.5">
             <button
               onClick={() => {
                 setView((v) => {
@@ -534,7 +534,7 @@ export function SignalChart({
                   return { ...v, offset: Math.min(maxOffset, v.offset + shift) };
                 });
               }}
-              className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
+              className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f5f5f5]/[0.08]"
               title="Voltar no tempo (Esquerda)"
             >
               &larr;
@@ -547,7 +547,7 @@ export function SignalChart({
                   return { ...v, offset: Math.max(minOffset, v.offset - shift) };
                 });
               }}
-              className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
+              className="rounded px-1 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f5f5f5]/[0.08]"
               title="Avançar no tempo (Direita)"
             >
               &rarr;
@@ -555,7 +555,7 @@ export function SignalChart({
           </span>
 
           {/* Zoom Manual */}
-          <span className="inline-flex items-center rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] p-0.5 gap-0.5">
+          <span className="inline-flex items-center rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] p-0.5 gap-0.5">
             <button
               onClick={() => {
                 setView((v) => {
@@ -563,7 +563,7 @@ export function SignalChart({
                   return { ...v, visibleCount: newCount };
                 });
               }}
-              className="rounded px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
+              className="rounded px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f5f5f5]/[0.08]"
               title="Aumentar Zoom (+)"
             >
               +
@@ -575,14 +575,14 @@ export function SignalChart({
                   return { ...v, visibleCount: newCount };
                 });
               }}
-              className="rounded px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
+              className="rounded px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 hover:bg-[#f5f5f5]/[0.08]"
               title="Diminuir Zoom (-)"
             >
               -
             </button>
           </span>
 
-          <span className="hidden items-center gap-1 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest sm:inline-flex">
+          <span className="hidden items-center gap-1 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest sm:inline-flex">
             <span className="h-1 w-1 rounded-full bg-emerald-400" />
             {new Date(scannedAt).toLocaleTimeString("pt-BR", { timeZone: TZ })}
           </span>
@@ -592,7 +592,7 @@ export function SignalChart({
               "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] uppercase tracking-widest transition",
               showSmc
                 ? "border-emerald-500/40 bg-emerald-500/[0.10] text-emerald-300"
-                : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] text-zinc-400 hover:text-zinc-200",
+                : "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] text-zinc-400 hover:text-zinc-200",
             )}
             title="Mostrar overlays SMC (FVG, OB, BOS, OTE, liquidez)"
           >
@@ -605,7 +605,7 @@ export function SignalChart({
               "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] uppercase tracking-widest transition",
               showMA
                 ? "border-blue-500/40 bg-blue-500/[0.10] text-blue-300"
-                : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] text-zinc-400 hover:text-zinc-200",
+                : "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] text-zinc-400 hover:text-zinc-200",
             )}
             title="Mostrar médias móveis"
           >
@@ -615,7 +615,7 @@ export function SignalChart({
           {isZoomedOrPanned && (
             <button
               onClick={reset}
-              className="inline-flex items-center gap-1 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-zinc-300 hover:bg-[#f0ddb0]/[0.08]"
+              className="inline-flex items-center gap-1 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-zinc-300 hover:bg-[#f5f5f5]/[0.08]"
               title="Resetar visualização"
             >
               <RotateCcw className="h-3 w-3" />
@@ -627,7 +627,7 @@ export function SignalChart({
 
       {/* Aviso quando não há mais histórico para arrastar */}
       {noMoreHistory && candles.length > 0 && (
-        <div className="border-b border-[#f0ddb0]/5 bg-amber-500/[0.04] px-3 py-1 text-[9px] uppercase tracking-widest text-amber-300/80">
+        <div className="border-b border-[#f5f5f5]/5 bg-amber-500/[0.04] px-3 py-1 text-[9px] uppercase tracking-widest text-amber-300/80">
           fim do histórico ({candles.length} velas) — para arrastar mais para trás, aguarde o EA acumular mais barras ou reduza o zoom (roda do mouse)
         </div>
       )}
@@ -650,14 +650,14 @@ export function SignalChart({
               y1={yOf(v)}
               x2={W - padR}
               y2={yOf(v)}
-              stroke="rgba(240,221,176,0.04)"
+              stroke="rgba(245,245,245,0.04)"
               strokeWidth="1"
             />
             <text
               x={W - padR + 6}
               y={yOf(v) + 3}
               fontSize="9"
-              fill="rgba(240,221,176,0.4)"
+              fill="rgba(245,245,245,0.4)"
               fontFamily="JetBrains Mono, monospace"
             >
               {v.toFixed(dec)}
@@ -665,8 +665,8 @@ export function SignalChart({
           </g>
         ))}
 
-        <rect x={W - padR} y={padT} width={padR} height={innerH} fill="rgba(240,221,176,0.005)" />
-        <rect x={padL} y={H - padB} width={innerW} height={padB} fill="rgba(240,221,176,0.005)" />
+        <rect x={W - padR} y={padT} width={padR} height={innerH} fill="rgba(245,245,245,0.005)" />
+        <rect x={padL} y={H - padB} width={innerW} height={padB} fill="rgba(245,245,245,0.005)" />
 
         {/* ====== OVERLAYS SMC (atrás das velas) ====== */}
         {showSmc && (
@@ -677,8 +677,8 @@ export function SignalChart({
               const yBot = yOf(smc.ote.bottom);
               const x1 = padL;
               const x2 = W - padR;
-              const fill = smc.ote.direction === "bullish" ? "rgba(212,160,59,0.07)" : "rgba(200,106,79,0.07)";
-              const stroke = smc.ote.direction === "bullish" ? "rgba(212,160,59,0.35)" : "rgba(200,106,79,0.35)";
+              const fill = smc.ote.direction === "bullish" ? "rgba(220,31,46,0.07)" : "rgba(176,22,35,0.07)";
+              const stroke = smc.ote.direction === "bullish" ? "rgba(220,31,46,0.35)" : "rgba(176,22,35,0.35)";
               return (
                 <g>
                   <rect x={x1} y={Math.min(yTop, yBot)} width={x2 - x1} height={Math.abs(yBot - yTop)} fill={fill} stroke={stroke} strokeDasharray="3 3" />
@@ -705,8 +705,8 @@ export function SignalChart({
               // FVG se estende da sua origem até o final da tela (permanece aberto)
               const x1 = xOf(sIdx ?? 0) - candleW / 2;
               const x2 = W - padR;
-              const fill = f.direction === "bullish" ? "rgba(212,160,59,0.09)" : "rgba(200,106,79,0.09)";
-              const stroke = f.direction === "bullish" ? "rgba(212,160,59,0.5)" : "rgba(200,106,79,0.5)";
+              const fill = f.direction === "bullish" ? "rgba(220,31,46,0.09)" : "rgba(176,22,35,0.09)";
+              const stroke = f.direction === "bullish" ? "rgba(220,31,46,0.5)" : "rgba(176,22,35,0.5)";
               const yT = yOf(f.top);
               const yB = yOf(f.bottom);
               const midY = (yT + yB) / 2; // CE — Consequent Encroachment (ponto de entrada)
@@ -754,7 +754,7 @@ export function SignalChart({
               const from = toView(lq.fromIdx);
               const x1 = xOf(from ?? 0);
               const x2 = W - padR;
-              const color = lq.kind === "BSL" ? "rgba(200,106,79,0.6)" : "rgba(212,160,59,0.6)";
+              const color = lq.kind === "BSL" ? "rgba(176,22,35,0.6)" : "rgba(220,31,46,0.6)";
               const y = yOf(lq.price);
               return (
                 <g key={`lq-${i}`}>
@@ -789,7 +789,7 @@ export function SignalChart({
               if (idx === null) return null;
               const x = xOf(idx);
               const y = yOf(sw.price);
-              const color = sw.kind === "high" ? "rgba(200,106,79,0.75)" : "rgba(212,160,59,0.75)";
+              const color = sw.kind === "high" ? "rgba(176,22,35,0.75)" : "rgba(220,31,46,0.75)";
               const dy = sw.kind === "high" ? -8 : 8;
               return (
                 <g key={`sw-${i}`}>
@@ -815,7 +815,7 @@ export function SignalChart({
               y1={padT}
               x2={xOf(scanIdxInView)}
               y2={H - padB}
-              stroke="rgba(240, 221, 176, 0.2)"
+              stroke="rgba(245, 245, 245, 0.2)"
               strokeWidth="1"
               strokeDasharray="3 3"
             />
@@ -825,8 +825,8 @@ export function SignalChart({
               width="54"
               height="14"
               rx="3"
-              fill="rgba(240, 221, 176, 0.15)"
-              stroke="rgba(240, 221, 176, 0.25)"
+              fill="rgba(245, 245, 245, 0.15)"
+              stroke="rgba(245, 245, 245, 0.25)"
               strokeWidth="0.5"
             />
             <text
@@ -835,7 +835,7 @@ export function SignalChart({
               fontSize="7"
               fontWeight="700"
               textAnchor="middle"
-              fill="rgba(240, 221, 176, 0.85)"
+              fill="rgba(245, 245, 245, 0.85)"
               fontFamily="JetBrains Mono, monospace"
             >
               DETECÇÃO
@@ -852,12 +852,12 @@ export function SignalChart({
           return (
             <g pointerEvents="none">
               {/* Zona Premium (acima do equilíbrio) — vermelho suave */}
-              <rect x={padL} y={yTop} width={innerW} height={Math.max(0, yMid - yTop)} fill="rgba(200,106,79,0.012)" />
+              <rect x={padL} y={yTop} width={innerW} height={Math.max(0, yMid - yTop)} fill="rgba(176,22,35,0.012)" />
               {/* Zona Discount (abaixo do equilíbrio) — verde suave */}
-              <rect x={padL} y={yMid} width={innerW} height={Math.max(0, yBot - yMid)} fill="rgba(212,160,59,0.012)" />
+              <rect x={padL} y={yMid} width={innerW} height={Math.max(0, yBot - yMid)} fill="rgba(220,31,46,0.012)" />
               {/* Linha de Equilíbrio (50%) */}
-              <line x1={padL} y1={yMid} x2={W - padR} y2={yMid} stroke="rgba(240,221,176,0.07)" strokeWidth="1" strokeDasharray="4 4" />
-              <text x={padL + 6} y={yMid - 3} fontSize="7" fill="rgba(240,221,176,0.22)" fontFamily="JetBrains Mono, monospace">EQ 50% — Premium ▲ / Discount ▼</text>
+              <line x1={padL} y1={yMid} x2={W - padR} y2={yMid} stroke="rgba(245,245,245,0.07)" strokeWidth="1" strokeDasharray="4 4" />
+              <text x={padL + 6} y={yMid - 3} fontSize="7" fill="rgba(245,245,245,0.22)" fontFamily="JetBrains Mono, monospace">EQ 50% — Premium ▲ / Discount ▼</text>
             </g>
           );
         })()}
@@ -879,7 +879,7 @@ export function SignalChart({
             y={yOf(stop)}
             price={stop}
             label="SL"
-            color="#C86A4F"
+            color="#B01623"
             dec={dec}
             solid
             x1={padL}
@@ -890,8 +890,8 @@ export function SignalChart({
           ? targets.map((tv, i) => {
               if (typeof tv !== "number") return null;
               const isRec = (recommendedTarget ?? 1) === i + 1;
-              const colors = ["#F0DDB0", "#D4A03B", "#8F6712"];
-              const color = colors[i] ?? "#D4A03B";
+              const colors = ["#F5F5F5", "#DC1F2E", "#8F6712"];
+              const color = colors[i] ?? "#DC1F2E";
 
               let pipsText = "";
               let pctText = "";
@@ -923,7 +923,7 @@ export function SignalChart({
                 y={yOf(target)}
                 price={target}
                 label="TP"
-                color="#D4A03B"
+                color="#DC1F2E"
                 dec={dec}
                 solid={false}
                 x1={padL}
@@ -940,7 +940,7 @@ export function SignalChart({
             y={yOf(exitPrice)}
             price={exitPrice}
             label={status === "WIN" ? "SAÍDA ✓" : "SAÍDA ✗"}
-            color={status === "WIN" ? "#D4A03B" : "#C86A4F"}
+            color={status === "WIN" ? "#DC1F2E" : "#B01623"}
             dec={dec}
             solid
             thick
@@ -1047,7 +1047,7 @@ export function SignalChart({
                     y={yTopI}
                     width={w}
                     height={bodyH}
-                    fill="#3A2610"
+                    fill="#0A0A0A"
                     stroke={color}
                     strokeWidth="1"
                   />
@@ -1071,23 +1071,23 @@ export function SignalChart({
         {/* Bolinha de execução: o preço TOCOU a entrada programada neste candle */}
         {fillIdxInView !== null && entry !== null && (
           <g>
-            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="7" fill="#3A2610" stroke="#D4A03B" strokeWidth="2" />
-            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="3" fill="#D4A03B" />
+            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="7" fill="#0A0A0A" stroke="#DC1F2E" strokeWidth="2" />
+            <circle cx={xOf(fillIdxInView)} cy={yOf(entry)} r="3" fill="#DC1F2E" />
             <rect
               x={xOf(fillIdxInView) + 10}
               y={yOf(entry) - 9}
               width="74"
               height="16"
               rx="3"
-              fill="rgba(212,160,59,0.15)"
-              stroke="rgba(212,160,59,0.5)"
+              fill="rgba(220,31,46,0.15)"
+              stroke="rgba(220,31,46,0.5)"
             />
             <text
               x={xOf(fillIdxInView) + 16}
               y={yOf(entry) + 3}
               fontSize="9"
               fontWeight="700"
-              fill="#F0DDB0"
+              fill="#F5F5F5"
               fontFamily="JetBrains Mono, monospace"
             >
               ENTRADA ✓
@@ -1101,7 +1101,7 @@ export function SignalChart({
               cx={xOf(closeIdxInView)}
               cy={yOf(exitPrice)}
               r="8"
-              fill={status === "WIN" ? "#D4A03B" : "#C86A4F"}
+              fill={status === "WIN" ? "#DC1F2E" : "#B01623"}
               opacity="0.94"
             />
             <text
@@ -1110,7 +1110,7 @@ export function SignalChart({
               fontSize="12"
               fontWeight="700"
               textAnchor="middle"
-              fill="#3A2610"
+              fill="#0A0A0A"
               fontFamily="JetBrains Mono, monospace"
             >
               {status === "WIN" ? "✓" : "✗"}
@@ -1120,17 +1120,17 @@ export function SignalChart({
 
         {cursor && (
           <g pointerEvents="none">
-            <line x1={cursor.x} y1={padT} x2={cursor.x} y2={H - padB} stroke="rgba(240,221,176,0.18)" strokeWidth="1" strokeDasharray="2 3" />
-            <line x1={padL} y1={cursor.y} x2={W - padR} y2={cursor.y} stroke="rgba(240,221,176,0.18)" strokeWidth="1" strokeDasharray="2 3" />
+            <line x1={cursor.x} y1={padT} x2={cursor.x} y2={H - padB} stroke="rgba(245,245,245,0.18)" strokeWidth="1" strokeDasharray="2 3" />
+            <line x1={padL} y1={cursor.y} x2={W - padR} y2={cursor.y} stroke="rgba(245,245,245,0.18)" strokeWidth="1" strokeDasharray="2 3" />
             {cursorPrice !== null && (
               <g>
-                <rect x={W - padR + 4} y={cursor.y - 9} width="72" height="18" rx="3" fill="#3A2610" stroke="rgba(240,221,176,0.3)" />
+                <rect x={W - padR + 4} y={cursor.y - 9} width="72" height="18" rx="3" fill="#0A0A0A" stroke="rgba(245,245,245,0.3)" />
                 <text
                   x={W - padR + 40}
                   y={cursor.y + 4}
                   fontSize="10"
                   textAnchor="middle"
-                  fill="#F0DDB0"
+                  fill="#F5F5F5"
                   fontFamily="JetBrains Mono, monospace"
                 >
                   {cursorPrice.toFixed(dec)}
@@ -1139,13 +1139,13 @@ export function SignalChart({
             )}
             {cursorCandle?.t && (
               <g>
-                <rect x={cursor.x - 52} y={H - padB + 2} width="104" height="18" rx="3" fill="#3A2610" stroke="rgba(240,221,176,0.3)" />
+                <rect x={cursor.x - 52} y={H - padB + 2} width="104" height="18" rx="3" fill="#0A0A0A" stroke="rgba(245,245,245,0.3)" />
                 <text
                   x={cursor.x}
                   y={H - padB + 14}
                   fontSize="10"
                   textAnchor="middle"
-                  fill="#F0DDB0"
+                  fill="#F5F5F5"
                   fontFamily="JetBrains Mono, monospace"
                 >
                   {formatTimestamp(cursorCandle.t, tzMode, symbol)}
@@ -1162,7 +1162,7 @@ export function SignalChart({
             y={H - 8}
             fontSize="9"
             textAnchor="middle"
-            fill="rgba(240,221,176,0.4)"
+            fill="rgba(245,245,245,0.4)"
             fontFamily="JetBrains Mono, monospace"
           >
             {l.label}
@@ -1177,15 +1177,15 @@ export function SignalChart({
               width="138"
               height="32"
               rx="6"
-              fill={status === "WIN" ? "rgba(212,160,59,0.20)" : "rgba(200,106,79,0.20)"}
-              stroke={status === "WIN" ? "rgba(212,160,59,0.6)" : "rgba(200,106,79,0.6)"}
+              fill={status === "WIN" ? "rgba(220,31,46,0.20)" : "rgba(176,22,35,0.20)"}
+              stroke={status === "WIN" ? "rgba(220,31,46,0.6)" : "rgba(176,22,35,0.6)"}
             />
             <text
               x={padL + 18}
               y={padT + 28}
               fontSize="12"
               fontWeight="700"
-              fill={status === "WIN" ? "#D4A03B" : "#C86A4F"}
+              fill={status === "WIN" ? "#DC1F2E" : "#B01623"}
               fontFamily="JetBrains Mono, monospace"
             >
               {status === "WIN" ? "GANHO" : "PERDA"}{" "}
@@ -1204,15 +1204,15 @@ export function SignalChart({
               width="160"
               height="26"
               rx="5"
-              fill={status === "FILLED" ? "rgba(201,145,29,0.15)" : "rgba(240,221,176,0.04)"}
-              stroke={status === "FILLED" ? "rgba(201,145,29,0.5)" : "rgba(240,221,176,0.15)"}
+              fill={status === "FILLED" ? "rgba(201,145,29,0.15)" : "rgba(245,245,245,0.04)"}
+              stroke={status === "FILLED" ? "rgba(201,145,29,0.5)" : "rgba(245,245,245,0.15)"}
             />
             <text
               x={padL + 18}
               y={padT + 25}
               fontSize="10"
               fontWeight="600"
-              fill={status === "FILLED" ? "#DEA82F" : "rgba(240,221,176,0.7)"}
+              fill={status === "FILLED" ? "#DEA82F" : "rgba(245,245,245,0.7)"}
               fontFamily="JetBrains Mono, monospace"
             >
               {status === "FILLED" ? "● EM EXECUÇÃO" : "○ AGUARDANDO ENTRADA"}
@@ -1339,7 +1339,7 @@ function PriceLine({
         y={y + 4}
         fontSize="9"
         fontWeight="700"
-        fill="#3A2610"
+        fill="#0A0A0A"
         fontFamily="JetBrains Mono, monospace"
       >
         {label}
@@ -1460,11 +1460,11 @@ function LiveClocks({ symbol }: { symbol: string }) {
   return (
     <span className="hidden items-center gap-2 sm:inline-flex">
       <span className="text-zinc-600">·</span>
-      <span className="inline-flex items-center gap-1 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest">
+      <span className="inline-flex items-center gap-1 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest">
         <span className="text-zinc-500">BR</span>
         <span className="num text-zinc-200">{fmt(TZ)}</span>
       </span>
-      <span className="inline-flex items-center gap-1 rounded-md border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest">
+      <span className="inline-flex items-center gap-1 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] px-1.5 py-0.5 text-[9px] tracking-widest">
         <span className="text-zinc-500">{market.label}</span>
         <span className="num text-zinc-200">{fmt(market.tz)}</span>
       </span>

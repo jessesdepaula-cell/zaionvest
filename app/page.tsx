@@ -25,18 +25,18 @@ export const metadata = {
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[#2A1D0A] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300 relative overflow-hidden">
+    <main className="min-h-screen bg-[#000000] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300 relative overflow-hidden">
       {/* Glow de Fundo */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-gradient-to-b from-emerald-950/20 to-transparent blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-gradient-to-b from-[#DC1F2E]/15 to-transparent blur-[120px] pointer-events-none z-0" />
 
       {/* Header Fixo Simples */}
-      <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-[#f0ddb0]/5">
+      <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-[#f5f5f5]/5">
         <div className="flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-md border border-emerald-500/20 bg-emerald-500/5">
-            <Target className="h-4 w-4 text-emerald-500" />
+          <div className="grid h-7 w-7 place-items-center rounded-md border border-[#DC1F2E]/40 bg-[#DC1F2E]/[0.12]">
+            <Target className="h-4 w-4 text-[#DC1F2E]" />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-[#F0DDB0]">
-            Zaion<span className="text-zinc-500">Vest</span>
+          <span className="text-sm font-semibold tracking-tight text-[#F5F5F5]">
+            Zaion<span className="text-[#DC1F2E]">Vest</span>
           </span>
         </div>
         <nav className="flex items-center gap-4 text-xs">
@@ -45,7 +45,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/sign-up"
-            className="rounded-lg border border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.04] px-3.5 py-2 text-[#F0DDB0] transition hover:bg-[#f0ddb0]/[0.08]"
+            className="rounded-lg border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] px-3.5 py-2 text-[#F5F5F5] transition hover:bg-[#f5f5f5]/[0.08]"
           >
             Área de Membros
           </Link>
@@ -54,15 +54,15 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center">
-        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.03] px-3.5 py-1.5 text-xs text-emerald-400 font-medium tracking-wide">
-          <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#DC1F2E]/40 bg-[#DC1F2E]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
+          <Sparkles className="h-3.5 w-3.5 text-[#DC1F2E] animate-pulse" />
           Scanner automático 24h · Alertas por e-mail · 3 Dias 100% Grátis
         </div>
 
-        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F0DDB0] sm:text-7xl">
+        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-7xl">
           Opere como as Instituições.{" "}
           <br />
-          <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-200 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#F5F5F5] via-[#F5F5F5] to-[#DC1F2E] bg-clip-text text-transparent">
             Sem achismos.
           </span>
         </h1>
@@ -70,21 +70,21 @@ export default function LandingPage() {
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
           Pare de ser o stop dos grandes bancos. A ZaionVest traduz gráficos complexos em
           planos de trade claros com Entrada, Stop Loss e Alvos objetivos — e te avisa por{" "}
-          <span className="text-emerald-400 font-medium">e-mail</span> quando a hora certa chega.
+          <span className="text-[#DC1F2E] font-semibold">e-mail</span> quando a hora certa chega.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/sign-up"
             id="cta-hero-primary"
-            className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-4 text-sm font-bold text-[#2A1D0A] shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 hover:shadow-emerald-500/30 focus:outline-none"
+            className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#DC1F2E] px-8 py-4 text-sm font-bold tracking-wide text-white shadow-[0_10px_40px_-10px_rgba(220,31,46,0.6)] ring-1 ring-white/10 transition hover:bg-[#B01623] hover:shadow-[0_14px_50px_-8px_rgba(220,31,46,0.8)] focus:outline-none"
           >
             Começar Teste de 3 Dias Grátis
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           <a
             href="#como-funciona"
-            className="text-xs text-zinc-400 hover:text-zinc-200 transition py-4 px-6 rounded-xl border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02] hover:bg-[#f0ddb0]/[0.05] w-full sm:w-auto text-center"
+            className="text-xs text-zinc-400 hover:text-zinc-200 transition py-4 px-6 rounded-xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] hover:bg-[#f5f5f5]/[0.05] w-full sm:w-auto text-center"
           >
             Ver como funciona
           </a>
@@ -99,12 +99,12 @@ export default function LandingPage() {
       </section>
 
       {/* ─── COMO FUNCIONA O TRIAL ─── */}
-      <section id="como-funciona" className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f0ddb0]/5">
+      <section id="como-funciona" className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="text-center mb-12">
-          <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
+          <span className="text-xs uppercase tracking-widest text-[#DC1F2E] font-semibold">
             Teste de 3 Dias Grátis
           </span>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F0DDB0]">
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
             Lucre antes de pagar
           </h2>
           <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
@@ -145,7 +145,7 @@ export default function LandingPage() {
               <span className={`text-[10px] uppercase tracking-widest font-bold ${step.textColor}`}>
                 {step.day}
               </span>
-              <h3 className="mt-1 text-sm font-semibold text-[#F0DDB0]">{step.title}</h3>
+              <h3 className="mt-1 text-sm font-semibold text-[#F5F5F5]">{step.title}</h3>
               <p className="mt-2 text-xs text-zinc-400 leading-relaxed">{step.desc}</p>
             </div>
           ))}
@@ -155,7 +155,7 @@ export default function LandingPage() {
           <Link
             href="/sign-up"
             id="cta-trial-flow"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-8 py-3.5 text-sm font-bold text-[#2A1D0A] transition hover:bg-emerald-400"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-8 py-3.5 text-sm font-bold text-[#000000] transition hover:bg-emerald-400"
           >
             Quero meus 3 dias grátis <ArrowRight className="h-4 w-4" />
           </Link>
@@ -164,9 +164,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── PROBLEMA VS SOLUÇÃO ─── */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f0ddb0]/5">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="grid gap-8 md:grid-cols-2">
-          <div className="rounded-2xl border border-[#f0ddb0]/5 bg-[#3A2610] p-6 sm:p-8">
+          <div className="rounded-2xl border border-[#f5f5f5]/5 bg-[#0A0A0A] p-6 sm:p-8">
             <h3 className="text-lg font-semibold text-rose-400 flex items-center gap-2">
               ⚠️ A Armadilha dos Indicadores Clássicos
             </h3>
@@ -183,7 +183,7 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-emerald-500/10 bg-[#4A3418] p-6 sm:p-8 relative overflow-hidden">
+          <div className="rounded-2xl border border-emerald-500/10 bg-[#141414] p-6 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-500/[0.02] blur-xl" />
             <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
               🛡️ A Vantagem de Operar com Estrutura
@@ -203,8 +203,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── RECURSOS ─── */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f0ddb0]/5">
-        <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#F0DDB0]">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
+        <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
           Recursos projetados para Traders Profissionais
         </h2>
         <p className="text-center text-sm text-zinc-400 mt-2 max-w-md mx-auto">
@@ -247,12 +247,12 @@ export default function LandingPage() {
       </section>
 
       {/* ─── COMPARATIVO COM CONCORRENTES ─── */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f0ddb0]/5">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="text-center mb-12">
           <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
             Comparativo
           </span>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F0DDB0]">
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
             Por que nos escolher?
           </h2>
           <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
@@ -261,10 +261,10 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-[#f0ddb0]/5">
+        <div className="overflow-x-auto rounded-2xl border border-[#f5f5f5]/5">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.02]">
+              <tr className="border-b border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02]">
                 <th className="px-5 py-3 text-left text-zinc-400 font-medium">Recurso</th>
                 <th className="px-5 py-3 text-center text-zinc-400 font-medium">Plataforma A<br /><span className="text-zinc-600 text-[10px]">R$ 220/mês</span></th>
                 <th className="px-5 py-3 text-center text-zinc-400 font-medium">Plataforma B<br /><span className="text-zinc-600 text-[10px]">R$ 44,90/mês</span></th>
@@ -283,7 +283,7 @@ export default function LandingPage() {
                 ["100% no navegador", "✅ Sim", "Parcial", "✅ Sim"],
                 ["Gráfico com E/SL/TP plotados", "✅ Sim", "✅ Sim", "✅ Sim"],
               ].map(([feature, a, b, us], i) => (
-                <tr key={i} className="border-b border-[#f0ddb0]/[0.03] hover:bg-[#f0ddb0]/[0.015]">
+                <tr key={i} className="border-b border-[#f5f5f5]/[0.03] hover:bg-[#f5f5f5]/[0.015]">
                   <td className="px-5 py-3 text-zinc-300">{feature}</td>
                   <td className="px-5 py-3 text-center text-zinc-500">{a}</td>
                   <td className="px-5 py-3 text-center text-zinc-500">{b}</td>
@@ -296,12 +296,12 @@ export default function LandingPage() {
       </section>
 
       {/* ─── PROVA SOCIAL ─── */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f0ddb0]/5">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="text-center mb-12">
           <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
             Depoimentos
           </span>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F0DDB0]">
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
             O que nossos traders dizem
           </h2>
         </div>
@@ -324,10 +324,10 @@ export default function LandingPage() {
               sub: "Trader desde 2019",
             },
           ].map((d, i) => (
-            <div key={i} className="rounded-2xl border border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.015] p-5">
+            <div key={i} className="rounded-2xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.015] p-5">
               <p className="text-sm text-zinc-300 leading-relaxed">"{d.text}"</p>
-              <div className="mt-4 border-t border-[#f0ddb0]/5 pt-3">
-                <p className="text-xs font-semibold text-[#F0DDB0]">{d.name}</p>
+              <div className="mt-4 border-t border-[#f5f5f5]/5 pt-3">
+                <p className="text-xs font-semibold text-[#F5F5F5]">{d.name}</p>
                 <p className="text-[10px] text-zinc-500">{d.sub}</p>
               </div>
             </div>
@@ -340,13 +340,13 @@ export default function LandingPage() {
       <TrackRecordSection />
 
       {/* ─── PREÇO ─── */}
-      <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f0ddb0]/5 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-[#F0DDB0]">Domine o mercado sem gastar uma fortuna</h2>
+      <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
+        <h2 className="text-3xl font-bold tracking-tight text-[#F5F5F5]">Domine o mercado sem gastar uma fortuna</h2>
         <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
           Um único stop evitado por conta de uma análise correta já paga a mensalidade por meses.
         </p>
 
-        <div className="mt-10 mx-auto max-w-sm rounded-3xl border border-emerald-500/20 bg-[#4A3418] p-8 shadow-2xl relative overflow-hidden text-left">
+        <div className="mt-10 mx-auto max-w-sm rounded-3xl border border-emerald-500/20 bg-[#141414] p-8 shadow-2xl relative overflow-hidden text-left">
           <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500/[0.03] blur-2xl pointer-events-none" />
 
           <div className="flex justify-between items-center">
@@ -357,7 +357,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-4 flex items-baseline gap-1.5">
-            <span className="num text-5xl font-extrabold text-[#F0DDB0] tracking-tight">R$ 47,90</span>
+            <span className="num text-5xl font-extrabold text-[#F5F5F5] tracking-tight">R$ 47,90</span>
             <span className="text-sm text-zinc-500">/mês</span>
           </div>
 
@@ -373,7 +373,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-6 border-t border-[#f0ddb0]/5 pt-6 space-y-3.5">
+          <div className="mt-6 border-t border-[#f5f5f5]/5 pt-6 space-y-3.5">
             {[
               "Scanner automático 24h em múltiplos ativos",
               "Alertas por e-mail quando sinal é detectado",
@@ -394,7 +394,7 @@ export default function LandingPage() {
           <Link
             href="/sign-up"
             id="cta-pricing"
-            className="mt-8 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-[#2A1D0A] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 hover:shadow-emerald-500/35 focus:outline-none"
+            className="mt-8 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-[#000000] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 hover:shadow-emerald-500/35 focus:outline-none"
           >
             Iniciar meu Teste Grátis
             <ArrowRight className="h-4 w-4" />
@@ -407,8 +407,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section className="relative z-10 mx-auto max-w-4xl px-6 py-20 border-t border-[#f0ddb0]/5">
-        <h2 className="text-center text-xl font-bold tracking-tight text-[#F0DDB0] flex items-center justify-center gap-2">
+      <section className="relative z-10 mx-auto max-w-4xl px-6 py-20 border-t border-[#f5f5f5]/5">
+        <h2 className="text-center text-xl font-bold tracking-tight text-[#F5F5F5] flex items-center justify-center gap-2">
           <HelpCircle className="h-5 w-5 text-emerald-400" />
           Dúvidas Frequentes
         </h2>
@@ -442,8 +442,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CTA FINAL ─── */}
-      <section className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f0ddb0]/5 text-center">
-        <h2 className="text-3xl font-extrabold tracking-tight text-[#F0DDB0]">
+      <section className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
+        <h2 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
           Comece agora. Sem risco.
         </h2>
         <p className="mt-4 text-sm text-zinc-400 max-w-sm mx-auto">
@@ -453,7 +453,7 @@ export default function LandingPage() {
         <Link
           href="/sign-up"
           id="cta-final"
-          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-10 py-4 text-sm font-bold text-[#2A1D0A] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
+          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-10 py-4 text-sm font-bold text-[#000000] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
         >
           Quero meus 3 dias grátis <ArrowRight className="h-4 w-4" />
         </Link>
@@ -461,7 +461,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="relative z-10 border-t border-[#f0ddb0]/5 py-10 text-center text-xs text-zinc-500">
+      <footer className="relative z-10 border-t border-[#f5f5f5]/5 py-10 text-center text-xs text-zinc-500">
         <div className="mx-auto max-w-4xl px-6">
           <div className="flex flex-wrap justify-center gap-6 text-[10px] text-zinc-600 mb-6">
             <a href="#" className="hover:text-zinc-400 transition">Termos de Uso</a>
@@ -512,17 +512,17 @@ function FeatureCard({
       className={`rounded-2xl border p-5 transition ${
         highlight
           ? "border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/30"
-          : "border-[#f0ddb0]/5 bg-[#f0ddb0]/[0.01] hover:border-[#f0ddb0]/10"
+          : "border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.01] hover:border-[#f5f5f5]/10"
       }`}
     >
       <div
         className={`grid h-9 w-9 place-items-center rounded-lg border ${
-          highlight ? "border-emerald-500/20 bg-emerald-500/[0.08]" : "border-[#f0ddb0]/10 bg-[#f0ddb0]/[0.02]"
+          highlight ? "border-emerald-500/20 bg-emerald-500/[0.08]" : "border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02]"
         }`}
       >
         {icon}
       </div>
-      <h3 className="mt-4 text-sm font-semibold text-[#F0DDB0]">
+      <h3 className="mt-4 text-sm font-semibold text-[#F5F5F5]">
         {title}
         {highlight && (
           <span className="ml-2 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-400">
@@ -538,7 +538,7 @@ function FeatureCard({
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div>
-      <h4 className="text-sm font-semibold text-[#F0DDB0]">{q}</h4>
+      <h4 className="text-sm font-semibold text-[#F5F5F5]">{q}</h4>
       <p className="mt-2 text-xs text-zinc-400 leading-relaxed">{a}</p>
     </div>
   );
