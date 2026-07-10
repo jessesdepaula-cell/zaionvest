@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 /**
  * Track record GLOBAL do sistema (todos os usuários), para exibição pública
@@ -70,10 +71,14 @@ function tpLevelOf(s: {
   return lvl > 0 ? lvl : 1;
 }
 
-export async function getGlobalTrackRecord(): Promise<GlobalTrackRecord> {
+async function computeGlobalTrackRecord(): Promise<GlobalTrackRecord> {
   const [closedSignals, totalSignals, recentRows] = await Promise.all([
     prisma.signal.findMany({
       where: { hasSetup: true, status: { in: ["WIN", "LOSS"] } },
+      // Guarda de egress: hoje são ~1k sinais fechados; o cap evita que esta
+      // query all-time cresça sem limite com o histórico.
+      orderBy: { closedAt: "desc" },
+      take: 5000,
       select: {
         mode: true, status: true, rMultiple: true, maxTargetHit: true,
         direction: true, exitPrice: true, target1: true, target2: true, target3: true,
@@ -136,3 +141,16 @@ export async function getGlobalTrackRecord(): Promise<GlobalTrackRecord> {
     generatedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * Versão cacheada (5 min) do track record global. A landing page é pública e
+ * cada visita disparava o findMany do histórico COMPLETO de sinais fechados —
+ * principal fonte do estouro de egress do Supabase (69GB/5GB no free tier).
+ * O dado só muda quando um sinal fecha; 5 min de cache preserva a semântica
+ * all-time e corta o egress da landing pra ~zero.
+ */
+export const getGlobalTrackRecord = unstable_cache(
+  computeGlobalTrackRecord,
+  ["global-track-record"],
+  { revalidate: 300 },
+);

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 export type ModeStats = {
   mode: "SMC" | "CLASSICO";
@@ -79,7 +80,7 @@ export function periodToDate(p?: string | null): Date | null {
   return null;
 }
 
-export async function getModeStats(
+async function computeModeStats(
   userId: string,
   since?: Date | null,
 ): Promise<{ smc: ModeStats; classico: ModeStats }> {
@@ -90,6 +91,10 @@ export async function getModeStats(
 
   const signals: SignalRow[] = await prisma.signal.findMany({
     where,
+    // Guarda de egress: sem cap, o período "all" arrastava o histórico
+    // completo de sinais a cada render do dashboard.
+    orderBy: { scannedAt: "desc" },
+    take: 5000,
     select: {
       mode: true,
       status: true,
@@ -166,6 +171,30 @@ export async function getModeStats(
     smc: { ...EMPTY, ...calc("SMC") },
     classico: { ...EMPTY, ...calc("CLASSICO") },
   };
+}
+
+const getModeStatsCached = unstable_cache(
+  async (userId: string, sinceIso: string | null) =>
+    computeModeStats(userId, sinceIso ? new Date(sinceIso) : null),
+  ["mode-stats"],
+  { revalidate: 120 },
+);
+
+/**
+ * Estatísticas por modo com cache de 2 min por (userId, período). Cada render
+ * do dashboard disparava o findMany do histórico inteiro — segunda maior fonte
+ * do estouro de egress do Supabase. O `since` é normalizado pra hora cheia:
+ * periodToDate() gera um Date novo (com ms) a cada request e, sem normalizar,
+ * a cache key mudaria sempre e o cache nunca acertaria.
+ */
+export async function getModeStats(
+  userId: string,
+  since?: Date | null,
+): Promise<{ smc: ModeStats; classico: ModeStats }> {
+  const sinceKey = since
+    ? new Date(Math.floor(since.getTime() / 3_600_000) * 3_600_000).toISOString()
+    : null;
+  return getModeStatsCached(userId, sinceKey);
 }
 
 export function classifyAccuracy(
