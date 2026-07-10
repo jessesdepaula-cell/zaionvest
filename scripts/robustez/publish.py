@@ -1,0 +1,214 @@
+"""
+Publica sobreviventes da mineração na vitrine (task 18 / R16 da spec).
+
+Para cada sobrevivente (ordenado por WFE):
+  1. Re-roda backtest + funil (evaluate) pra obter trades/janelas frescos.
+  2. Monta a curva de capital (equityCurveOos) a partir dos trades.
+  3. GATE DE CORRELAÇÃO (spec R13): |corr| > CORR_GATE com um já aceito → pula
+     (a vitrine ainda tem o slider; este gate só evita publicar clones).
+  4. Compila o .ex5 (params baked-in + license check em EA_STATUS_URL_BASE).
+  5. Sobe o .ex5 pro bucket ea-files (Supabase Storage, service key).
+  6. INSERT EA (status APPROVED) + EAValidation via Management API.
+
+Uso:  py publish.py --survivors <survivors.json> [--limit N]
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import secrets
+import string
+import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+# URL de licença que vai BAKED no .ex5 — domínio real do app.
+os.environ.setdefault("EA_STATUS_URL_BASE", "https://zaionvest.com.br/api/ea")
+
+import mt5_data
+import pipeline
+import compiler
+from backtest import run_backtest
+
+REF = "kpijsnygzqgpjxxikpig"
+SB_TOKEN = os.environ.get("SUPABASE_MGMT_TOKEN", "")
+CORR_GATE = 0.7
+STYLE = {"trend": "trend", "mean_reversion": "reversal", "breakout": "breakout"}
+
+
+def _curl(args: list[str], data: bytes | None = None) -> str:
+    r = subprocess.run(["curl", "-s", "--max-time", "60"] + args,
+                       capture_output=True, input=data)
+    return r.stdout.decode("utf-8", errors="replace")
+
+
+def q(sql: str):
+    body = json.dumps({"query": sql}).encode("utf-8")
+    out = _curl(["-X", "POST", "-H", f"Authorization: Bearer {SB_TOKEN}",
+                 "-H", "Content-Type: application/json", "--data-binary", "@-",
+                 f"https://api.supabase.com/v1/projects/{REF}/database/query"], body)
+    return json.loads(out)
+
+
+def service_key() -> str:
+    keys = json.loads(_curl(["-H", f"Authorization: Bearer {SB_TOKEN}",
+                             f"https://api.supabase.com/v1/projects/{REF}/api-keys"]))
+    return next(k["api_key"] for k in keys if k["name"] == "service_role")
+
+
+def cuid() -> str:
+    alpha = string.ascii_lowercase + string.digits
+    return "c" + "".join(secrets.choice(alpha) for _ in range(24))
+
+
+def equity_curve(trades, start=1000.0, max_points=48):
+    """Curva {date,value} acumulada por trade, reamostrada pra <= max_points."""
+    pts, eq = [], start
+    for t in trades:
+        eq += t.profit
+        pts.append({"date": t.date or "", "value": round(eq, 2)})
+    if len(pts) > max_points:
+        step = len(pts) / max_points
+        pts = [pts[int(i * step)] for i in range(max_points - 1)] + [pts[-1]]
+    return pts
+
+
+def returns_of(curve):
+    out = []
+    for a, b in zip(curve, curve[1:]):
+        if a["value"]:
+            out.append((b["value"] - a["value"]) / a["value"])
+    return out
+
+
+def pearson(a, b):
+    n = min(len(a), len(b))
+    if n < 3:
+        return 0.0
+    a, b = a[-n:], b[-n:]
+    ma, mb = sum(a) / n, sum(b) / n
+    num = sum((x - ma) * (y - mb) for x, y in zip(a, b))
+    da = sum((x - ma) ** 2 for x in a) ** 0.5
+    db = sum((y - mb) ** 2 for y in b) ** 0.5
+    return 0.0 if da * db == 0 else num / (da * db)
+
+
+def insert_row(table: str, row: dict):
+    payload = json.dumps([row], ensure_ascii=False)
+    tag = "$qmpub$"
+    if tag in payload:
+        raise RuntimeError("dollar-quote colidiu")
+    res = q(f'insert into "{table}" select * from '
+            f'jsonb_populate_recordset(null::"{table}", {tag}{payload}{tag}::jsonb);')
+    if isinstance(res, dict) and res.get("message"):
+        raise RuntimeError(f"{table}: {res['message'][:300]}")
+
+
+def main():
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--survivors", required=True)
+    ap.add_argument("--limit", type=int, default=0)
+    args = ap.parse_args()
+
+    if not SB_TOKEN:
+        raise SystemExit("defina SUPABASE_MGMT_TOKEN no ambiente")
+
+    survivors = json.load(open(args.survivors, encoding="utf-8"))
+    survivors.sort(key=lambda s: -s["wfe"])
+    if args.limit:
+        survivors = survivors[: args.limit]
+
+    svc = service_key()
+    accepted = []  # [(returns, name)]
+    published = 0
+
+    mt5_data.connect()
+    try:
+        for s in survivors:
+            fam, mode = s["family"], s["exit_mode"]
+            symbol, tf = s["symbol"], s["timeframe"]
+            params = s["params"]
+
+            df, resolved = mt5_data.get_candles(symbol, tf, years=2.0)
+            info = mt5_data.symbol_info(resolved)
+            trades = run_backtest(df, fam, params, exit_mode=mode,
+                                  point=info.point, contract_size=info.contract_size)
+            res = pipeline.evaluate(trades, ea_id="publish", ea_name=f"{fam} {symbol} {tf}",
+                                    symbol=resolved, timeframe=tf, family=fam, exit_mode=mode)
+            if not res["approved"]:
+                print(f"  ~ {fam} {symbol} {tf} {mode}: reprovou na re-validação, pulo")
+                continue
+
+            curve = equity_curve(trades)
+            rets = returns_of(curve)
+            clone_of = next((n for r, n in accepted if abs(pearson(rets, r)) > CORR_GATE), None)
+            if clone_of:
+                print(f"  ~ {fam} {symbol} {tf} {mode}: corr>{CORR_GATE} com {clone_of}, pulo")
+                continue
+
+            ea_id = cuid()
+            h = secrets.token_hex(3)
+            name = f"ZV {fam.replace('_', ' ').title()} {symbol} {tf} #{h}"
+            slug = f"{fam.replace('_', '-')}-{symbol.lower()}-{tf.lower()}-{h}"
+
+            comp = compiler.compile_ea(ea_id=ea_id, family=fam, exit_mode=mode,
+                                       params=params, name=f"ZV_{slug.replace('-', '_')}")
+            if not comp.ok:
+                print(f"  ✗ {name}: compilação falhou"); continue
+
+            obj_path = f"{slug}.ex5"
+            up = _curl(["-X", "POST", "-H", f"Authorization: Bearer {svc}",
+                        "-H", "Content-Type: application/octet-stream",
+                        "--data-binary", f"@{comp.ex5_path}",
+                        f"https://{REF}.supabase.co/storage/v1/object/ea-files/{obj_path}"])
+            if '"Key"' not in up and "Duplicate" not in up:
+                print(f"  ✗ {name}: upload falhou: {up[:150]}"); continue
+
+            m = res["metrics"]
+            # timestamps explícitos: populate_recordset insere NULL nas colunas
+            # ausentes e NULL explícito NÃO aciona o DEFAULT (NOT NULL falharia)
+            from datetime import datetime, timezone
+            now_iso = datetime.now(timezone.utc).isoformat()
+            insert_row("EA", {
+                "id": ea_id, "name": name, "slug": slug,
+                "symbol": resolved, "timeframe": tf,
+                "style": STYLE[fam], "exitMode": mode,
+                "wfe": res["wfe"], "profitFactor": m["profit_factor"],
+                "maxDrawdown": m["max_drawdown_pct"], "totalTrades": m["total_trades"],
+                "oosWins": res["oosWins"], "oosTotalWindows": res["oosTotalWin"],
+                "status": "APPROVED", "fileUrl": obj_path,
+                "strategyDef": {"family": fam, "exit_mode": mode, **params},
+                "equityCurveOos": curve,
+                "lastValidatedAt": now_iso, "createdAt": now_iso, "updatedAt": now_iso,
+            })
+            insert_row("EAValidation", {
+                "id": cuid(), "eaId": ea_id, "wfe": res["wfe"],
+                "oosWins": res["oosWins"], "oosTotalWin": res["oosTotalWin"],
+                "approved": True, "reportMd": res["reportMd"],
+                "windowsJson": res["windowsJson"], "validatedAt": now_iso,
+            })
+            # limpa artefatos do Experts local
+            for ext in (".ex5", ".mq5", ".log"):
+                p = comp.ex5_path.replace(".ex5", ext)
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+
+            accepted.append((rets, name))
+            published += 1
+            print(f"  ✔ publicado: {name} (WFE {res['wfe']:.1f}%, PF {m['profit_factor']})")
+    finally:
+        mt5_data.shutdown()
+
+    print(f"\n{published} EA(s) publicados de {len(survivors)} sobreviventes.")
+
+
+if __name__ == "__main__":
+    main()
