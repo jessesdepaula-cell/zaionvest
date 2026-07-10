@@ -132,15 +132,24 @@ def walk_forward_analysis(
 
 
 def _consolidate(windows: list[WFAWindow]) -> WFAResult:
-    """Consolida os resultados das janelas em métricas finais."""
-    wfe_values = [w.wfe for w in windows]
-    wfe_avg = sum(wfe_values) / len(wfe_values) if wfe_values else 0.0
+    """Consolida os resultados das janelas em métricas finais.
+
+    WFE CONSOLIDADO (DQ Labs cap. 07, literal): "Divide o resultado consolidado
+    de todos os períodos OOS pelo resultado consolidado de todos os períodos
+    IS". A média dos ratios por janela (versão anterior) era patológica: uma
+    janela com IS negativo e OOS POSITIVO zerava/negativava a média — reprovava
+    estratégia que ganha dinheiro fora da amostra em todas as janelas.
+    """
+    total_is = sum(w.is_profit for w in windows)
+    total_oos = sum(w.oos_profit for w in windows)
+    # IS consolidado ≤ 0: estratégia nem no aprendizado funcionou → WFE 0.
+    wfe_avg = (total_oos / total_is * 100.0) if total_is > 0 else 0.0
 
     oos_wins = sum(1 for w in windows if w.oos_profit >= 0)
     oos_total = len(windows)
     oos_negative_pct = ((oos_total - oos_wins) / oos_total * 100) if oos_total else 0.0
 
-    # Critério DQ Labs: WFE médio > 50% E janelas OOS negativas < 50%
+    # Critério DQ Labs: WFE consolidado > 50% E janelas OOS negativas < 50%
     approved = wfe_avg > 50.0 and oos_negative_pct < 50.0
 
     return WFAResult(

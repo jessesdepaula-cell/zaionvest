@@ -96,7 +96,8 @@ def normalized_lot(atr_mean: float, contract_size: float) -> float:
     if dollars_per_atr_per_lot <= 0:
         return 0.01
     lot = TARGET_ATR_RISK / dollars_per_atr_per_lot
-    return max(0.01, round(lot, 2))
+    # float() evita np.float64 vazar pro JSON (json.dumps quebra com np types)
+    return float(max(0.01, round(lot, 2)))
 
 
 def run_backtest(
@@ -188,7 +189,7 @@ def run_backtest(
 
         # equity mark-to-market da barra (realizado + posição aberta)
         floating = pos * (close[i] - entry_px) * value if pos != 0 else 0.0
-        equity_bar.append(round(realized + floating, 2))
+        equity_bar.append(float(round(realized + floating, 2)))
         equity_dates.append(str(pd.Timestamp(times[i]).date()))
 
     return BacktestResult(trades=trades, equity_bar=equity_bar,
@@ -262,7 +263,7 @@ def _run_grid(
                 basket, bdir = [px], -1
 
         floating = sum(bdir * (px - e) * value for e in basket) if basket else 0.0
-        equity_bar.append(round(realized + floating, 2))
+        equity_bar.append(float(round(realized + floating, 2)))
         equity_dates.append(str(pd.Timestamp(times[i]).date()))
 
     return BacktestResult(trades=trades, equity_bar=equity_bar,

@@ -37,7 +37,8 @@ DIRECTIONS = ["both", "long", "short"]
 
 def _grid(family: str, exit_mode: str) -> list[dict]:
     combos: list[dict] = []
-    sltp = ([{"sl_atr": s, "tp_atr": t} for s in (1.5, 2.5) for t in (2.0, 3.0)]
+    sltp = ([{"sl_atr": s, "tp_atr": t}
+             for s in (1.0, 1.5, 2.0, 2.5) for t in (1.5, 2.0, 3.0)]
             if exit_mode == "fixed_sltp" else [{}])
 
     if family == "trend":
@@ -55,7 +56,7 @@ def _grid(family: str, exit_mode: str) -> list[dict]:
                     combos.append({"rsi_period": rsi_p, "rsi_os": os_,
                                    "rsi_ob": 100 - os_, "atr_period": 14, **ex})
     elif family == "breakout":
-        for lb in (10, 20, 30, 40, 55):
+        for lb in (8, 12, 16, 20, 26, 32, 40, 50):
             for ex in sltp:
                 combos.append({"lookback": lb, "atr_period": 14, **ex})
     elif family == "grid":
