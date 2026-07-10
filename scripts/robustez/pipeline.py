@@ -30,10 +30,14 @@ from metrics import (compute_metrics, min_trades_required,
 from montecarlo import monte_carlo, RISK_PROFILES
 from backtest import run_backtest, count_params, START_CAPITAL
 
-# Gates de qualidade de curva ("ninguém usa estratégia com DD de 81%"):
-MAX_DD_PCT = 30.0     # DD flutuante (mark-to-market) máximo
-MIN_R2 = 0.85         # linearidade mínima da curva de capital
-MIN_RECOVERY = 2.0    # lucro líquido / DD máx
+# Gates calibrados pelos filtros REAIS do SQX do Jessé (prints 2026-07-10):
+# Ranking: PF > 1.3, Ret/DD > 4, trades/mês > 2; Stability aceita 0.67-0.86.
+# Base $10k (START_CAPITAL) — DD% na régua SQX/QuantMiner.
+MAX_DD_PCT = 10.0       # DD flutuante m2m máximo (melhores SQX: 3-5%)
+MIN_R2 = 0.80           # linearidade (SQX "Stability" aceitava até 0.67)
+MIN_RECOVERY = 4.0      # Ret/DD — filtro literal do SQX (aceitos: 4.9-7.5)
+MIN_PF = 1.3            # Profit Factor — filtro literal do SQX
+MIN_TRADES_PER_MONTH = 2.0  # filtro literal do SQX
 
 # Params default por família (ponto de partida; a otimização refina depois).
 DEFAULT_PARAMS = {
@@ -95,7 +99,7 @@ def run_pipeline(
     direction: str = "both",
     params: dict | None = None,
     n_windows: int = 6,
-    years: float = 2.0,
+    years: float = 10.0,
 ) -> dict:
     params = {**DEFAULT_PARAMS.get(family, {}), **(params or {})}
     bt, trades, source = _get_result(symbol, timeframe, family, params,
@@ -151,13 +155,24 @@ def evaluate(
         r2 = equity_r_squared(eq)
     recovery = (m.net_profit / dd_abs) if dd_abs > 0 else 0.0
 
-    # ── Gates DQ Labs + qualidade de curva ────────────────────────────────────
+    # trades/mês (SQX): meses entre primeiro e último trade datado
+    months = 1.0
+    dated = [t.date for t in trades if t.date]
+    if len(dated) >= 2:
+        from datetime import date
+        d0 = date.fromisoformat(dated[0])
+        d1 = date.fromisoformat(dated[-1])
+        months = max(1.0, (d1 - d0).days / 30.44)
+    tpm = m.total_trades / months
+
+    # ── Gates DQ Labs + filtros SQX ───────────────────────────────────────────
     pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
     gates = {
         "min_trades": (m.total_trades >= min_trades, f"{m.total_trades} ≥ {min_trades}"),
+        "trades_per_month": (tpm >= MIN_TRADES_PER_MONTH, f"{tpm:.1f} ≥ {MIN_TRADES_PER_MONTH}"),
         "wfe_gt_50": (wfa.wfe_avg > 50.0, f"{wfa.wfe_avg:.1f}%"),
         "oos_neg_lt_50": (wfa.oos_negative_pct < 50.0, f"{wfa.oos_negative_pct:.1f}%"),
-        "pf_gt_1": (pf > 1.0, f"{pf:.2f}"),
+        "pf_min": (pf > MIN_PF, f"{pf:.2f} > {MIN_PF}"),
         "net_positive": (m.net_profit > 0, f"${m.net_profit:.2f}"),
         "dd_max": (dd_pct <= MAX_DD_PCT, f"{dd_pct:.1f}% ≤ {MAX_DD_PCT:.0f}%"),
         "linearity_r2": (r2 >= MIN_R2, f"{r2:.3f} ≥ {MIN_R2}"),
@@ -213,13 +228,14 @@ def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades
 ## 5. Checklist completo DQ Labs
 
 - **Mín. trades ({min_trades}):** {'✅' if gates['min_trades'][0] else '❌'} ({gates['min_trades'][1]})
-- **WFE médio > 50%:** {'✅' if gates['wfe_gt_50'][0] else '❌'} ({gates['wfe_gt_50'][1]})
+- **Trades/mês ≥ {MIN_TRADES_PER_MONTH:.0f} (SQX):** {'✅' if gates['trades_per_month'][0] else '❌'} ({gates['trades_per_month'][1]})
+- **WFE consolidado > 50%:** {'✅' if gates['wfe_gt_50'][0] else '❌'} ({gates['wfe_gt_50'][1]})
 - **OOS negativas < 50%:** {'✅' if gates['oos_neg_lt_50'][0] else '❌'} ({gates['oos_neg_lt_50'][1]})
-- **Profit Factor > 1.0:** {'✅' if gates['pf_gt_1'][0] else '❌'} ({gates['pf_gt_1'][1]})
+- **Profit Factor > {MIN_PF} (SQX):** {'✅' if gates['pf_min'][0] else '❌'} ({gates['pf_min'][1]})
 - **Lucro líquido > 0:** {'✅' if gates['net_positive'][0] else '❌'} ({gates['net_positive'][1]})
 - **DD flutuante ≤ {MAX_DD_PCT:.0f}%:** {'✅' if gates['dd_max'][0] else '❌'} ({gates['dd_max'][1]})
 - **Curva linear (R² ≥ {MIN_R2}):** {'✅' if gates['linearity_r2'][0] else '❌'} ({gates['linearity_r2'][1]})
-- **Recovery Factor ≥ {MIN_RECOVERY}:** {'✅' if gates['recovery'][0] else '❌'} ({gates['recovery'][1]})
+- **Ret/DD ≥ {MIN_RECOVERY:.0f} (SQX):** {'✅' if gates['recovery'][0] else '❌'} ({gates['recovery'][1]})
 
 ### Veredito final: {'✅ ROBUSTA — publicável' if approved else '⚠️ REPROVADA'}
 """
@@ -237,7 +253,7 @@ def main_stdin():
         ea_id=p.get("ea_id", "unknown"), ea_name=p.get("ea_name", "EA"),
         symbol=p.get("symbol", "EURUSD"), timeframe=p.get("timeframe", "H1"),
         family=p.get("family", "trend"), exit_mode=p.get("exit_mode", "reversal"),
-        params=p.get("params"), years=p.get("years", 2.0),
+        params=p.get("params"), years=p.get("years", 10.0),
     )
     print(json.dumps(out, ensure_ascii=False))
 
@@ -250,7 +266,7 @@ def main_cli():
     ap.add_argument("--timeframe", default="H1")
     ap.add_argument("--family", default="trend", choices=["trend", "mean_reversion", "breakout"])
     ap.add_argument("--exit-mode", default="reversal", choices=["reversal", "fixed_sltp"])
-    ap.add_argument("--years", type=float, default=2.0)
+    ap.add_argument("--years", type=float, default=10.0)
     ap.add_argument("--output-md")
     args = ap.parse_args()
 

@@ -127,7 +127,9 @@ def _signals(df: pd.DataFrame, family: str, p: dict) -> np.ndarray:
 # o DD% (ex.: DD 81% no card). Com isso, curvas/DDs ficam comparáveis.
 TARGET_ATR_RISK = 10.0
 
-START_CAPITAL = 1000.0
+# Base de capital do SQX/QuantMiner ($10k + ~0.1 lot): DD% dos cards passa a
+# ler na mesma régua deles (bons = 2-5%, não 20-30% sobre $1k).
+START_CAPITAL = 10_000.0
 
 
 @dataclass

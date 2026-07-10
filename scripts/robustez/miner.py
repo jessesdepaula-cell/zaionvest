@@ -106,10 +106,10 @@ def _cheap_screen(profits: list[float], equity_bar: list[float], min_trades: int
     dd_abs, dd_pct = drawdown_of_curve(equity_bar, START_CAPITAL)
     if dd_pct > pipeline.MAX_DD_PCT:
         return False
-    if equity_r_squared(equity_bar) < 0.80:  # folga; o gate final exige 0.85
+    if equity_r_squared(equity_bar) < 0.75:  # folga; o gate final exige 0.80
         return False
     recovery = (m.net_profit / dd_abs) if dd_abs > 0 else 0.0
-    return recovery >= 1.5
+    return recovery >= 3.0
 
 
 def mine(
@@ -118,7 +118,7 @@ def mine(
     families: list[str] = FAMILIES,
     modes: list[str] = EXIT_MODES,
     directions: list[str] = DIRECTIONS,
-    years: float = 2.0,
+    years: float = 10.0,
     verbose: bool = True,
 ) -> list[dict]:
     survivors: list[dict] = []
@@ -240,7 +240,7 @@ def main():
     ap.add_argument("--timeframes", default="H1", help="lista separada por vírgula, ou 'v1'")
     ap.add_argument("--families", default=",".join(FAMILIES))
     ap.add_argument("--modes", default=",".join(EXIT_MODES))
-    ap.add_argument("--years", type=float, default=2.0)
+    ap.add_argument("--years", type=float, default=10.0)
     ap.add_argument("--json-out", help="salva sobreviventes em .json")
     args = ap.parse_args()
 

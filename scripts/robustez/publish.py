@@ -137,7 +137,7 @@ def main():
             symbol, tf = s["symbol"], s["timeframe"]
             params = s["params"]
 
-            df, resolved = mt5_data.get_candles(symbol, tf, years=2.0)
+            df, resolved = mt5_data.get_candles(symbol, tf, years=10.0)
             info = mt5_data.symbol_info(resolved)
             bt = run_backtest(df, fam, params, exit_mode=mode, direction=direction,
                               point=info.point, contract_size=info.contract_size)
