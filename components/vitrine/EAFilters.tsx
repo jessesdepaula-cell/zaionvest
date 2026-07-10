@@ -16,6 +16,7 @@ const STYLES = [
   { value: "trend", label: "Tendência" },
   { value: "reversal", label: "Reversão" },
   { value: "breakout", label: "Rompimento" },
+  { value: "grid", label: "Grid" },
   { value: "range", label: "Range" },
 ];
 

@@ -35,7 +35,8 @@ from backtest import run_backtest
 REF = "kpijsnygzqgpjxxikpig"
 SB_TOKEN = os.environ.get("SUPABASE_MGMT_TOKEN", "")
 CORR_GATE = 0.7
-STYLE = {"trend": "trend", "mean_reversion": "reversal", "breakout": "breakout"}
+STYLE = {"trend": "trend", "mean_reversion": "reversal",
+         "breakout": "breakout", "grid": "grid"}
 
 
 def _curl(args: list[str], data: bytes | None = None) -> str:
@@ -63,12 +64,10 @@ def cuid() -> str:
     return "c" + "".join(secrets.choice(alpha) for _ in range(24))
 
 
-def equity_curve(trades, start=1000.0, max_points=48):
-    """Curva {date,value} acumulada por trade, reamostrada pra <= max_points."""
-    pts, eq = [], start
-    for t in trades:
-        eq += t.profit
-        pts.append({"date": t.date or "", "value": round(eq, 2)})
+def equity_curve_from_bars(equity_bar, dates, max_points=60):
+    """Curva {date,value} da equity mark-to-market POR BARRA (suave, sem os
+    degraus da curva por trade), reamostrada pra <= max_points."""
+    pts = [{"date": d, "value": v} for d, v in zip(dates, equity_bar)]
     if len(pts) > max_points:
         step = len(pts) / max_points
         pts = [pts[int(i * step)] for i in range(max_points - 1)] + [pts[-1]]
@@ -132,33 +131,37 @@ def main():
     try:
         for s in survivors:
             fam, mode = s["family"], s["exit_mode"]
+            direction = s.get("direction", "both")
             symbol, tf = s["symbol"], s["timeframe"]
             params = s["params"]
 
             df, resolved = mt5_data.get_candles(symbol, tf, years=2.0)
             info = mt5_data.symbol_info(resolved)
-            trades = run_backtest(df, fam, params, exit_mode=mode,
-                                  point=info.point, contract_size=info.contract_size)
-            res = pipeline.evaluate(trades, ea_id="publish", ea_name=f"{fam} {symbol} {tf}",
-                                    symbol=resolved, timeframe=tf, family=fam, exit_mode=mode)
+            bt = run_backtest(df, fam, params, exit_mode=mode, direction=direction,
+                              point=info.point, contract_size=info.contract_size)
+            res = pipeline.evaluate(bt.trades, ea_id="publish", ea_name=f"{fam} {symbol} {tf}",
+                                    symbol=resolved, timeframe=tf, family=fam,
+                                    exit_mode=mode, equity_bar=bt.equity_bar)
             if not res["approved"]:
-                print(f"  ~ {fam} {symbol} {tf} {mode}: reprovou na re-validação, pulo")
+                print(f"  ~ {fam} {symbol} {tf} {mode}/{direction}: reprovou na re-validação, pulo")
                 continue
 
-            curve = equity_curve(trades)
+            curve = equity_curve_from_bars(bt.equity_bar, bt.equity_dates)
             rets = returns_of(curve)
             clone_of = next((n for r, n in accepted if abs(pearson(rets, r)) > CORR_GATE), None)
             if clone_of:
-                print(f"  ~ {fam} {symbol} {tf} {mode}: corr>{CORR_GATE} com {clone_of}, pulo")
+                print(f"  ~ {fam} {symbol} {tf} {mode}/{direction}: corr>{CORR_GATE} com {clone_of}, pulo")
                 continue
 
             ea_id = cuid()
             h = secrets.token_hex(3)
-            name = f"ZV {fam.replace('_', ' ').title()} {symbol} {tf} #{h}"
-            slug = f"{fam.replace('_', '-')}-{symbol.lower()}-{tf.lower()}-{h}"
+            dir_tag = {"both": "", "long": " Long", "short": " Short"}[direction]
+            name = f"ZV {fam.replace('_', ' ').title()}{dir_tag} {symbol} {tf} #{h}"
+            slug = f"{fam.replace('_', '-')}-{direction}-{symbol.lower()}-{tf.lower()}-{h}"
 
             comp = compiler.compile_ea(ea_id=ea_id, family=fam, exit_mode=mode,
-                                       params=params, name=f"ZV_{slug.replace('-', '_')}")
+                                       params=params, name=f"ZV_{slug.replace('-', '_')}",
+                                       direction=direction, lot=bt.lot)
             if not comp.ok:
                 print(f"  ✗ {name}: compilação falhou"); continue
 
@@ -180,10 +183,13 @@ def main():
                 "symbol": resolved, "timeframe": tf,
                 "style": STYLE[fam], "exitMode": mode,
                 "wfe": res["wfe"], "profitFactor": m["profit_factor"],
-                "maxDrawdown": m["max_drawdown_pct"], "totalTrades": m["total_trades"],
+                # DD flutuante mark-to-market — o honesto (gate ≤ 30%)
+                "maxDrawdown": res["curve"]["dd_pct_mtm"],
+                "totalTrades": m["total_trades"],
                 "oosWins": res["oosWins"], "oosTotalWindows": res["oosTotalWin"],
                 "status": "APPROVED", "fileUrl": obj_path,
-                "strategyDef": {"family": fam, "exit_mode": mode, **params},
+                "strategyDef": {"family": fam, "exit_mode": mode,
+                                "direction": direction, "lot": bt.lot, **params},
                 "equityCurveOos": curve,
                 "lastValidatedAt": now_iso, "createdAt": now_iso, "updatedAt": now_iso,
             })
@@ -203,7 +209,9 @@ def main():
 
             accepted.append((rets, name))
             published += 1
-            print(f"  ✔ publicado: {name} (WFE {res['wfe']:.1f}%, PF {m['profit_factor']})")
+            c = res["curve"]
+            print(f"  ✔ publicado: {name} (WFE {res['wfe']:.1f}%, PF {m['profit_factor']}, "
+                  f"DD {c['dd_pct_mtm']:.1f}%, R² {c['r2']:.2f})")
     finally:
         mt5_data.shutdown()
 

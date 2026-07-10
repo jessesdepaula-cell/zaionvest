@@ -1,20 +1,23 @@
 //+------------------------------------------------------------------+
-//|  QuantMiner-style EA (ZaionVest) — template                      |
+//|  ZaionVest EA (Modelo A) — template v2                           |
 //|  Params baked-in por estratégia. Licença/kill-switch via         |
-//|  WebRequest ao endpoint /api/ea/<id>/status. Modelo A.           |
-//|  Os tokens __XXX__ são substituídos na compilação (compiler.py). |
+//|  WebRequest ao endpoint /api/ea/<id>/status.                     |
+//|  v2: direção (long/short/both), lote normalizado, família GRID.  |
+//|  Tokens __XXX__ são substituídos na compilação (compiler.py).    |
 //+------------------------------------------------------------------+
 #property strict
-#property version   "1.00"
+#property version   "2.00"
 #include <Trade/Trade.mqh>
 
-//--- Identidade / licença (substituídos na compilação) ---
+//--- Identidade / licença ---
 input string InpEAId      = "__EA_ID__";      // id do EA na vitrine
 input string InpEmail     = "";               // e-mail do assinante (obrigatório)
 input string InpStatusUrl = "__STATUS_URL__"; // endpoint de licença
-input int    InpFamily    = __FAMILY__;       // 0=trend 1=meanrev 2=breakout
+input int    InpFamily    = __FAMILY__;       // 0=trend 1=meanrev 2=breakout 3=grid
 input int    InpExitMode  = __EXIT_MODE__;    // 0=reversal 1=fixed_sltp
-input double InpLot       = 0.10;
+input int    InpDirection = __DIRECTION__;    // 0=both 1=long-only 2=short-only
+input double InpLot       = __LOT__;          // lote normalizado por volatilidade
+input ulong  InpMagic     = __MAGIC__;
 
 //--- Parâmetros da estratégia (baked-in) ---
 input int    InpEmaFast   = __EMA_FAST__;
@@ -27,32 +30,37 @@ input int    InpLookback  = __LOOKBACK__;
 input int    InpAtrPeriod = __ATR_PERIOD__;
 input double InpSlAtr     = __SL_ATR__;
 input double InpTpAtr     = __TP_ATR__;
+//--- Grid (família 3) ---
+input double InpGridSpacing = __GRID_SPACING__; // em ATRs contra a posição
+input int    InpGridLevels  = __GRID_LEVELS__;  // máx. de ordens no cesto
+input double InpGridTp      = __GRID_TP__;      // ATRs além do preço médio
 
 CTrade   trade;
 int      hEmaFast=INVALID_HANDLE, hEmaSlow=INVALID_HANDLE, hEmaFilter=INVALID_HANDLE;
 int      hRsi=INVALID_HANDLE, hAtr=INVALID_HANDLE;
 datetime g_lastLicenseCheck=0;
 datetime g_lastGoodLicense=0;
-bool     g_licenseOk=true;         // otimista até a 1ª checagem
+bool     g_licenseOk=true;
 datetime g_lastBarTime=0;
 
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   trade.SetExpertMagicNumber(InpMagic);
    if(InpFamily==0)
    {
       hEmaFast   = iMA(_Symbol,_Period,InpEmaFast,0,MODE_EMA,PRICE_CLOSE);
       hEmaSlow   = iMA(_Symbol,_Period,InpEmaSlow,0,MODE_EMA,PRICE_CLOSE);
       hEmaFilter = iMA(_Symbol,_Period,InpEmaFilter,0,MODE_EMA,PRICE_CLOSE);
    }
-   else if(InpFamily==1)
+   else if(InpFamily==1 || InpFamily==3)
       hRsi = iRSI(_Symbol,_Period,InpRsiPeriod,PRICE_CLOSE);
 
    hAtr = iATR(_Symbol,_Period,InpAtrPeriod);
    g_lastGoodLicense = TimeCurrent();
 
    if(InpEmail=="")
-      Print("QuantMiner: informe seu e-mail de assinante no input InpEmail.");
+      Print("ZaionVest: informe seu e-mail de assinante no input InpEmail.");
    return(INIT_SUCCEEDED);
 }
 
@@ -80,8 +88,7 @@ void CheckLicense()
    int code = WebRequest("POST",InpStatusUrl,headers,5000,post,result,rheaders);
    if(code==-1)
    {
-      // Sem contato (URL não liberada ou offline): fail-safe de 24h
-      // operando com o último status válido; depois disso, trava.
+      // Fail-safe: sem contato, opera com o último status válido por 24h.
       if(TimeCurrent()-g_lastGoodLicense > 86400) g_licenseOk=false;
       return;
    }
@@ -96,9 +103,9 @@ void CheckLicense()
    {
       g_licenseOk = false;
       if(StringFind(resp,"ea_rejected")>=0)
-         Alert("QuantMiner: estratégia REPROVADA na revalidação. Troque por outra aprovada na vitrine.");
+         Alert("ZaionVest: estratégia REPROVADA na revalidação. Troque por outra aprovada na vitrine.");
       else if(StringFind(resp,"no_subscription")>=0)
-         Alert("QuantMiner: assinatura inativa/expirada. Renove para continuar operando.");
+         Alert("ZaionVest: assinatura inativa/expirada. Renove para continuar operando.");
    }
 }
 
@@ -111,7 +118,9 @@ bool NewBar()
 }
 
 //+------------------------------------------------------------------+
-int Signal()
+//| Sinal cru da família (sem filtro de direção)                     |
+//+------------------------------------------------------------------+
+int RawSignal()
 {
    double c = iClose(_Symbol,_Period,1);   // barra fechada
    if(InpFamily==0)
@@ -130,19 +139,102 @@ int Signal()
    {
       int ih=iHighest(_Symbol,_Period,MODE_HIGH,InpLookback,2);
       int il=iLowest(_Symbol,_Period,MODE_LOW,InpLookback,2);
-      if(ih<0 || il<0) return(0);
-      double hh=iHigh(_Symbol,_Period,ih);
-      double ll=iLow(_Symbol,_Period,il);
-      if(c>hh) return(1);
-      if(c<ll) return(-1);
+      if(ih>=0 && il>=0)
+      {
+         if(c>iHigh(_Symbol,_Period,ih)) return(1);
+         if(c<iLow(_Symbol,_Period,il)) return(-1);
+      }
    }
    return(0);
+}
+
+//+------------------------------------------------------------------+
+//| Sinal de entrada (com filtro de direção)                         |
+//+------------------------------------------------------------------+
+int EntrySignal()
+{
+   int sig=RawSignal();
+   if(InpDirection==1 && sig==-1) return(0);  // long-only não vende
+   if(InpDirection==2 && sig==1)  return(0);  // short-only não compra
+   return(sig);
+}
+
+//+------------------------------------------------------------------+
+//| Cesto do grid: n, preço médio, direção e pior entrada            |
+//+------------------------------------------------------------------+
+int BasketInfo(double &avg, int &dir, double &worst)
+{
+   int n=0; double sum=0.0; dir=0; worst=0.0;
+   for(int i=PositionsTotal()-1;i>=0;i--)
+   {
+      ulong tk=PositionGetTicket(i);
+      if(tk==0) continue;
+      if(PositionGetString(POSITION_SYMBOL)!=_Symbol) continue;
+      if(PositionGetInteger(POSITION_MAGIC)!=(long)InpMagic) continue;
+      double op=PositionGetDouble(POSITION_PRICE_OPEN);
+      long type=PositionGetInteger(POSITION_TYPE);
+      int d=(type==POSITION_TYPE_BUY)?1:-1;
+      if(dir==0) dir=d;
+      sum+=op; n++;
+      if(n==1) worst=op;
+      else worst = (d==1) ? MathMin(worst,op) : MathMax(worst,op);
+   }
+   avg = (n>0)? sum/n : 0.0;
+   return(n);
+}
+
+void CloseBasket()
+{
+   for(int i=PositionsTotal()-1;i>=0;i--)
+   {
+      ulong tk=PositionGetTicket(i);
+      if(tk==0) continue;
+      if(PositionGetString(POSITION_SYMBOL)!=_Symbol) continue;
+      if(PositionGetInteger(POSITION_MAGIC)!=(long)InpMagic) continue;
+      trade.PositionClose(tk);
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Família GRID: cesto que média o preço e fecha no retorno         |
+//+------------------------------------------------------------------+
+void GridTick()
+{
+   double atr=Buf(hAtr,1);
+   if(atr<=0) return;
+   double px = iClose(_Symbol,_Period,1);
+
+   double avg; int dir; double worst;
+   int n=BasketInfo(avg,dir,worst);
+
+   if(n>0)
+   {
+      // fecha o cesto no retorno ao médio + tp*ATR
+      double target = avg + dir*InpGridTp*atr;
+      if((dir==1 && px>=target) || (dir==-1 && px<=target))
+      { CloseBasket(); return; }
+
+      // adiciona nível se andou spacing*ATR contra a pior entrada
+      if(g_licenseOk && n<InpGridLevels)
+      {
+         if(dir==1 && px<=worst-InpGridSpacing*atr)       trade.Buy(InpLot,_Symbol);
+         else if(dir==-1 && px>=worst+InpGridSpacing*atr) trade.Sell(InpLot,_Symbol);
+      }
+      return;
+   }
+
+   if(!g_licenseOk) return;   // kill-switch: não abre cesto novo
+
+   double rsi=Buf(hRsi,1);
+   if(rsi<InpRsiOS && InpDirection!=2)      trade.Buy(InpLot,_Symbol);
+   else if(rsi>InpRsiOB && InpDirection!=1) trade.Sell(InpLot,_Symbol);
 }
 
 //+------------------------------------------------------------------+
 int PosDir()
 {
    if(!PositionSelect(_Symbol)) return(0);
+   if(PositionGetInteger(POSITION_MAGIC)!=(long)InpMagic) return(0);
    long type=PositionGetInteger(POSITION_TYPE);
    return (type==POSITION_TYPE_BUY)?1:-1;
 }
@@ -153,19 +245,21 @@ void OnTick()
    CheckLicense();
    if(!NewBar()) return;
 
-   int dir=PosDir();
-   int sig=Signal();
+   if(InpFamily==3){ GridTick(); return; }
 
-   // Saída por sinal contrário
-   if(dir!=0 && sig==-dir)
+   int dir=PosDir();
+
+   // saída por sinal contrário usa o sinal CRU: long-only fecha no sinal
+   // de venda (só não abre venda) — espelha o backtest
+   if(dir!=0 && RawSignal()==-dir)
    {
       trade.PositionClose(_Symbol);
       dir=0;
    }
 
-   // Licença inválida → não abre novas ordens (kill-switch)
-   if(!g_licenseOk) return;
+   if(!g_licenseOk) return;   // kill-switch: não abre novas ordens
 
+   int sig=EntrySignal();
    if(dir==0 && sig!=0)
    {
       double atr=Buf(hAtr,1);

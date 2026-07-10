@@ -67,3 +67,37 @@ def compute_metrics(profits: list[float], start_capital: float = 1000.0) -> Metr
 def min_trades_required(n_params: int) -> int:
     """DQ Labs: significância mínima IS = 50 + 50 * nº de parâmetros."""
     return 50 + 50 * n_params
+
+
+def equity_r_squared(equity: list[float]) -> float:
+    """R² da curva de capital contra uma reta (regressão linear simples).
+    1.0 = perfeitamente linear. Gate de 'curva suave ascendente'."""
+    n = len(equity)
+    if n < 3:
+        return 0.0
+    xs = range(n)
+    mx = (n - 1) / 2.0
+    my = sum(equity) / n
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, equity))
+    sxx = sum((x - mx) ** 2 for x in xs)
+    syy = sum((y - my) ** 2 for y in equity)
+    if sxx == 0 or syy == 0:
+        return 0.0
+    return round((sxy * sxy) / (sxx * syy), 4)
+
+
+def drawdown_of_curve(equity: list[float], start_capital: float = 1000.0) -> tuple[float, float]:
+    """(dd_abs, dd_pct) da curva mark-to-market — pega o DD FLUTUANTE,
+    essencial pra grid, onde o DD só-realizado mente."""
+    peak = start_capital
+    dd_abs = 0.0
+    dd_pct = 0.0
+    for v in equity:
+        if v > peak:
+            peak = v
+        dd = peak - v
+        if dd > dd_abs:
+            dd_abs = dd
+        if peak > 0:
+            dd_pct = max(dd_pct, dd / peak * 100.0)
+    return round(dd_abs, 2), round(dd_pct, 2)

@@ -25,15 +25,23 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(__file__))
 
 from wfa import Trade, walk_forward_analysis, generate_report_md
-from metrics import compute_metrics, min_trades_required
+from metrics import (compute_metrics, min_trades_required,
+                     equity_r_squared, drawdown_of_curve)
 from montecarlo import monte_carlo, RISK_PROFILES
-from backtest import run_backtest, count_params
+from backtest import run_backtest, count_params, START_CAPITAL
+
+# Gates de qualidade de curva ("ninguém usa estratégia com DD de 81%"):
+MAX_DD_PCT = 30.0     # DD flutuante (mark-to-market) máximo
+MIN_R2 = 0.85         # linearidade mínima da curva de capital
+MIN_RECOVERY = 2.0    # lucro líquido / DD máx
 
 # Params default por família (ponto de partida; a otimização refina depois).
 DEFAULT_PARAMS = {
     "trend": {"ema_fast": 12, "ema_slow": 48, "ema_filter": 200, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
     "mean_reversion": {"rsi_period": 14, "rsi_os": 30, "rsi_ob": 70, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
     "breakout": {"lookback": 20, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
+    "grid": {"rsi_period": 14, "rsi_os": 30, "rsi_ob": 70, "atr_period": 14,
+             "grid_spacing": 1.0, "grid_levels": 4, "grid_tp": 0.5},
 }
 
 
@@ -47,25 +55,26 @@ def _stub_trades(ea_id: str, n: int = 500) -> list[Trade]:
     return out
 
 
-def _get_trades(symbol: str, timeframe: str, family: str, params: dict,
-                exit_mode: str, years: float) -> tuple[list[Trade], str]:
-    """Tenta backtest real no MT5; retorna (trades, fonte)."""
+def _get_result(symbol: str, timeframe: str, family: str, params: dict,
+                exit_mode: str, direction: str, years: float):
+    """Backtest real no MT5; retorna (BacktestResult|None, trades, fonte)."""
     try:
         import mt5_data
         mt5_data.connect()
         df, resolved = mt5_data.get_candles(symbol, timeframe, years=years)
         info = mt5_data.symbol_info(resolved)
-        trades = run_backtest(
+        bt = run_backtest(
             df, family, params,
             exit_mode=exit_mode,
+            direction=direction,
             point=info.point,
             contract_size=info.contract_size,
         )
         mt5_data.shutdown()
-        return trades, f"MT5:{resolved}"
+        return bt, bt.trades, f"MT5:{resolved}"
     except Exception as e:  # noqa: BLE001 — fallback consciente
         print(f"[Pipeline] MT5 indisponível ({e}); usando stub.", file=sys.stderr)
-        return _stub_trades(family + symbol), "stub"
+        return None, _stub_trades(family + symbol), "stub"
 
 
 def run_pipeline(
@@ -75,15 +84,18 @@ def run_pipeline(
     timeframe: str,
     family: str = "trend",
     exit_mode: str = "reversal",
+    direction: str = "both",
     params: dict | None = None,
     n_windows: int = 6,
     years: float = 2.0,
 ) -> dict:
     params = {**DEFAULT_PARAMS.get(family, {}), **(params or {})}
-    trades, source = _get_trades(symbol, timeframe, family, params, exit_mode, years)
+    bt, trades, source = _get_result(symbol, timeframe, family, params,
+                                     exit_mode, direction, years)
     print(f"[Pipeline] {len(trades)} trades ({source}) — {ea_name} {symbol} {timeframe}", file=sys.stderr)
     return evaluate(trades, ea_id, ea_name, symbol, timeframe, family, exit_mode,
-                    n_windows=n_windows, source=source)
+                    n_windows=n_windows, source=source,
+                    equity_bar=bt.equity_bar if bt else None)
 
 
 def evaluate(
@@ -96,9 +108,11 @@ def evaluate(
     exit_mode: str,
     n_windows: int = 6,
     source: str = "backtest",
+    equity_bar: list[float] | None = None,
 ) -> dict:
-    """Aplica os gates DQ Labs a uma lista de trades JÁ obtida (sem buscar MT5).
-    Reusado pelo minerador (que já rodou o backtest) e pelo run_pipeline."""
+    """Aplica os gates DQ Labs a um backtest JÁ rodado.
+    equity_bar (mark-to-market por barra) habilita os gates de curva:
+    DD flutuante ≤ MAX_DD_PCT, R² ≥ MIN_R2, Recovery Factor ≥ MIN_RECOVERY."""
     profits = [t.profit for t in trades]
     m = compute_metrics(profits)
     n_params = count_params(family)
@@ -116,7 +130,20 @@ def evaluate(
 
     mc = monte_carlo(profits)
 
-    # ── Gates DQ Labs ─────────────────────────────────────────────────────────
+    # Métricas de curva (mark-to-market quando disponível; senão por trade)
+    if equity_bar:
+        dd_abs, dd_pct = drawdown_of_curve(equity_bar, START_CAPITAL)
+        r2 = equity_r_squared(equity_bar)
+    else:
+        dd_abs, dd_pct = m.max_drawdown_abs, m.max_drawdown_pct
+        eq, acc = [], START_CAPITAL
+        for p in profits:
+            acc += p
+            eq.append(acc)
+        r2 = equity_r_squared(eq)
+    recovery = (m.net_profit / dd_abs) if dd_abs > 0 else 0.0
+
+    # ── Gates DQ Labs + qualidade de curva ────────────────────────────────────
     pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
     gates = {
         "min_trades": (m.total_trades >= min_trades, f"{m.total_trades} ≥ {min_trades}"),
@@ -124,8 +151,13 @@ def evaluate(
         "oos_neg_lt_50": (wfa.oos_negative_pct < 50.0, f"{wfa.oos_negative_pct:.1f}%"),
         "pf_gt_1": (pf > 1.0, f"{pf:.2f}"),
         "net_positive": (m.net_profit > 0, f"${m.net_profit:.2f}"),
+        "dd_max": (dd_pct <= MAX_DD_PCT, f"{dd_pct:.1f}% ≤ {MAX_DD_PCT:.0f}%"),
+        "linearity_r2": (r2 >= MIN_R2, f"{r2:.3f} ≥ {MIN_R2}"),
+        "recovery": (recovery >= MIN_RECOVERY, f"{recovery:.2f} ≥ {MIN_RECOVERY}"),
     }
     approved = all(ok for ok, _ in gates.values())
+    # sobrescreve o DD reportado com o flutuante (o honesto)
+    m.max_drawdown_abs, m.max_drawdown_pct = dd_abs, dd_pct
 
     report_md = _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved)
 
@@ -141,6 +173,8 @@ def evaluate(
              "wfe": w.wfe, "approved": w.approved} for w in wfa.windows
         ],
         "metrics": m.__dict__,
+        "curve": {"r2": r2, "recovery_factor": round(recovery, 2),
+                  "dd_pct_mtm": dd_pct},
         "montecarlo": {"dd_p95_abs": mc.dd_p95_abs, "recommended_capital": mc.recommended_capital},
         "gates": {k: ok for k, (ok, _) in gates.items()},
         "source": source,
@@ -175,6 +209,9 @@ def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades
 - **OOS negativas < 50%:** {'✅' if gates['oos_neg_lt_50'][0] else '❌'} ({gates['oos_neg_lt_50'][1]})
 - **Profit Factor > 1.0:** {'✅' if gates['pf_gt_1'][0] else '❌'} ({gates['pf_gt_1'][1]})
 - **Lucro líquido > 0:** {'✅' if gates['net_positive'][0] else '❌'} ({gates['net_positive'][1]})
+- **DD flutuante ≤ {MAX_DD_PCT:.0f}%:** {'✅' if gates['dd_max'][0] else '❌'} ({gates['dd_max'][1]})
+- **Curva linear (R² ≥ {MIN_R2}):** {'✅' if gates['linearity_r2'][0] else '❌'} ({gates['linearity_r2'][1]})
+- **Recovery Factor ≥ {MIN_RECOVERY}:** {'✅' if gates['recovery'][0] else '❌'} ({gates['recovery'][1]})
 
 ### Veredito final: {'✅ ROBUSTA — publicável' if approved else '⚠️ REPROVADA'}
 """

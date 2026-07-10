@@ -8,6 +8,8 @@ descontados por trade — backtest sem custo mente (DQ Labs cap. 2).
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 
@@ -72,69 +74,110 @@ def _signals(df: pd.DataFrame, family: str, p: dict) -> np.ndarray:
 
 # ─── Backtest ────────────────────────────────────────────────────────────────
 
+# Risco-alvo em $ por movimento de 1 ATR com 1 posição. Normaliza o lote entre
+# símbolos: lote fixo 0.1 em XAUUSD arrisca ~10x mais que em EURUSD e distorcia
+# o DD% (ex.: DD 81% no card). Com isso, curvas/DDs ficam comparáveis.
+TARGET_ATR_RISK = 10.0
+
+START_CAPITAL = 1000.0
+
+
+@dataclass
+class BacktestResult:
+    trades: list          # list[Trade] — base da WFA/Monte Carlo
+    equity_bar: list      # equity mark-to-market POR BARRA (DD flutuante + r²)
+    equity_dates: list    # data (str) de cada ponto da equity_bar
+    lot: float            # lote normalizado usado
+
+
+def normalized_lot(atr_mean: float, contract_size: float) -> float:
+    """Lote que arrisca ~TARGET_ATR_RISK por movimento de 1 ATR médio."""
+    dollars_per_atr_per_lot = atr_mean * contract_size
+    if dollars_per_atr_per_lot <= 0:
+        return 0.01
+    lot = TARGET_ATR_RISK / dollars_per_atr_per_lot
+    return max(0.01, round(lot, 2))
+
+
 def run_backtest(
     df: pd.DataFrame,
     family: str,
     params: dict,
     *,
     exit_mode: str = "reversal",
+    direction: str = "both",          # "both" | "long" | "short"
     point: float = 1e-5,
     contract_size: float = 100_000.0,
-    lot: float = 0.1,
+    lot: float | None = None,          # None = normalizado por ATR
     spread_points: float = 12.0,
     commission_per_trade: float = 0.7,
-) -> list[Trade]:
-    """Roda a estratégia e devolve a lista de trades (com profit em $ e data)."""
+) -> BacktestResult:
+    """Roda a estratégia; devolve trades + equity mark-to-market por barra."""
     close = df["close"].values
     high = df["high"].values
     low = df["low"].values
     times = df["time"].values
-    sig = _signals(df, family, params)
     atr = _atr(df, int(params.get("atr_period", 14))).values
+
+    atr_mean = float(np.nanmean(atr))
+    if lot is None:
+        lot = normalized_lot(atr_mean, contract_size)
+
+    if family == "grid":
+        return _run_grid(df, params, direction=direction, point=point,
+                         contract_size=contract_size, lot=lot,
+                         spread_points=spread_points,
+                         commission_per_trade=commission_per_trade)
+
+    sig = _signals(df, family, params)
+    # filtro de direção: long-only zera sinais de venda e vice-versa
+    if direction == "long":
+        sig[sig == -1] = 0
+    elif direction == "short":
+        sig[sig == 1] = 0
 
     sl_mult = float(params.get("sl_atr", 2.0))
     tp_mult = float(params.get("tp_atr", 3.0))
     cost_per_trade = spread_points * point * contract_size * lot + commission_per_trade
-    value = contract_size * lot  # $ por 1.0 de variação de preço
+    value = contract_size * lot
 
     trades: list[Trade] = []
-    pos = 0            # 0 flat, +1 long, -1 short
+    equity_bar: list[float] = []
+    equity_dates: list[str] = []
+    realized = START_CAPITAL
+    pos = 0
     entry_px = 0.0
     sl = tp = 0.0
 
     def close_trade(exit_px: float, i: int):
-        nonlocal pos
+        nonlocal pos, realized
         gross = pos * (exit_px - entry_px) * value
-        trades.append(Trade(profit=round(float(gross) - cost_per_trade, 2),
-                            date=str(pd.Timestamp(times[i]).date())))
+        p = round(float(gross) - cost_per_trade, 2)
+        realized += p
+        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date())))
         pos = 0
 
     for i in range(1, len(df)):
         s = sig[i]
 
-        # Gestão de posição aberta
         if pos != 0:
             if exit_mode == "fixed_sltp":
-                # checa SL/TP intrabar (SL primeiro, conservador)
                 if pos == 1:
                     if low[i] <= sl:
                         close_trade(sl, i)
                     elif high[i] >= tp:
                         close_trade(tp, i)
-                else:  # short
+                else:
                     if high[i] >= sl:
                         close_trade(sl, i)
                     elif low[i] <= tp:
                         close_trade(tp, i)
-            # saída por sinal contrário (reversal, ou fallback do fixed)
             if pos != 0 and s == -pos:
                 close_trade(close[i], i)
-                if exit_mode == "reversal":
-                    # inverte imediatamente
+                if exit_mode == "reversal" and direction == "both":
                     pos = s
                     entry_px = close[i]
 
-        # Abre nova posição se está flat e há sinal
         if pos == 0 and s != 0:
             pos = s
             entry_px = close[i]
@@ -143,9 +186,89 @@ def run_backtest(
                 sl = entry_px - pos * sl_mult * a
                 tp = entry_px + pos * tp_mult * a
 
-    return trades
+        # equity mark-to-market da barra (realizado + posição aberta)
+        floating = pos * (close[i] - entry_px) * value if pos != 0 else 0.0
+        equity_bar.append(round(realized + floating, 2))
+        equity_dates.append(str(pd.Timestamp(times[i]).date()))
+
+    return BacktestResult(trades=trades, equity_bar=equity_bar,
+                          equity_dates=equity_dates, lot=lot)
+
+
+def _run_grid(
+    df: pd.DataFrame,
+    params: dict,
+    *,
+    direction: str,
+    point: float,
+    contract_size: float,
+    lot: float,
+    spread_points: float,
+    commission_per_trade: float,
+) -> BacktestResult:
+    """Família GRID: abre 1ª ordem por reversão (RSI extremo), adiciona mais a
+    cada `grid_spacing`×ATR contra a posição (até `grid_levels`), e fecha o
+    cesto inteiro quando o preço retorna `grid_tp`×ATR além do preço médio.
+    Sem stop individual — o risco real aparece no DD FLUTUANTE (mark-to-market),
+    que é gateado no funil. Grid short é o espelho.
+    """
+    close = df["close"].values
+    times = df["time"].values
+    rsi = _rsi(df["close"], int(params.get("rsi_period", 14))).values
+    atr = _atr(df, int(params.get("atr_period", 14))).values
+
+    os_, ob = float(params.get("rsi_os", 30)), float(params.get("rsi_ob", 70))
+    spacing = float(params.get("grid_spacing", 1.0))   # em ATRs
+    max_lvl = int(params.get("grid_levels", 4))
+    tp_atr = float(params.get("grid_tp", 0.5))         # além do preço médio
+
+    value = contract_size * lot
+    cost = spread_points * point * contract_size * lot + commission_per_trade
+
+    trades: list[Trade] = []
+    equity_bar: list[float] = []
+    equity_dates: list[str] = []
+    realized = START_CAPITAL
+
+    basket: list[float] = []   # preços de entrada
+    bdir = 0                   # direção do cesto
+
+    for i in range(1, len(df)):
+        px = close[i]
+        a = atr[i] if not np.isnan(atr[i]) else 0.0
+
+        if basket and a > 0:
+            avg = sum(basket) / len(basket)
+            # adiciona nível se andou spacing*ATR contra
+            if len(basket) < max_lvl:
+                worst = min(basket) if bdir == 1 else max(basket)
+                if (bdir == 1 and px <= worst - spacing * a) or \
+                   (bdir == -1 and px >= worst + spacing * a):
+                    basket.append(px)
+                    avg = sum(basket) / len(basket)
+            # fecha o cesto no retorno
+            target = avg + bdir * tp_atr * a
+            if (bdir == 1 and px >= target) or (bdir == -1 and px <= target):
+                gross = sum(bdir * (px - e) * value for e in basket)
+                p = round(float(gross) - cost * len(basket), 2)
+                realized += p
+                trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date())))
+                basket, bdir = [], 0
+
+        if not basket and not np.isnan(rsi[i]):
+            if rsi[i] < os_ and direction in ("both", "long"):
+                basket, bdir = [px], 1
+            elif rsi[i] > ob and direction in ("both", "short"):
+                basket, bdir = [px], -1
+
+        floating = sum(bdir * (px - e) * value for e in basket) if basket else 0.0
+        equity_bar.append(round(realized + floating, 2))
+        equity_dates.append(str(pd.Timestamp(times[i]).date()))
+
+    return BacktestResult(trades=trades, equity_bar=equity_bar,
+                          equity_dates=equity_dates, lot=lot)
 
 
 def count_params(family: str) -> int:
     """Nº de parâmetros otimizáveis por família (pra mín. trades DQ Labs)."""
-    return {"trend": 3, "mean_reversion": 3, "breakout": 2}.get(family, 3)
+    return {"trend": 3, "mean_reversion": 3, "breakout": 2, "grid": 4}.get(family, 3)

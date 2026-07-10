@@ -22,14 +22,16 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
 import mt5_data
-from backtest import run_backtest, count_params
-from metrics import compute_metrics, min_trades_required
+from backtest import run_backtest, count_params, START_CAPITAL
+from metrics import (compute_metrics, min_trades_required,
+                     equity_r_squared, drawdown_of_curve)
 import pipeline
 
 V1_SYMBOLS = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "EURAUD", "XAUUSD"]
 V1_TIMEFRAMES = ["H1", "H4"]
-FAMILIES = ["trend", "mean_reversion", "breakout"]
+FAMILIES = ["trend", "mean_reversion", "breakout", "grid"]
 EXIT_MODES = ["reversal", "fixed_sltp"]
+DIRECTIONS = ["both", "long", "short"]
 
 # ─── Grids de parâmetros por família (otimização por contexto, DQ Labs cap. 3) ─
 
@@ -56,16 +58,33 @@ def _grid(family: str, exit_mode: str) -> list[dict]:
         for lb in (10, 20, 30, 40, 55):
             for ex in sltp:
                 combos.append({"lookback": lb, "atr_period": 14, **ex})
+    elif family == "grid":
+        # grid não usa SL/TP por ordem — o cesto fecha no retorno ao médio
+        for spacing in (0.8, 1.2, 1.6):
+            for levels in (3, 4, 5):
+                for tp in (0.4, 0.6):
+                    combos.append({"rsi_period": 14, "rsi_os": 30, "rsi_ob": 70,
+                                   "atr_period": 14, "grid_spacing": spacing,
+                                   "grid_levels": levels, "grid_tp": tp})
     return combos
 
 
-def _cheap_screen(profits: list[float], min_trades: int) -> bool:
-    """Descarta lixo antes do WFA caro: precisa de trades, lucro e PF>1."""
+def _cheap_screen(profits: list[float], equity_bar: list[float], min_trades: int) -> bool:
+    """Descarta lixo antes do WFA caro: trades, lucro, PF>1 E qualidade de
+    curva (DD flutuante, linearidade, recovery) — os gates que o Jessé pediu."""
     if len(profits) < min_trades:
         return False
     m = compute_metrics(profits)
     pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
-    return m.net_profit > 0 and pf > 1.0
+    if m.net_profit <= 0 or pf <= 1.0:
+        return False
+    dd_abs, dd_pct = drawdown_of_curve(equity_bar, START_CAPITAL)
+    if dd_pct > pipeline.MAX_DD_PCT:
+        return False
+    if equity_r_squared(equity_bar) < 0.80:  # folga; o gate final exige 0.85
+        return False
+    recovery = (m.net_profit / dd_abs) if dd_abs > 0 else 0.0
+    return recovery >= 1.5
 
 
 def mine(
@@ -73,6 +92,7 @@ def mine(
     timeframes: list[str],
     families: list[str] = FAMILIES,
     modes: list[str] = EXIT_MODES,
+    directions: list[str] = DIRECTIONS,
     years: float = 2.0,
     verbose: bool = True,
 ) -> list[dict]:
@@ -93,38 +113,50 @@ def mine(
 
                 for family in families:
                     min_trades = min_trades_required(count_params(family))
-                    for mode in modes:
-                        for params in _grid(family, mode):
-                            tested += 1
-                            trades = run_backtest(
-                                df, family, params, exit_mode=mode,
-                                point=info.point, contract_size=info.contract_size,
-                            )
-                            profits = [t.profit for t in trades]
-                            if not _cheap_screen(profits, min_trades):
-                                continue
-                            screened += 1
-                            # Funil completo DQ Labs
-                            res = pipeline.evaluate(
-                                trades, ea_id=f"mine-{symbol}-{tf}-{family}",
-                                ea_name=f"{family} {symbol} {tf}",
-                                symbol=resolved, timeframe=tf,
-                                family=family, exit_mode=mode, source="mine",
-                            )
-                            if res["approved"]:
-                                survivors.append({
-                                    "symbol": resolved, "timeframe": tf,
-                                    "family": family, "exit_mode": mode,
-                                    "params": params,
-                                    "strategyDef": {"family": family, "exit_mode": mode, **params},
-                                    "wfe": res["wfe"], "metrics": res["metrics"],
-                                    "montecarlo": res["montecarlo"],
-                                    "reportMd": res["reportMd"],
-                                })
-                                if verbose:
-                                    print(f"[miner] ✔ SOBREVIVENTE: {family} {resolved} {tf} "
-                                          f"{mode} WFE={res['wfe']:.1f}% PF={res['metrics']['profit_factor']}",
-                                          file=sys.stderr)
+                    # grid tem cesto próprio; só faz sentido no modo próprio
+                    fam_modes = ["reversal"] if family == "grid" else modes
+                    for mode in fam_modes:
+                        for direction in directions:
+                            for params in _grid(family, mode):
+                                tested += 1
+                                bt = run_backtest(
+                                    df, family, params, exit_mode=mode,
+                                    direction=direction,
+                                    point=info.point, contract_size=info.contract_size,
+                                )
+                                profits = [t.profit for t in bt.trades]
+                                if not _cheap_screen(profits, bt.equity_bar, min_trades):
+                                    continue
+                                screened += 1
+                                # Funil completo DQ Labs + gates de curva
+                                res = pipeline.evaluate(
+                                    bt.trades, ea_id=f"mine-{symbol}-{tf}-{family}",
+                                    ea_name=f"{family} {symbol} {tf}",
+                                    symbol=resolved, timeframe=tf,
+                                    family=family, exit_mode=mode, source="mine",
+                                    equity_bar=bt.equity_bar,
+                                )
+                                if res["approved"]:
+                                    survivors.append({
+                                        "symbol": resolved, "timeframe": tf,
+                                        "family": family, "exit_mode": mode,
+                                        "direction": direction,
+                                        "params": params,
+                                        "lot": bt.lot,
+                                        "strategyDef": {"family": family, "exit_mode": mode,
+                                                        "direction": direction, "lot": bt.lot,
+                                                        **params},
+                                        "wfe": res["wfe"], "metrics": res["metrics"],
+                                        "curve": res["curve"],
+                                        "montecarlo": res["montecarlo"],
+                                        "reportMd": res["reportMd"],
+                                    })
+                                    if verbose:
+                                        c = res["curve"]
+                                        print(f"[miner] ✔ SOBREVIVENTE: {family} {resolved} {tf} "
+                                              f"{mode}/{direction} WFE={res['wfe']:.1f}% "
+                                              f"DD={c['dd_pct_mtm']:.1f}% R2={c['r2']:.2f}",
+                                              file=sys.stderr)
     finally:
         mt5_data.shutdown()
 
@@ -152,12 +184,16 @@ def main():
     symbols = V1_SYMBOLS if args.symbols == "v1" else args.symbols.split(",")
     timeframes = V1_TIMEFRAMES if args.timeframes == "v1" else args.timeframes.split(",")
 
-    survivors = mine(symbols, timeframes, args.families.split(","), args.modes.split(","), args.years)
+    survivors = mine(symbols, timeframes, args.families.split(","),
+                     args.modes.split(","), years=args.years)
     print(f"\n=== {len(survivors)} sobrevivente(s) ===")
     for s in survivors:
         cap = s["montecarlo"]["recommended_capital"]
-        print(f"  {s['family']:14s} {s['symbol']:8s} {s['timeframe']:3s} {s['exit_mode']:10s} "
+        c = s["curve"]
+        print(f"  {s['family']:14s} {s['symbol']:8s} {s['timeframe']:3s} "
+              f"{s['exit_mode']:10s} {s['direction']:5s} "
               f"WFE={s['wfe']:.1f}% PF={s['metrics']['profit_factor']} "
+              f"DD={c['dd_pct_mtm']:.1f}% R2={c['r2']:.2f} "
               f"cap(mod)=${cap.get('moderado', 0):,.0f}")
     if args.json_out:
         with open(args.json_out, "w", encoding="utf-8") as f:
