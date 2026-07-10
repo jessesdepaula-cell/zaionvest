@@ -13,7 +13,7 @@
 input string InpEAId      = "__EA_ID__";      // id do EA na vitrine
 input string InpEmail     = "";               // e-mail do assinante (obrigatório)
 input string InpStatusUrl = "__STATUS_URL__"; // endpoint de licença
-input int    InpFamily    = __FAMILY__;       // 0=trend 1=meanrev 2=breakout 3=grid
+input int    InpFamily    = __FAMILY__;       // 0=trend 1=meanrev 2=breakout 3=grid 4=macd 5=bbfade 6=bbbreak 7=stoch
 input int    InpExitMode  = __EXIT_MODE__;    // 0=reversal 1=fixed_sltp
 input int    InpDirection = __DIRECTION__;    // 0=both 1=long-only 2=short-only
 input double InpLot       = __LOT__;          // lote normalizado por volatilidade
@@ -34,10 +34,21 @@ input double InpTpAtr     = __TP_ATR__;
 input double InpGridSpacing = __GRID_SPACING__; // em ATRs contra a posição
 input int    InpGridLevels  = __GRID_LEVELS__;  // máx. de ordens no cesto
 input double InpGridTp      = __GRID_TP__;      // ATRs além do preço médio
+//--- MACD (família 4) / Bollinger (5-6) / Stochastic (7) ---
+input int    InpMacdFast    = __MACD_FAST__;
+input int    InpMacdSlow    = __MACD_SLOW__;
+input int    InpMacdSignal  = __MACD_SIGNAL__;
+input int    InpBbPeriod    = __BB_PERIOD__;
+input double InpBbDev       = __BB_DEV__;
+input int    InpStochK      = __STOCH_K__;
+input int    InpStochSmooth = __STOCH_SMOOTH__;
+input int    InpStochOS     = __STOCH_OS__;
+input int    InpStochOB     = __STOCH_OB__;
 
 CTrade   trade;
 int      hEmaFast=INVALID_HANDLE, hEmaSlow=INVALID_HANDLE, hEmaFilter=INVALID_HANDLE;
 int      hRsi=INVALID_HANDLE, hAtr=INVALID_HANDLE;
+int      hMacd=INVALID_HANDLE, hBands=INVALID_HANDLE, hStoch=INVALID_HANDLE;
 datetime g_lastLicenseCheck=0;
 datetime g_lastGoodLicense=0;
 bool     g_licenseOk=true;
@@ -55,6 +66,12 @@ int OnInit()
    }
    else if(InpFamily==1 || InpFamily==3)
       hRsi = iRSI(_Symbol,_Period,InpRsiPeriod,PRICE_CLOSE);
+   else if(InpFamily==4)
+      hMacd = iMACD(_Symbol,_Period,InpMacdFast,InpMacdSlow,InpMacdSignal,PRICE_CLOSE);
+   else if(InpFamily==5 || InpFamily==6)
+      hBands = iBands(_Symbol,_Period,InpBbPeriod,0,InpBbDev,PRICE_CLOSE);
+   else if(InpFamily==7)
+      hStoch = iStochastic(_Symbol,_Period,InpStochK,InpStochSmooth,InpStochSmooth,MODE_SMA,STO_LOWHIGH);
 
    hAtr = iATR(_Symbol,_Period,InpAtrPeriod);
    g_lastGoodLicense = TimeCurrent();
@@ -65,10 +82,10 @@ int OnInit()
 }
 
 //+------------------------------------------------------------------+
-double Buf(int handle,int shift)
+double Buf(int handle,int shift,int buffer=0)
 {
    double b[];
-   if(CopyBuffer(handle,0,shift,1,b)<=0) return(0.0);
+   if(CopyBuffer(handle,buffer,shift,1,b)<=0) return(0.0);
    return(b[0]);
 }
 
@@ -145,7 +162,47 @@ int RawSignal()
          if(c<iLow(_Symbol,_Period,il)) return(-1);
       }
    }
+   else if(InpFamily==4)   // MACD cross
+   {
+      double m1=Buf(hMacd,1,0), s1=Buf(hMacd,1,1);
+      double m2=Buf(hMacd,2,0), s2=Buf(hMacd,2,1);
+      if(m1>s1 && m2<=s2) return(1);
+      if(m1<s1 && m2>=s2) return(-1);
+   }
+   else if(InpFamily==5)   // Bollinger fade (reversão)
+   {
+      double up=Buf(hBands,1,1), lo=Buf(hBands,1,2);
+      if(c<lo) return(1);
+      if(c>up) return(-1);
+   }
+   else if(InpFamily==6)   // Bollinger break (rompimento)
+   {
+      double up=Buf(hBands,1,1), lo=Buf(hBands,1,2);
+      if(c>up) return(1);
+      if(c<lo) return(-1);
+   }
+   else if(InpFamily==7)   // Stochastic
+   {
+      double st=Buf(hStoch,1,0);
+      if(st<InpStochOS) return(1);
+      if(st>InpStochOB) return(-1);
+   }
    return(0);
+}
+
+//+------------------------------------------------------------------+
+//| Exit on Friday (SQX): sexta >= 20h fecha tudo, sem novas ordens  |
+//+------------------------------------------------------------------+
+bool FridayShutdown()
+{
+   MqlDateTime t;
+   TimeToStruct(TimeCurrent(),t);
+   if(t.day_of_week==5 && t.hour>=20)
+   {
+      CloseBasket();   // fecha qualquer posição deste EA (magic)
+      return(true);
+   }
+   return(false);
 }
 
 //+------------------------------------------------------------------+
@@ -244,6 +301,7 @@ void OnTick()
 {
    CheckLicense();
    if(!NewBar()) return;
+   if(FridayShutdown()) return;
 
    if(InpFamily==3){ GridTick(); return; }
 

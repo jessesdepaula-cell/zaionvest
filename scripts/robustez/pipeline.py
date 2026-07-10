@@ -42,6 +42,14 @@ DEFAULT_PARAMS = {
     "breakout": {"lookback": 20, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
     "grid": {"rsi_period": 14, "rsi_os": 30, "rsi_ob": 70, "atr_period": 14,
              "grid_spacing": 1.0, "grid_levels": 4, "grid_tp": 0.5},
+    "macd_cross": {"macd_fast": 12, "macd_slow": 26, "macd_signal": 9,
+                   "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
+    "bollinger_fade": {"bb_period": 20, "bb_dev": 2.0, "atr_period": 14,
+                       "sl_atr": 2.0, "tp_atr": 3.0},
+    "bollinger_break": {"bb_period": 20, "bb_dev": 2.0, "atr_period": 14,
+                        "sl_atr": 2.0, "tp_atr": 3.0},
+    "stochastic": {"stoch_k": 14, "stoch_smooth": 3, "stoch_os": 20,
+                   "stoch_ob": 80, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
 }
 
 

@@ -36,7 +36,9 @@ REF = "kpijsnygzqgpjxxikpig"
 SB_TOKEN = os.environ.get("SUPABASE_MGMT_TOKEN", "")
 CORR_GATE = 0.7
 STYLE = {"trend": "trend", "mean_reversion": "reversal",
-         "breakout": "breakout", "grid": "grid"}
+         "breakout": "breakout", "grid": "grid",
+         "macd_cross": "trend", "bollinger_fade": "reversal",
+         "bollinger_break": "breakout", "stochastic": "reversal"}
 
 
 def _curl(args: list[str], data: bytes | None = None) -> str:

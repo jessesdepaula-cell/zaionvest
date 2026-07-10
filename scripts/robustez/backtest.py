@@ -38,6 +38,25 @@ def _atr(df: pd.DataFrame, n: int) -> pd.Series:
     return tr.ewm(alpha=1 / n, adjust=False).mean()
 
 
+def _macd(close: pd.Series, fast: int, slow: int, signal: int):
+    macd = _ema(close, fast) - _ema(close, slow)
+    sig = macd.ewm(span=signal, adjust=False).mean()
+    return macd, sig
+
+
+def _bollinger(close: pd.Series, n: int, dev: float):
+    mid = close.rolling(n).mean()
+    sd = close.rolling(n).std()
+    return mid + dev * sd, mid - dev * sd
+
+
+def _stochastic(df: pd.DataFrame, k: int, smooth: int) -> pd.Series:
+    ll = df["low"].rolling(k).min()
+    hh = df["high"].rolling(k).max()
+    raw = 100 * (df["close"] - ll) / (hh - ll).replace(0, np.nan)
+    return raw.rolling(smooth).mean().fillna(50.0)
+
+
 # ─── Sinais por família ──────────────────────────────────────────────────────
 
 def _signals(df: pd.DataFrame, family: str, p: dict) -> np.ndarray:
@@ -66,6 +85,35 @@ def _signals(df: pd.DataFrame, family: str, p: dict) -> np.ndarray:
         ll = df["low"].rolling(n).min().shift(1)
         sig[(close > hh).fillna(False).values] = 1
         sig[(close < ll).fillna(False).values] = -1
+
+    elif family == "macd_cross":
+        macd, msig = _macd(close, int(p.get("macd_fast", 12)),
+                           int(p.get("macd_slow", 26)), int(p.get("macd_signal", 9)))
+        up = (macd > msig) & (macd.shift(1) <= msig.shift(1))
+        dn = (macd < msig) & (macd.shift(1) >= msig.shift(1))
+        sig[up.fillna(False).values] = 1
+        sig[dn.fillna(False).values] = -1
+
+    elif family == "bollinger_fade":
+        # reversão: fecha fora da banda → aposta na volta
+        upper, lower = _bollinger(close, int(p.get("bb_period", 20)),
+                                  float(p.get("bb_dev", 2.0)))
+        sig[(close < lower).fillna(False).values] = 1
+        sig[(close > upper).fillna(False).values] = -1
+
+    elif family == "bollinger_break":
+        # rompimento: fecha fora da banda → segue o movimento
+        upper, lower = _bollinger(close, int(p.get("bb_period", 20)),
+                                  float(p.get("bb_dev", 2.0)))
+        sig[(close > upper).fillna(False).values] = 1
+        sig[(close < lower).fillna(False).values] = -1
+
+    elif family == "stochastic":
+        st = _stochastic(df, int(p.get("stoch_k", 14)), int(p.get("stoch_smooth", 3)))
+        os_, ob = p.get("stoch_os", 20), p.get("stoch_ob", 80)
+        sig[(st < os_).fillna(False).values] = 1
+        sig[(st > ob).fillna(False).values] = -1
+
     else:
         raise ValueError(f"família desconhecida: {family}")
 
@@ -137,6 +185,10 @@ def run_backtest(
     elif direction == "short":
         sig[sig == 1] = 0
 
+    # Exit on Friday (SQX): fecha tudo no fim da sexta — sem gap de fim de semana
+    dt_idx = pd.DatetimeIndex(df["time"])
+    friday_close = (dt_idx.weekday == 4) & (dt_idx.hour >= 20)
+
     sl_mult = float(params.get("sl_atr", 2.0))
     tp_mult = float(params.get("tp_atr", 3.0))
     cost_per_trade = spread_points * point * contract_size * lot + commission_per_trade
@@ -160,6 +212,14 @@ def run_backtest(
 
     for i in range(1, len(df)):
         s = sig[i]
+
+        # sexta à noite: fecha posição e não abre nova até segunda
+        if friday_close[i]:
+            if pos != 0:
+                close_trade(close[i], i)
+            equity_bar.append(float(round(realized, 2)))
+            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            continue
 
         if pos != 0:
             if exit_mode == "fixed_sltp":
@@ -234,9 +294,23 @@ def _run_grid(
     basket: list[float] = []   # preços de entrada
     bdir = 0                   # direção do cesto
 
+    dt_idx = pd.DatetimeIndex(df["time"])
+    friday_close = (dt_idx.weekday == 4) & (dt_idx.hour >= 20)
+
     for i in range(1, len(df)):
         px = close[i]
         a = atr[i] if not np.isnan(atr[i]) else 0.0
+
+        # sexta à noite: fecha o cesto inteiro (gap de fds em grid é fatal)
+        if friday_close[i] and basket:
+            gross = sum(bdir * (px - e) * value for e in basket)
+            p = round(float(gross) - cost * len(basket), 2)
+            realized += p
+            trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date())))
+            basket, bdir = [], 0
+            equity_bar.append(float(round(realized, 2)))
+            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            continue
 
         if basket and a > 0:
             avg = sum(basket) / len(basket)
@@ -272,4 +346,6 @@ def _run_grid(
 
 def count_params(family: str) -> int:
     """Nº de parâmetros otimizáveis por família (pra mín. trades DQ Labs)."""
-    return {"trend": 3, "mean_reversion": 3, "breakout": 2, "grid": 4}.get(family, 3)
+    return {"trend": 3, "mean_reversion": 3, "breakout": 2, "grid": 4,
+            "macd_cross": 3, "bollinger_fade": 2, "bollinger_break": 2,
+            "stochastic": 3}.get(family, 3)

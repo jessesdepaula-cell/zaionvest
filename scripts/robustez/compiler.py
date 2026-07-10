@@ -27,7 +27,9 @@ EXPERTS_DIR = os.environ.get(
 )
 STATUS_URL_BASE = os.environ.get("EA_STATUS_URL_BASE", "https://zaionvest.com.br/api/ea")
 
-FAMILY_CODE = {"trend": 0, "mean_reversion": 1, "breakout": 2, "grid": 3}
+FAMILY_CODE = {"trend": 0, "mean_reversion": 1, "breakout": 2, "grid": 3,
+               "macd_cross": 4, "bollinger_fade": 5, "bollinger_break": 6,
+               "stochastic": 7}
 EXIT_CODE = {"reversal": 0, "fixed_sltp": 1}
 DIRECTION_CODE = {"both": 0, "long": 1, "short": 2}
 
@@ -38,6 +40,9 @@ _TOKEN_DEFAULTS = {
     "RSI_PERIOD": 14, "RSI_OS": 30, "RSI_OB": 70,
     "LOOKBACK": 20, "ATR_PERIOD": 14, "SL_ATR": 2.0, "TP_ATR": 3.0,
     "GRID_SPACING": 1.0, "GRID_LEVELS": 4, "GRID_TP": 0.5,
+    "MACD_FAST": 12, "MACD_SLOW": 26, "MACD_SIGNAL": 9,
+    "BB_PERIOD": 20, "BB_DEV": 2.0,
+    "STOCH_K": 14, "STOCH_SMOOTH": 3, "STOCH_OS": 20, "STOCH_OB": 80,
 }
 
 
