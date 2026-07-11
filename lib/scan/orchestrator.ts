@@ -4,7 +4,6 @@ import { generateSmcSignal } from "@/lib/smcSignal";
 import { generateGorilaSignal } from "@/lib/gorilaSignal";
 import { narrateSignal } from "@/lib/narrator";
 import { evaluateOpenSignalsAgainstCandles } from "@/lib/signalTracker";
-import { sendSignalEmail } from "@/lib/email";
 import { getCandles } from "@/lib/market/router";
 import { findSymbol } from "@/lib/market/symbols";
 import type { Timeframe } from "@/lib/market/types";
@@ -302,42 +301,9 @@ export async function scanWatchlistItem(
     },
   });
 
-  // Disparo assíncrono do alerta por e-mail. SINAIS GLOBAIS: um novo sinal é
-  // enviado para TODOS os assinantes ativos (não só a conta mestra que o gerou).
-  // Best-effort: nunca bloqueia nem quebra o scan.
-  if (hasSetup && signal.status === "PENDING") {
-    prisma.user
-      .findMany({
-        where: { subscriptionStatus: { in: ["active", "trialing"] } },
-        select: { email: true },
-      })
-      .then((subs) => {
-        const payload = {
-          symbol: signal.symbol,
-          timeframe: signal.timeframe,
-          mode: signal.mode,
-          direction: signal.direction ?? "NEUTRO",
-          entryPrice: signal.entryPrice,
-          stopPrice: signal.stopPrice,
-          target1: signal.target1,
-          target2: signal.target2,
-          target3: signal.target3,
-          riskReward: signal.riskReward,
-          justification: signal.justification,
-          tipoSetup: signal.tipoSetup,
-        };
-        for (const u of subs) {
-          if (u.email && !u.email.endsWith("@no-email.local")) {
-            sendSignalEmail(u.email, payload).catch((err) =>
-              console.error("[sendSignalEmail Catch]", err),
-            );
-          }
-        }
-      })
-      .catch((err) => {
-        console.error("[Email Subscribers Query Error]", err);
-      });
-  }
+  // Alerta por e-mail de sinais DESLIGADO (decisão Jessé 2026-07-11): o produto
+  // migrou para a vitrine de EAs; sinais ao vivo não disparam mais e-mail.
+  // (sendSignalEmail permanece em lib/email.ts caso precise ser reativado.)
 
   if (input.watchlistId) {
     await prisma.watchlist
