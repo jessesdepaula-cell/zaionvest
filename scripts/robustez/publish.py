@@ -40,6 +40,27 @@ STYLE = {"trend": "trend", "mean_reversion": "reversal",
          "macd_cross": "trend", "bollinger_fade": "reversal",
          "bollinger_break": "breakout", "stochastic": "reversal"}
 
+# Estilo da vitrine por bloco direcional (usado quando family == "multi").
+# Só valores aceitos pelo filtro do front: trend/reversal/breakout/range/grid.
+BLOCK_STYLE = {
+    "rsi_extreme": "reversal", "rsi_trend": "trend",
+    "ema_stack": "trend", "ema_cross": "trend", "price_ema": "trend",
+    "macd_state": "trend", "macd_cross": "trend", "momentum": "trend",
+    "bb_fade": "reversal", "bb_break": "breakout", "donchian": "breakout",
+    "stoch": "reversal", "cci": "reversal",
+}
+
+
+def style_of(fam: str, params: dict) -> str:
+    """Estilo p/ o card. Multi: 1º bloco com estilo conhecido (direcional)."""
+    if fam != "multi":
+        return STYLE.get(fam, "trend")
+    for blk in params.get("blocks", []):
+        st = BLOCK_STYLE.get(blk.get("name"))
+        if st:
+            return st
+    return "trend"
+
 
 def _curl(args: list[str], data: bytes | None = None) -> str:
     r = subprocess.run(["curl", "-s", "--max-time", "60"] + args,
@@ -158,8 +179,15 @@ def main():
             ea_id = cuid()
             h = secrets.token_hex(3)
             dir_tag = {"both": "", "long": " Long", "short": " Short"}[direction]
-            name = f"ZV {fam.replace('_', ' ').title()}{dir_tag} {symbol} {tf} #{h}"
-            slug = f"{fam.replace('_', '-')}-{direction}-{symbol.lower()}-{tf.lower()}-{h}"
+            # nome do card: multi usa o estilo (nome de família "multi" é interno)
+            style_val = style_of(fam, params)
+            fam_label = {"trend": "Tendência", "reversal": "Reversão",
+                         "breakout": "Rompimento", "range": "Range",
+                         "grid": "Grid"}.get(style_val, style_val.title()) if fam == "multi" \
+                        else fam.replace("_", " ").title()
+            name = f"ZV {fam_label}{dir_tag} {symbol} {tf} #{h}"
+            slug_fam = style_val if fam == "multi" else fam.replace("_", "-")
+            slug = f"{slug_fam}-{direction}-{symbol.lower()}-{tf.lower()}-{h}"
 
             comp = compiler.compile_ea(ea_id=ea_id, family=fam, exit_mode=mode,
                                        params=params, name=f"ZV_{slug.replace('-', '_')}",
@@ -183,7 +211,7 @@ def main():
             insert_row("EA", {
                 "id": ea_id, "name": name, "slug": slug,
                 "symbol": resolved, "timeframe": tf,
-                "style": STYLE[fam], "exitMode": mode,
+                "style": style_of(fam, params), "exitMode": mode,
                 "wfe": res["wfe"], "profitFactor": m["profit_factor"],
                 # DD flutuante mark-to-market — o honesto (gate ≤ 30%)
                 "maxDrawdown": res["curve"]["dd_pct_mtm"],
