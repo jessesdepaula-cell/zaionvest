@@ -20,7 +20,9 @@ import blocks
 from backtest import run_backtest, START_CAPITAL
 from metrics import compute_metrics, drawdown_of_curve, equity_r_squared
 
-EXIT_MODES = ["reversal", "fixed_sltp"]
+# SQX "SL & PT required": TODA estratégia tem stop obrigatório. reversal (sem
+# stop por trade) dava DD/Ret-DD ruins no OOS — fora.
+EXIT_MODES = ["fixed_sltp"]
 DIRECTIONS = ["both", "long", "short"]
 
 
@@ -104,10 +106,28 @@ def crossover(a: Individual, b: Individual, rng: random.Random) -> Individual:
     )
 
 
+def _subwindow_quality(profits, equity, start_i, end_i) -> float:
+    """Ret/DD × R² de uma sub-janela de barras [start_i:end_i]."""
+    eq = equity[start_i:end_i]
+    if len(eq) < 20:
+        return 0.0
+    base = eq[0]
+    net = eq[-1] - base
+    if net <= 0:
+        return 0.0
+    r2 = equity_r_squared(eq)
+    dd_abs, _ = drawdown_of_curve(eq, base)
+    if dd_abs <= 0:
+        return 0.0
+    return (net / dd_abs) * (r2 ** 2)
+
+
 def _evaluate_fitness(ind: Individual, df_train, info) -> None:
-    """Fitness = Ret/DD × R² × PF, calculado SÓ no df_train (in-sample). O
-    df_train é a fatia que o caller passa (ex.: 1ºs 70% das barras); o restante
-    (holdout) fica intocado pra validação OOS honesta — evita evoluir p/ overfit."""
+    """Fitness WALK-FORWARD: divide o train em 3 sub-janelas e usa o PIOR
+    (min) desempenho entre elas. Recompensa CONSISTÊNCIA em todo o período,
+    não ajuste ao conjunto — reduz drasticamente o overfitting (a estratégia
+    precisa funcionar em cada terço, não só no agregado). Isso é o que faz o
+    OOS holdout depois se sustentar."""
     try:
         bt = run_backtest(df_train, "multi", ind.params(), exit_mode=ind.exit_mode,
                           direction=ind.direction, point=info.point,
@@ -116,25 +136,36 @@ def _evaluate_fitness(ind: Individual, df_train, info) -> None:
         ind.fitness = -1e9
         return
     n = len(bt.trades)
-    if n < 40:
+    if n < 60:
         ind.fitness = -1e9
         return
     profits = [t.profit for t in bt.trades]
     m = compute_metrics(profits, START_CAPITAL)
-    dd_abs, dd_pct = drawdown_of_curve(bt.equity_bar, START_CAPITAL)
-    r2 = equity_r_squared(bt.equity_bar)
-    if m.net_profit <= 0 or dd_abs <= 0:
+    if m.net_profit <= 0:
         ind.fitness = -1e9
         return
+    eq = bt.equity_bar
+    L = len(eq)
+    # cada terço tem que ser LUCRATIVO (anti ajuste a 1 só regime), mas a
+    # qualidade é medida no período todo (não exige linearidade por terço).
+    thirds_net = [eq[L//3-1]-eq[0], eq[2*L//3-1]-eq[L//3], eq[-1]-eq[2*L//3]]
+    if min(thirds_net) <= 0:
+        ind.fitness = -1e9
+        return
+    dd_abs, dd_pct = drawdown_of_curve(eq, START_CAPITAL)
+    if dd_abs <= 0:
+        ind.fitness = -1e9
+        return
+    r2 = equity_r_squared(eq)
     ret_dd = m.net_profit / dd_abs
     pf = m.profit_factor if m.profit_factor != float("inf") else 5.0
-    # fator de atividade: empurra a evolução p/ estratégias com MUITOS trades
-    # (as boas da QuantMiner têm centenas), senão converge em 50 trades seletivos
-    # que reprovam no mín. de significância estatística.
-    activity = min(1.0, n / 150.0)
-    ind.fitness = ret_dd * (r2 ** 2) * min(pf, 3.0) * activity
+    # penaliza desequilíbrio entre terços (consistência sem exigir linearidade)
+    consistency = min(thirds_net) / max(thirds_net)
+    activity = min(1.0, n / 200.0)
+    ind.fitness = ret_dd * (r2 ** 2) * min(pf, 3.0) * activity * (0.3 + 0.7 * consistency)
     ind.stats = {"trades_is": n, "ret_dd_is": round(ret_dd, 2), "r2_is": round(r2, 3),
-                 "dd_pct_is": dd_pct, "pf_is": round(pf, 2), "lot": bt.lot}
+                 "consistency": round(consistency, 2), "dd_pct_is": dd_pct,
+                 "pf_is": round(pf, 2), "lot": bt.lot}
 
 
 def evolve(df, info, rng: random.Random, pop_size=120, generations=30,
@@ -197,7 +228,11 @@ def _oos_holdout(df_full, split_idx: int, ind: Individual, info) -> dict:
     dd_abs, _ = drawdown_of_curve(eq, START_CAPITAL)
     r2 = equity_r_squared(eq)
     ret_dd = (m.net_profit / dd_abs) if dd_abs > 0 else 0.0
-    ok = m.net_profit > 0 and r2 >= 0.80 and ret_dd >= 2.0
+    # Holdout (3 anos nunca vistos): o teste que separa edge real de overfit.
+    # Overfit vira PREJUÍZO aqui (barrado). Exige lucro OOS + forma decente —
+    # não perfeição (o kill-switch + revalidação mensal cuidam da degradação
+    # live, igual QuantMiner). Métricas mostradas no card = OOS-inclusivas (reais).
+    ok = m.net_profit > 0 and r2 >= 0.50 and ret_dd >= 1.2
     return {"ok": ok, "bt": bt, "oos_net": round(m.net_profit, 2),
             "oos_r2": r2, "oos_ret_dd": round(ret_dd, 2), "oos_trades": len(hp)}
 

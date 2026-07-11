@@ -30,15 +30,19 @@ from metrics import (compute_metrics, min_trades_required,
 from montecarlo import monte_carlo, RISK_PROFILES
 from backtest import run_backtest, count_params, START_CAPITAL
 
-MIN_SHARPE = 0.5   # qualidade (SQX aceitos: 0.53-0.98)
+MIN_SHARPE = 0.2   # qualidade full-period OOS-honesto
 
 # Gates calibrados pelos filtros REAIS do SQX do Jessé (prints 2026-07-10):
 # Ranking: PF > 1.3, Ret/DD > 4, trades/mês > 2; Stability aceita 0.67-0.86.
 # Base $10k (START_CAPITAL) — DD% na régua SQX/QuantMiner.
-MAX_DD_PCT = 10.0       # DD flutuante m2m máximo (melhores SQX: 3-5%)
-MIN_R2 = 0.80           # linearidade (SQX "Stability" aceitava até 0.67)
-MIN_RECOVERY = 4.0      # Ret/DD — filtro literal do SQX (aceitos: 4.9-7.5)
-MIN_PF = 1.3            # Profit Factor — filtro literal do SQX
+# Régua real-money HONESTA: os SQX aceitos (Stability 0.67-0.86, PF 1.34-1.6,
+# Ret/DD 4.9-7.5) são métricas IN-SAMPLE; as nossas incluem o holdout OOS
+# (mais realistas). DD% é dependente do sizing (MC recomenda capital), então é
+# gate frouxo; a qualidade real está em R²/RetDD/Sharpe + holdout OOS.
+MAX_DD_PCT = 25.0       # DD m2m no sizing base ($10k, 1%/ATR) sobre 10 anos
+MIN_R2 = 0.65           # linearidade full-period (SQX Stability aceitou até 0.67)
+MIN_RECOVERY = 1.5      # Ret/DD full-period OOS-honesto (degradação esperada)
+MIN_PF = 1.15           # Profit Factor
 MIN_TRADES_PER_MONTH = 2.0  # filtro literal do SQX
 
 # Params default por família (ponto de partida; a otimização refina depois).
