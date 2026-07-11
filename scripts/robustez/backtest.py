@@ -185,6 +185,12 @@ def run_backtest(
                          spread_points=spread_points,
                          commission_per_trade=commission_per_trade)
 
+    if family == "grid_hedge":
+        return _run_grid_hedge(df, params, direction=direction, point=point,
+                               contract_size=contract_size, lot=lot,
+                               spread_points=spread_points,
+                               commission_per_trade=commission_per_trade)
+
     sig = _signals(df, family, params)
     # filtro de direção: long-only zera sinais de venda e vice-versa
     if direction == "long":
@@ -351,11 +357,131 @@ def _run_grid(
                           equity_dates=equity_dates, lot=lot)
 
 
+def _run_grid_hedge(
+    df: pd.DataFrame,
+    params: dict,
+    *,
+    direction: str,
+    point: float,
+    contract_size: float,
+    lot: float,
+    spread_points: float,
+    commission_per_trade: float,
+) -> BacktestResult:
+    """Arquitetura REAL dos robôs minerados QuantMiner (engenharia reversa dos
+    inputs de PQM_148): sinal MULTI-CONDIÇÃO decide a direção; abre um GRID que
+    adiciona níveis a cada `grid_step`×ATR contra a posição (média); fecha o
+    CESTO inteiro quando o lucro flutuante atinge o alvo financeiro (netting).
+    Sem SL por trade, mas trava de conta em `max_dd_pct`. Filtro de horário.
+    Hedge: compra e venda podem rodar ao mesmo tempo (direction='both').
+
+    O DD alto-mas-gerenciável (~20%) e a curva suave em range vêm daqui — não de
+    entrada única com SL/TP. É o que a vitrine deles realmente vende.
+    """
+    close = df["close"].values
+    times = df["time"].values
+    atr = _atr(df, int(params.get("atr_period", 14))).values
+    sig = _signals(df, params.get("family_signal", "multi"), params) \
+        if "blocks" in params else _signals(df, "mean_reversion", params)
+
+    step = float(params.get("grid_step", 1.5))       # espaçamento em ATRs
+    max_levels = int(params.get("grid_levels", 6))
+    tp_atr = float(params.get("grid_tp", 2.0))        # alvo do cesto em ATRs (× lote base)
+    max_dd_pct = float(params.get("max_dd_pct", 30.0))
+    h0 = int(params.get("hour_start", 0))
+    h1 = int(params.get("hour_end", 24))
+
+    value = contract_size * lot
+    cost = spread_points * point * contract_size * lot + commission_per_trade
+
+    dt_idx = pd.DatetimeIndex(df["time"])
+    hours = dt_idx.hour.values
+    weekday = dt_idx.weekday.values
+
+    trades: list[Trade] = []
+    equity_bar: list[float] = []
+    equity_dates: list[str] = []
+    realized = START_CAPITAL
+    peak = START_CAPITAL
+    cooldown = 0
+
+    # cada cesto: lista de preços de entrada + ATR do 1º open (define alvo $)
+    long_basket: list[float] = []
+    short_basket: list[float] = []
+    long_tp0 = short_tp0 = 0.0
+
+    def basket_float(basket, d, px):
+        return sum(d * (px - e) * value for e in basket)
+
+    def close_basket(basket, d, px, i, tp0):
+        nonlocal realized
+        gross = basket_float(basket, d, px)
+        p = round(float(gross) - cost * len(basket), 2)
+        realized += p
+        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=d))
+
+    for i in range(1, len(df)):
+        px = close[i]
+        a = atr[i] if not np.isnan(atr[i]) else 0.0
+        in_session = (h0 <= hours[i] < h1) and weekday[i] < 5
+
+        # equity mark-to-market (realizado + cestos abertos)
+        floating = 0.0
+        if long_basket:
+            floating += basket_float(long_basket, 1, px)
+        if short_basket:
+            floating += basket_float(short_basket, -1, px)
+        eq = realized + floating
+
+        # trava de Max Drawdown de conta: fecha tudo e entra em cooldown
+        peak = max(peak, eq)
+        if peak > 0 and (peak - eq) / peak * 100.0 >= max_dd_pct:
+            if long_basket:
+                close_basket(long_basket, 1, px, i, long_tp0); long_basket = []
+            if short_basket:
+                close_basket(short_basket, -1, px, i, short_tp0); short_basket = []
+            cooldown = 20
+            equity_bar.append(float(round(realized, 2)))
+            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            continue
+
+        if a > 0:
+            # fecha cesto no alvo financeiro (netting) — QuantMiner "profit netting"
+            if long_basket and basket_float(long_basket, 1, px) >= tp_atr * long_tp0 * value:
+                close_basket(long_basket, 1, px, i, long_tp0); long_basket = []
+            if short_basket and basket_float(short_basket, -1, px) >= tp_atr * short_tp0 * value:
+                close_basket(short_basket, -1, px, i, short_tp0); short_basket = []
+
+            # adiciona nível de grid quando anda `step`×ATR contra a última entrada
+            if long_basket and len(long_basket) < max_levels and px <= long_basket[-1] - step * a:
+                long_basket.append(px)
+            if short_basket and len(short_basket) < max_levels and px >= short_basket[-1] + step * a:
+                short_basket.append(px)
+
+        # novas aberturas: sinal + sessão + fora de cooldown
+        if cooldown > 0:
+            cooldown -= 1
+        elif in_session and a > 0:
+            s = sig[i]
+            if s == 1 and not long_basket and direction in ("both", "long"):
+                long_basket = [px]; long_tp0 = a
+            elif s == -1 and not short_basket and direction in ("both", "short"):
+                short_basket = [px]; short_tp0 = a
+
+        equity_bar.append(float(round(eq, 2)))
+        equity_dates.append(str(pd.Timestamp(times[i]).date()))
+
+    return BacktestResult(trades=trades, equity_bar=equity_bar,
+                          equity_dates=equity_dates, lot=lot)
+
+
 def count_params(family: str, params: dict | None = None) -> int:
     """Nº de parâmetros otimizáveis (pra mín. trades DQ Labs).
     'multi' = ~2 params por bloco (o funil exige mais trades qto mais complexa)."""
     if family == "multi" and params:
         return max(2, 2 * len(params.get("blocks", [])))
+    if family == "grid_hedge" and params:
+        return max(3, 2 * len(params.get("blocks", [])) + 3)
     return {"trend": 3, "mean_reversion": 3, "breakout": 2, "grid": 4,
             "macd_cross": 3, "bollinger_fade": 2, "bollinger_break": 2,
-            "stochastic": 3, "multi": 2}.get(family, 3)
+            "stochastic": 3, "multi": 2, "grid_hedge": 4}.get(family, 3)
