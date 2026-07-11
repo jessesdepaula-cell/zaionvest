@@ -191,11 +191,11 @@ export default async function EADetailPage({
                 </h4>
                 <ol className="space-y-2 text-[11px] text-zinc-500">
                   <li className="flex gap-2">
-                    <span className="font-mono text-[#DC1F2E]">01.</span>
+                    <span className="font-mono text-[#2563EB]">01.</span>
                     Baixe o arquivo <code className="text-zinc-300">.ex5</code>
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-mono text-[#DC1F2E]">02.</span>
+                    <span className="font-mono text-[#2563EB]">02.</span>
                     Copie para{" "}
                     <code className="text-zinc-300">
                       MQL5/Experts/
@@ -203,16 +203,16 @@ export default async function EADetailPage({
                     no MT5
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-mono text-[#DC1F2E]">03.</span>
+                    <span className="font-mono text-[#2563EB]">03.</span>
                     Abra o gráfico <strong className="text-zinc-300">{ea.symbol}</strong>{" "}
                     no timeframe <strong className="text-zinc-300">{ea.timeframe}</strong>
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-mono text-[#DC1F2E]">04.</span>
+                    <span className="font-mono text-[#2563EB]">04.</span>
                     Arraste o EA para o chart e configure o lote
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-mono text-[#DC1F2E]">05.</span>
+                    <span className="font-mono text-[#2563EB]">05.</span>
                     O EA verifica revalidação automaticamente a cada 30 min
                   </li>
                 </ol>

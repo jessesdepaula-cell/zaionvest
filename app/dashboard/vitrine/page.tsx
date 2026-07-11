@@ -78,7 +78,7 @@ export default async function DashboardVitrinePage({
         <div className="mb-8 flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Bot className="h-5 w-5 text-[#DC1F2E]" />
+              <Bot className="h-5 w-5 text-[#2563EB]" />
               <h1 className="text-xl font-bold text-[#F5F5F5]">
                 Vitrine de EAs
               </h1>

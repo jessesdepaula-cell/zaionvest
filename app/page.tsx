@@ -24,7 +24,7 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[#000000] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300 relative overflow-hidden">
       {/* Glow de Fundo */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-gradient-to-b from-[#DC1F2E]/15 to-transparent blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-gradient-to-b from-[#2563EB]/15 to-transparent blur-[120px] pointer-events-none z-0" />
 
       {/* Header Fixo Simples */}
       <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-[#f5f5f5]/5">
@@ -54,14 +54,14 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center">
-        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#DC1F2E]/40 bg-[#DC1F2E]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
-          <Sparkles className="h-3.5 w-3.5 text-[#DC1F2E] animate-pulse" />
+        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/40 bg-[#2563EB]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
+          <Sparkles className="h-3.5 w-3.5 text-[#2563EB] animate-pulse" />
           Robôs para MetaTrader 5 · Revalidação mensal · 3 Dias 100% Grátis
         </div>
 
         <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-7xl">
           Robôs de trading que{" "}
-          <span className="bg-gradient-to-r from-[#F5F5F5] via-[#F5F5F5] to-[#DC1F2E] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#F5F5F5] via-[#F5F5F5] to-[#2563EB] bg-clip-text text-transparent">
             não escondem o risco.
           </span>
         </h1>
@@ -70,7 +70,7 @@ export default function LandingPage() {
           A maioria dos robôs vendidos por aí brilha no backtest e quebra na conta real. Na
           ZaionVest, cada robô passa por uma <span className="text-[#F5F5F5] font-semibold">validação
           de robustez</span> antes de entrar na vitrine, é reavaliado todo mês e tem um{" "}
-          <span className="text-[#DC1F2E] font-semibold">kill-switch</span> que o desliga sozinho se
+          <span className="text-[#2563EB] font-semibold">kill-switch</span> que o desliga sozinho se
           parar de funcionar. E mostramos o <span className="text-[#F5F5F5] font-semibold">drawdown
           real</span> — não o número bonito de marketing.
         </p>
@@ -79,7 +79,7 @@ export default function LandingPage() {
           <Link
             href="/sign-up"
             id="cta-hero-primary"
-            className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#DC1F2E] px-8 py-4 text-sm font-bold tracking-wide text-white shadow-[0_10px_40px_-10px_rgba(220,31,46,0.6)] ring-1 ring-white/10 transition hover:bg-[#B01623] hover:shadow-[0_14px_50px_-8px_rgba(220,31,46,0.8)] focus:outline-none"
+            className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-4 text-sm font-bold tracking-wide text-white shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] ring-1 ring-white/10 transition hover:bg-[#1D4ED8] hover:shadow-[0_14px_50px_-8px_rgba(37,99,235,0.8)] focus:outline-none"
           >
             Começar Teste de 3 Dias Grátis
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
@@ -103,7 +103,7 @@ export default function LandingPage() {
       {/* ─── COMO FUNCIONA O TRIAL ─── */}
       <section id="como-funciona" className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="text-center mb-12">
-          <span className="text-xs uppercase tracking-widest text-[#DC1F2E] font-semibold">
+          <span className="text-xs uppercase tracking-widest text-[#2563EB] font-semibold">
             Teste de 3 Dias Grátis
           </span>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">

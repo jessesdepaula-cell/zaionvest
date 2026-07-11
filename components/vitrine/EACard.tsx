@@ -249,8 +249,8 @@ export function EACard({
               href={canDownload ? `/api/ea/${id}/download` : "/billing"}
               className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
                 canDownload
-                  ? "bg-[#DC1F2E] text-white hover:bg-[#B01623] shadow-[0_4px_16px_-4px_rgba(220,31,46,0.4)]"
-                  : "border border-[#DC1F2E]/30 text-[#DC1F2E] hover:bg-[#DC1F2E]/10"
+                  ? "bg-[#2563EB] text-white hover:bg-[#1D4ED8] shadow-[0_4px_16px_-4px_rgba(37,99,235,0.4)]"
+                  : "border border-[#2563EB]/30 text-[#2563EB] hover:bg-[#2563EB]/10"
               }`}
             >
               <Download className="h-3.5 w-3.5" />

@@ -46,7 +46,7 @@ export default async function AdminEAsPage() {
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Bot className="h-5 w-5 text-[#DC1F2E]" />
+              <Bot className="h-5 w-5 text-[#2563EB]" />
               <h1 className="text-xl font-bold text-[#F5F5F5]">
                 Admin — Vitrine de EAs
               </h1>
@@ -57,7 +57,7 @@ export default async function AdminEAsPage() {
           </div>
           <Link
             href="/dashboard/admin/eas/novo"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#DC1F2E] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#B01623] transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1D4ED8] transition"
           >
             <Plus className="h-4 w-4" />
             Cadastrar EA
@@ -71,7 +71,7 @@ export default async function AdminEAsPage() {
             { label: "Aprovados", value: stats.approved, color: "text-emerald-400" },
             { label: "Reprovados", value: stats.rejected, color: "text-rose-400" },
             { label: "Pendentes", value: stats.pending, color: "text-amber-400" },
-            { label: "Downloads", value: stats.totalDownloads, color: "text-[#DC1F2E]" },
+            { label: "Downloads", value: stats.totalDownloads, color: "text-[#2563EB]" },
           ].map((s) => (
             <div
               key={s.label}
@@ -101,7 +101,7 @@ export default async function AdminEAsPage() {
               <p className="text-sm text-zinc-500">Nenhum EA cadastrado ainda.</p>
               <Link
                 href="/dashboard/admin/eas/novo"
-                className="mt-4 text-xs text-[#DC1F2E] hover:underline"
+                className="mt-4 text-xs text-[#2563EB] hover:underline"
               >
                 Cadastrar o primeiro EA →
               </Link>

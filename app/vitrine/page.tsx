@@ -132,7 +132,7 @@ export default async function VitrinePage({
             </Link>
             <Link
               href="/sign-up"
-              className="rounded-lg bg-[#DC1F2E] px-4 py-2 font-semibold text-white transition hover:bg-[#B01623]"
+              className="rounded-lg bg-[#2563EB] px-4 py-2 font-semibold text-white transition hover:bg-[#1D4ED8]"
             >
               Começar grátis
             </Link>
@@ -143,7 +143,7 @@ export default async function VitrinePage({
       <div className="mx-auto max-w-6xl px-6 py-12">
         {/* Hero da vitrine */}
         <div className="mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#DC1F2E]/30 bg-[#DC1F2E]/[0.06] px-3.5 py-1.5 text-xs text-[#DC1F2E] font-medium mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#2563EB]/30 bg-[#2563EB]/[0.06] px-3.5 py-1.5 text-xs text-[#2563EB] font-medium mb-4">
             <Bot className="h-3.5 w-3.5" />
             Esteira de Robustez DQ Labs
           </div>
@@ -164,13 +164,13 @@ export default async function VitrinePage({
           </p>
 
           {/* CTA para assinar */}
-          <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-[#DC1F2E]/20 bg-[#DC1F2E]/[0.04] px-5 py-3">
+          <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-[#2563EB]/20 bg-[#2563EB]/[0.04] px-5 py-3">
             <span className="text-xs text-zinc-400">
               Faça download dos .ex5 com uma assinatura ativa
             </span>
             <Link
               href="/sign-up"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#DC1F2E] px-4 py-2 text-xs font-bold text-white hover:bg-[#B01623] transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-bold text-white hover:bg-[#1D4ED8] transition"
             >
               3 Dias Grátis <ArrowRight className="h-3.5 w-3.5" />
             </Link>

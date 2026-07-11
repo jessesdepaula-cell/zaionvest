@@ -14,9 +14,9 @@
   --cream-20: rgba(245, 245, 245, 0.2);
   --cream-10: rgba(245, 245, 245, 0.1);
   --cream-06: rgba(245, 245, 245, 0.06);
-  --gold: #dc1f2e;
-  --rust: #b01623;
-  --brand-red: #dc1f2e;
+  --gold: #2563eb;
+  --rust: #1d4ed8;
+  --brand-red: #2563eb;
   --brand-white: #f5f5f5;
   --brand-black: #0a0a0a;
 }
@@ -67,12 +67,12 @@ body {
   }
 
   .brand-glow {
-    box-shadow: 0 0 60px -20px rgba(220, 31, 46, 0.55);
+    box-shadow: 0 0 60px -20px rgba(37, 99, 235, 0.55);
   }
 }
 
 ::selection {
-  background: rgba(220, 31, 46, 0.35);
+  background: rgba(37, 99, 235, 0.35);
   color: #ffffff;
 }
 
@@ -88,5 +88,5 @@ body {
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(220, 31, 46, 0.35);
+  background: rgba(37, 99, 235, 0.35);
 }

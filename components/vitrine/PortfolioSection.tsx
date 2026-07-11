@@ -20,7 +20,7 @@ interface PortfolioView {
 const ACCENT: Record<string, string> = {
   conservador: "#22c55e",
   moderado: "#eab308",
-  agressivo: "#DC1F2E",
+  agressivo: "#2563EB",
 };
 
 export function PortfolioSection({ portfolios }: { portfolios: PortfolioView[] }) {
@@ -41,7 +41,7 @@ export function PortfolioSection({ portfolios }: { portfolios: PortfolioView[] }
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {portfolios.map((p) => {
-          const accent = ACCENT[p.profile] ?? "#DC1F2E";
+          const accent = ACCENT[p.profile] ?? "#2563EB";
           return (
             <div
               key={p.profile}

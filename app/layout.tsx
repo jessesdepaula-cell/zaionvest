@@ -33,7 +33,7 @@ export default function RootLayout({
       localization={ptBR}
       appearance={{
         variables: {
-          colorPrimary: "#DC1F2E",
+          colorPrimary: "#2563EB",
           colorBackground: "#0A0A0A",
           colorText: "#F5F5F5",
           colorInputBackground: "#1F1F1F",

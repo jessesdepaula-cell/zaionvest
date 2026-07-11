@@ -66,7 +66,7 @@ export function EAFilters({ total }: EAFiltersProps) {
         <select
           value={symbol}
           onChange={(e) => setParam("symbol", e.target.value)}
-          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#DC1F2E]/50 focus:outline-none transition"
+          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#2563EB]/50 focus:outline-none transition"
         >
           <option value="">Todos os pares</option>
           {SYMBOLS.map((s) => (
@@ -80,7 +80,7 @@ export function EAFilters({ total }: EAFiltersProps) {
         <select
           value={timeframe}
           onChange={(e) => setParam("timeframe", e.target.value)}
-          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#DC1F2E]/50 focus:outline-none transition"
+          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#2563EB]/50 focus:outline-none transition"
         >
           <option value="">Todos os TFs</option>
           {TIMEFRAMES.map((tf) => (
@@ -94,7 +94,7 @@ export function EAFilters({ total }: EAFiltersProps) {
         <select
           value={style}
           onChange={(e) => setParam("style", e.target.value)}
-          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#DC1F2E]/50 focus:outline-none transition"
+          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#2563EB]/50 focus:outline-none transition"
         >
           {STYLES.map((s) => (
             <option key={s.value} value={s.value}>
@@ -107,7 +107,7 @@ export function EAFilters({ total }: EAFiltersProps) {
         <select
           value={sort}
           onChange={(e) => setParam("sort", e.target.value)}
-          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#DC1F2E]/50 focus:outline-none transition ml-auto"
+          className="rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-300 focus:border-[#2563EB]/50 focus:outline-none transition ml-auto"
         >
           {SORT_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -138,7 +138,7 @@ export function EAFilters({ total }: EAFiltersProps) {
           aria-pressed={top25}
           className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
             top25
-              ? "border-[#DC1F2E]/50 bg-[#DC1F2E]/[0.08] text-[#DC1F2E]"
+              ? "border-[#2563EB]/50 bg-[#2563EB]/[0.08] text-[#2563EB]"
               : "border-[#f5f5f5]/10 text-zinc-400 hover:text-zinc-200"
           }`}
         >
@@ -160,7 +160,7 @@ export function EAFilters({ total }: EAFiltersProps) {
               const v = parseFloat(e.target.value);
               setParam("corr", v >= 1 ? "" : v.toFixed(1));
             }}
-            className="h-1 w-40 cursor-pointer accent-[#DC1F2E]"
+            className="h-1 w-40 cursor-pointer accent-[#2563EB]"
           />
           <span className="w-8 text-[11px] tabular-nums text-zinc-400">
             {corr >= 1 ? "off" : corr.toFixed(1)}

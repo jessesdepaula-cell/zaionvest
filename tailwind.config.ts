@@ -72,12 +72,14 @@ const config: Config = {
           "bg-elevated": "#141414",
           surface: "#1F1F1F",
           white: "#F5F5F5",
-          red: "#DC1F2E",
-          "red-deep": "#B01623",
+          // Cor da marca = AZUL premium (antes era vermelho). O vermelho segue
+          // reservado só para semântica negativa/SELL/danger (escala `red`/`rose`).
+          red: "#2563EB",
+          "red-deep": "#1D4ED8",
           // aliases legados (mantêm compatibilidade com classes antigas)
           cream: "#F5F5F5",
-          gold: "#DC1F2E",
-          rust: "#B01623",
+          gold: "#2563EB",
+          rust: "#1D4ED8",
         },
         charcoal: {
           DEFAULT: "#0A0A0A",
@@ -126,7 +128,7 @@ const config: Config = {
       boxShadow: {
         terminal:
           "0 1px 0 rgba(245,245,245,0.05) inset, 0 0 0 1px rgba(245,245,245,0.08)",
-        glow: "0 0 40px -10px rgba(220,31,46,0.45)",
+        glow: "0 0 40px -10px rgba(37,99,235,0.45)",
       },
       backgroundImage: {
         grid:

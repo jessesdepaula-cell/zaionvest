@@ -58,9 +58,9 @@ export default async function DashboardLayout({
               style={{ mixBlendMode: "lighten" }}
             />
             <span className="text-sm font-semibold tracking-tight text-[#F5F5F5]">
-              Zaion<span className="text-[#DC1F2E]">Vest</span>
+              Zaion<span className="text-[#2563EB]">Vest</span>
             </span>
-            <span className="ml-auto rounded-md border border-[#DC1F2E]/50 bg-[#DC1F2E]/[0.14] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#DC1F2E] font-semibold">
+            <span className="ml-auto rounded-md border border-[#2563EB]/50 bg-[#2563EB]/[0.14] px-2 py-0.5 text-[10px] uppercase tracking-widest text-[#2563EB] font-semibold">
               Pro
             </span>
           </Link>
@@ -107,7 +107,7 @@ export default async function DashboardLayout({
               style={{ mixBlendMode: "lighten" }}
             />
             <span className="text-sm font-semibold tracking-tight text-[#F5F5F5]">
-              Zaion<span className="text-[#DC1F2E]">Vest</span>
+              Zaion<span className="text-[#2563EB]">Vest</span>
             </span>
           </Link>
           <div className="flex items-center gap-2">

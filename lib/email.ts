@@ -26,7 +26,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
   try {
     const isBuy = signal.direction.toUpperCase().includes("COMPRA");
     const dirText = isBuy ? "COMPRA" : "VENDA";
-    const dirColor = isBuy ? "#DC1F2E" : "#B01623"; // Dourado vs Rústico
+    const dirColor = isBuy ? "#2563EB" : "#1D4ED8"; // Dourado vs Rústico
 
     const formatPrice = (val: number | null) =>
       val !== null ? val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : "N/A";
@@ -72,7 +72,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             margin: 0;
           }
           .logo span {
-            color: #dc1f2e;
+            color: #2563eb;
           }
           .content {
             padding: 32px 24px;
@@ -145,7 +145,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #dc1f2e;
+            color: #2563eb;
             margin-bottom: 6px;
           }
           .btn-container {
@@ -154,7 +154,7 @@ export async function sendSignalEmail(toEmail: string, signal: EmailSignalData) 
           }
           .btn {
             display: inline-block;
-            background-color: #dc1f2e;
+            background-color: #2563eb;
             color: #000000 !important;
             text-decoration: none;
             padding: 12px 30px;
@@ -300,7 +300,7 @@ export async function sendEARejectedEmail({
             <tr>
               <td style="background:#0A0A0A;border-bottom:1px solid rgba(245,245,245,0.06);padding:24px 32px;">
                 <span style="font-size:18px;font-weight:700;color:#F5F5F5;letter-spacing:-0.01em;">
-                  Zaion<span style="color:#DC1F2E;">Vest</span>
+                  Zaion<span style="color:#2563EB;">Vest</span>
                 </span>
               </td>
             </tr>
@@ -308,8 +308,8 @@ export async function sendEARejectedEmail({
             <!-- Alerta -->
             <tr>
               <td style="padding:32px 32px 24px;">
-                <div style="background:rgba(220,31,46,0.08);border:1px solid rgba(220,31,46,0.25);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-                  <p style="margin:0;font-size:13px;font-weight:700;color:#DC1F2E;text-transform:uppercase;letter-spacing:0.08em;">
+                <div style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.25);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:0.08em;">
                     ⚠️ EA Reprovado na Revalidação
                   </p>
                 </div>
@@ -347,7 +347,7 @@ export async function sendEARejectedEmail({
                 </p>
 
                 <a href="https://zaionvest.com.br/dashboard/vitrine"
-                   style="display:inline-block;background:#DC1F2E;color:#FFFFFF;padding:14px 28px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:0.02em;">
+                   style="display:inline-block;background:#2563EB;color:#FFFFFF;padding:14px 28px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:0.02em;">
                   Ver Vitrine de EAs →
                 </a>
               </td>

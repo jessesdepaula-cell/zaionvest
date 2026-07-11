@@ -37,14 +37,14 @@ export function SidebarNav({ owner = false }: { owner?: boolean }) {
             className={cn(
               "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition",
               isActive
-                ? "bg-[#DC1F2E]/[0.12] text-[#F5F5F5] ring-1 ring-inset ring-[#DC1F2E]/40"
+                ? "bg-[#2563EB]/[0.12] text-[#F5F5F5] ring-1 ring-inset ring-[#2563EB]/40"
                 : "text-zinc-400 hover:bg-[#f5f5f5]/[0.04] hover:text-offwhite",
             )}
           >
             <Icon
               className={cn(
                 "h-4 w-4 transition",
-                isActive ? "text-[#DC1F2E]" : "text-zinc-500 group-hover:text-zinc-300",
+                isActive ? "text-[#2563EB]" : "text-zinc-500 group-hover:text-zinc-300",
               )}
             />
             {item.label}
