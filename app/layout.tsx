@@ -17,9 +17,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZaionVest — Análise Institucional em Segundos",
+  title: "ZaionVest — Robôs de Trading Automático para MetaTrader 5",
   description:
-    "Plataforma de análise de gráficos com IA institucional. SMC, Price Action, planos de trade com R:R em segundos.",
+    "Vitrine de robôs (Expert Advisors) validados para MetaTrader 5. Revalidação mensal, kill-switch remoto e drawdown real e transparente.",
   metadataBase: new URL("https://zaionvest.com.br"),
 };
 

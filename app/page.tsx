@@ -15,9 +15,9 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "ZaionVest — Robôs de Trading Automático para MetaTrader 5 | 3 Dias Grátis",
+  title: "ZaionVest — Robôs de Trading Automático para MetaTrader 5",
   description:
-    "Vitrine de robôs (Expert Advisors) validados para MetaTrader 5. Revalidação mensal, kill-switch remoto e drawdown real e transparente. Teste 3 dias grátis.",
+    "Vitrine de robôs (Expert Advisors) validados para MetaTrader 5. Revalidação mensal, kill-switch remoto e drawdown real e transparente. Assinatura mensal, acesso imediato.",
 };
 
 export default function LandingPage() {
@@ -56,7 +56,7 @@ export default function LandingPage() {
       <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center">
         <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/40 bg-[#2563EB]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
           <Sparkles className="h-3.5 w-3.5 text-[#2563EB] animate-pulse" />
-          Robôs para MetaTrader 5 · Revalidação mensal · 3 Dias 100% Grátis
+          Robôs para MetaTrader 5 · Validados e revalidados · Kill-switch remoto
         </div>
 
         <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-7xl">
@@ -81,7 +81,7 @@ export default function LandingPage() {
             id="cta-hero-primary"
             className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-4 text-sm font-bold tracking-wide text-white shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] ring-1 ring-white/10 transition hover:bg-[#1D4ED8] hover:shadow-[0_14px_50px_-8px_rgba(37,99,235,0.8)] focus:outline-none"
           >
-            Começar Teste de 3 Dias Grátis
+            Quero acessar a vitrine
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           <a
@@ -94,74 +94,9 @@ export default function LandingPage() {
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-[10px] text-zinc-500">
           <span className="flex items-center gap-1">🔒 Pagamento seguro via Asaas</span>
-          <span className="flex items-center gap-1">⚡ 3 Dias de Acesso Grátis</span>
+          <span className="flex items-center gap-1">⚡ Acesso imediato após assinar</span>
           <span className="flex items-center gap-1">🤖 Robôs prontos para MetaTrader 5</span>
           <span className="flex items-center gap-1">📅 Cancele a qualquer momento</span>
-        </div>
-      </section>
-
-      {/* ─── COMO FUNCIONA O TRIAL ─── */}
-      <section id="como-funciona" className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
-        <div className="text-center mb-12">
-          <span className="text-xs uppercase tracking-widest text-[#2563EB] font-semibold">
-            Teste de 3 Dias Grátis
-          </span>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-            Explore antes de pagar
-          </h2>
-          <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
-            Você tem 3 dias completos para acessar a vitrine, baixar os robôs e colocá-los para
-            rodar. Sem cobrança antecipada.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              day: "Dia 1",
-              icon: "🚀",
-              title: "Acesso imediato à vitrine",
-              desc: "Crie sua conta e entre direto na vitrine: veja todos os robôs disponíveis, com o drawdown real e as métricas de cada um.",
-              color: "border-blue-500/20 bg-blue-500/[0.03]",
-              textColor: "text-blue-400",
-            },
-            {
-              day: "Dias 2–3",
-              icon: "🤖",
-              title: "Coloque para rodar",
-              desc: "Baixe os robôs que fizerem sentido, instale no seu MetaTrader 5 (conta demo ou real) e acompanhe funcionando.",
-              color: "border-emerald-500/20 bg-emerald-500/[0.03]",
-              textColor: "text-emerald-400",
-            },
-            {
-              day: "Após 3 dias",
-              icon: "✅",
-              title: "Você decide",
-              desc: "Se gostar, continue por apenas R$ 47,90/mês. Se não, cancele com um clique. Sem multa, sem burocracia.",
-              color: "border-zinc-500/20 bg-zinc-500/[0.02]",
-              textColor: "text-zinc-400",
-            },
-          ].map((step, i) => (
-            <div key={i} className={`rounded-2xl border p-6 ${step.color} relative overflow-hidden`}>
-              <div className="text-3xl mb-4">{step.icon}</div>
-              <span className={`text-[10px] uppercase tracking-widest font-bold ${step.textColor}`}>
-                {step.day}
-              </span>
-              <h3 className="mt-1 text-sm font-semibold text-[#F5F5F5]">{step.title}</h3>
-              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">{step.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 text-center">
-          <Link
-            href="/sign-up"
-            id="cta-trial-flow"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-8 py-3.5 text-sm font-bold text-[#000000] transition hover:bg-emerald-400"
-          >
-            Quero meus 3 dias grátis <ArrowRight className="h-4 w-4" />
-          </Link>
-          <p className="mt-3 text-[10px] text-zinc-600">Nenhum cartão cobrado agora.</p>
         </div>
       </section>
 
@@ -249,7 +184,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── COMO COLOCAR PARA RODAR ─── */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
+      <section id="como-funciona" className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="text-center mb-12">
           <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
             Simples assim
@@ -307,7 +242,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center">
             <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Acesso Profissional</span>
             <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
-              3 Dias Grátis
+              Acesso imediato
             </span>
           </div>
 
@@ -317,14 +252,14 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-1 text-xs text-zinc-500">
-            Após o período de teste. Cancele quando quiser.
+            Cobrança mensal recorrente. Cancele quando quiser.
           </p>
 
           <div className="mt-4 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
-            <p className="text-xs font-semibold text-emerald-300">🎯 Seus 3 primeiros dias são 100% gratuitos</p>
+            <p className="text-xs font-semibold text-emerald-300">✅ Acesso liberado na hora</p>
             <p className="mt-1 text-[11px] text-zinc-400">
-              Cadastre-se hoje e explore a vitrine na hora. Nenhuma cobrança
-              até o 4º dia. Cancele antes e não paga nada.
+              Assim que o pagamento é confirmado, toda a vitrine de robôs é
+              liberada para você. Renova automaticamente todo mês; cancele quando quiser.
             </p>
           </div>
 
@@ -351,7 +286,7 @@ export default function LandingPage() {
             id="cta-pricing"
             className="mt-8 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-[#000000] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 hover:shadow-emerald-500/35 focus:outline-none"
           >
-            Iniciar meu Teste Grátis
+            Assinar agora
             <ArrowRight className="h-4 w-4" />
           </Link>
 
@@ -370,8 +305,8 @@ export default function LandingPage() {
 
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           <FaqItem
-            q="O que acontece ao final dos 3 dias de teste?"
-            a="Se você gostar e decidir continuar, o Asaas processará a primeira mensalidade de R$ 47,90 automaticamente. Se cancelar antes do final do terceiro dia, nenhuma cobrança será efetuada."
+            q="Como funciona a cobrança?"
+            a="A assinatura é mensal (R$ 47,90) via Asaas, no Pix ou cartão. O acesso a toda a vitrine é liberado assim que o pagamento é confirmado e renova automaticamente todo mês. Você cancela quando quiser, sem multa."
           />
           <FaqItem
             q="Preciso saber programar ou configurar algo complicado?"
@@ -399,20 +334,19 @@ export default function LandingPage() {
       {/* ─── CTA FINAL ─── */}
       <section className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
         <h2 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-          Comece agora. Sem risco de assinatura.
+          Acesse a vitrine agora.
         </h2>
         <p className="mt-4 text-sm text-zinc-400 max-w-sm mx-auto">
-          3 dias para explorar a vitrine, baixar robôs e vê-los operando. Se não gostar, cancela e
-          não paga nada.
+          Assine, baixe os robôs e coloque-os para operar hoje mesmo. Cancele quando quiser.
         </p>
         <Link
           href="/sign-up"
           id="cta-final"
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-10 py-4 text-sm font-bold text-[#000000] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
         >
-          Quero meus 3 dias grátis <ArrowRight className="h-4 w-4" />
+          Quero acessar a vitrine <ArrowRight className="h-4 w-4" />
         </Link>
-        <p className="mt-3 text-[10px] text-zinc-600">Sem cartão cobrado agora. Cancele quando quiser.</p>
+        <p className="mt-3 text-[10px] text-zinc-600">Pagamento seguro via Asaas · Cancele quando quiser.</p>
       </section>
 
       {/* ─── FOOTER ─── */}

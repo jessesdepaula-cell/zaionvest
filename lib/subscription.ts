@@ -50,8 +50,9 @@ export async function getOrCreateUser() {
       clerkId: userId,
       email,
       name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" "),
-      subscriptionStatus: "trialing",
-      currentPeriodEnd: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 dias grátis
+      // Sem período grátis (decisão Jessé 2026-07-11): novo usuário nasce
+      // INATIVO e cai no paywall /billing até assinar.
+      subscriptionStatus: "inactive",
     },
     update: { email },
   });

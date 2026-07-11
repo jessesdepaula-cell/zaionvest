@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles, AlertCircle, Shield, Target, Zap, TrendingUp, HelpCircle } from "lucide-react";
+import { ArrowRight, Check, Sparkles, AlertCircle, Shield, RefreshCw, Power, Gauge, Bot, HelpCircle } from "lucide-react";
 
 export default async function BillingPage({
   searchParams,
@@ -11,15 +11,15 @@ export default async function BillingPage({
   return (
     <main className="min-h-screen bg-[#000000] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* Glow de Fundo */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-gradient-to-b from-emerald-950/20 to-transparent blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-gradient-to-b from-[#2563EB]/15 to-transparent blur-[120px] pointer-events-none z-0" />
 
       {/* Header Fixo Simples */}
       <header className="relative z-10 mx-auto max-w-6xl flex items-center justify-between px-6 py-6 border-b border-[#f5f5f5]/5">
         <div className="flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-md border border-emerald-500/20 bg-emerald-500/5">
-            <Target className="h-4 w-4 text-emerald-500" />
+          <div className="grid h-7 w-7 place-items-center rounded-md border border-[#2563EB]/20 bg-[#2563EB]/5">
+            <Bot className="h-4 w-4 text-[#2563EB]" />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-offwhite">Zaion<span className="text-zinc-500">Vest</span></span>
+          <span className="text-sm font-semibold tracking-tight text-offwhite">Zaion<span className="text-[#2563EB]">Vest</span></span>
         </div>
         <Link
           href="/dashboard"
@@ -31,18 +31,19 @@ export default async function BillingPage({
 
       {/* Hero Section */}
       <section className="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-12 text-center">
-        <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.03] px-3.5 py-1 text-xs text-emerald-400 font-medium tracking-wide">
-          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-          Tecnologia de Mesa Proprietária
+        <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/30 bg-[#2563EB]/[0.06] px-3.5 py-1 text-xs text-[#F5F5F5] font-medium tracking-wide">
+          <Sparkles className="h-3.5 w-3.5 text-[#2563EB]" />
+          Ative sua assinatura para acessar a vitrine
         </div>
         <h1 className="text-balance text-4xl font-bold tracking-tight text-offwhite sm:text-6xl">
-          Opere no mesmo nível dos <br />
-          <span className="bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">
-            Fundos Institucionais.
+          Robôs de trading que <br />
+          <span className="bg-gradient-to-r from-[#F5F5F5] to-[#2563EB] bg-clip-text text-transparent">
+            não escondem o risco.
           </span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
-          Pare de ser liquidez para o mercado. A ZaionVest utiliza visão computacional e algoritmos inteligentes para identificar setups de alta probabilidade baseados em SMC (Smart Money Concepts) e Price Action Puro.
+          Cada robô da vitrine passa por uma validação de robustez, é revalidado todo mês e tem
+          kill-switch remoto. Assine para liberar o acesso a todos e baixá-los para o seu MetaTrader 5.
         </p>
 
         {/* Mensagem de Erro se houver */}
@@ -61,9 +62,9 @@ export default async function BillingPage({
           <form action="/api/billing/checkout" method="POST" className="w-full sm:w-auto">
             <button
               type="submit"
-              className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-charcoal shadow-lg shadow-emerald-500/10 transition hover:bg-emerald-400 hover:shadow-emerald-500/20 focus:outline-none"
+              className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#2563EB]/20 transition hover:bg-[#1D4ED8] focus:outline-none"
             >
-              Iniciar meu Teste Grátis de 3 dias
+              Assinar e acessar a vitrine
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
           </form>
@@ -76,41 +77,43 @@ export default async function BillingPage({
         </div>
 
         <div className="mt-4 flex items-center justify-center gap-6 text-[10px] text-zinc-500">
-          <span className="flex items-center gap-1">🔒 Conexão Criptografada</span>
-          <span className="flex items-center gap-1">⚡ Sem taxas ocultas</span>
+          <span className="flex items-center gap-1">🔒 Pagamento seguro via Asaas</span>
+          <span className="flex items-center gap-1">⚡ Acesso imediato após pagar</span>
           <span className="flex items-center gap-1">📅 Cancele com 1 clique</span>
         </div>
       </section>
 
-      {/* A Cilada do Varejo vs Realidade Institucional */}
+      {/* Problema vs Solução */}
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-[#f5f5f5]/5">
         <div className="grid gap-8 md:grid-cols-2">
           <div className="rounded-2xl border border-[#f5f5f5]/5 bg-[#0A0A0A] p-6 sm:p-8">
             <h3 className="text-lg font-semibold text-rose-400 flex items-center gap-2">
-              ⚠️ A Cilada do Trader de Varejo
+              ⚠️ O “robô perfeito” que só funciona no passado
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              Indicadores clássicos (RSI, MACD, Médias Cruzadas) são construídos sobre dados passados. O mercado institucional sabe exatamente onde os traders de varejo colocam seus stops baseando-se nesses indicadores e gera movimentos falsos para capturar essa liquidez.
+              A maioria dos robôs vendidos por aí brilha no backtest e desanda na conta real. E o
+              pior: seguem operando mesmo depois de parar de funcionar, drenando a conta.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-zinc-500">
-              <li className="flex items-center gap-2">❌ Entradas atrasadas em topos ou fundos</li>
-              <li className="flex items-center gap-2">❌ Sinais que mudam de direção depois do movimento</li>
-              <li className="flex items-center gap-2">❌ Relações Risco/Retorno desastrosas</li>
+              <li className="flex items-center gap-2">❌ Curvas de backtest que não se repetem ao vivo</li>
+              <li className="flex items-center gap-2">❌ Drawdown escondido ou maquiado no marketing</li>
+              <li className="flex items-center gap-2">❌ Robô que continua operando mesmo depois de “quebrar”</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border border-emerald-500/10 bg-[#141414] p-6 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-500/[0.02] blur-xl" />
             <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-              🛡️ A Vantagem Profissional da ZaionVest
+              🛡️ Robôs que provam valor — e continuam provando
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              A ZaionVest ignora o ruído e mapeia o mercado conforme o Smart Money. Identificamos Fair Value Gaps (desequilíbrio de ordens), Order Blocks (onde os grandes bancos se posicionam), e calculamos planos com Risco/Retorno matemáticos favoráveis.
+              Só entra na vitrine o robô que passa na nossa validação de robustez. Reavaliamos todo
+              mês com dados novos — o que degrada é retirado e desligado na sua conta.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-emerald-500/80">
-              <li className="flex items-center gap-2">✔ Mapeamento inteligente de BOS e CHoCH</li>
-              <li className="flex items-center gap-2">✔ Alvos objetivos baseados em liquidez pendente</li>
-              <li className="flex items-center gap-2">✔ Relação Risco:Retorno mínima de 1:1 (média de 1:2+)</li>
+              <li className="flex items-center gap-2">✔ Validação de robustez antes de listar</li>
+              <li className="flex items-center gap-2">✔ Revalidação mensal com dados atualizados</li>
+              <li className="flex items-center gap-2">✔ Kill-switch remoto: robô que degrada para sozinho</li>
             </ul>
           </div>
         </div>
@@ -119,60 +122,60 @@ export default async function BillingPage({
       {/* Principais Recursos */}
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-[#f5f5f5]/5">
         <h2 className="text-center text-2xl font-bold tracking-tight text-offwhite">
-          Tudo o que você precisa para dominar o mercado
+          O que você recebe na vitrine
         </h2>
         <p className="text-center text-sm text-zinc-400 mt-2 max-w-md mx-auto">
-          Uma suíte de ferramentas projetadas para consistência matemática, sem achismos.
+          Robôs prontos para o MetaTrader 5, com transparência total sobre o risco.
         </p>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <FeatureCard
-            icon={<Target className="h-5 w-5 text-emerald-400" />}
-            title="Análise com Visão Computacional"
-            description="Tire um print de qualquer gráfico no TradingView ou MT4, envie na plataforma e receba a marcação técnica em segundos."
-          />
-          <FeatureCard
-            icon={<Zap className="h-5 w-5 text-emerald-400" />}
-            title="SMC e Price Action Híbrido"
-            description="Entenda o viés de tendência, localize blocos de ordens institucionais e zonas de valor clássicas integradas."
-          />
-          <FeatureCard
-            icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
-            title="Radar de Setups 24/7"
-            description="Monitore múltiplos ativos e timeframes. O sistema faz varreduras automáticas de mercado constantemente em segundo plano."
+            icon={<Bot className="h-5 w-5 text-emerald-400" />}
+            title="Robôs prontos para o MT5"
+            description="Baixe o Expert Advisor, coloque no MetaTrader 5 e opere. Sem programar, sem configurar parâmetros."
           />
           <FeatureCard
             icon={<Shield className="h-5 w-5 text-emerald-400" />}
-            title="Gestão de Risco Blindada"
-            description="Cada sinal gerado vem com preços exatos de entrada, stop loss técnico e alvos parciais estruturados."
+            title="Validação de robustez"
+            description="Cada robô passa por um processo proprietário de validação antes de aparecer na vitrine."
+          />
+          <FeatureCard
+            icon={<RefreshCw className="h-5 w-5 text-emerald-400" />}
+            title="Revalidação mensal"
+            description="Todo mês reavaliamos cada robô com dados novos de mercado. O que degrada é retirado."
+          />
+          <FeatureCard
+            icon={<Power className="h-5 w-5 text-emerald-400" />}
+            title="Kill-switch remoto"
+            description="Robô que perde robustez é desativado automaticamente no seu MetaTrader — sem você fazer nada."
+          />
+          <FeatureCard
+            icon={<Gauge className="h-5 w-5 text-emerald-400" />}
+            title="Drawdown real"
+            description="Mostramos o rebaixamento real de cada robô, não um número de marketing. Você conhece o risco antes."
           />
           <FeatureCard
             icon={<Check className="h-5 w-5 text-emerald-400" />}
-            title="Auditor de Assertividade"
-            description="Um auditor dedicado analisa e publica de forma transparente as taxas de acerto históricas de cada setup."
-          />
-          <FeatureCard
-            icon={<Sparkles className="h-5 w-5 text-emerald-400" />}
-            title="Alertas por E-mail em Tempo Real"
-            description="Assim que um novo setup é confirmado, você recebe um e-mail na hora com entrada, stop e alvos — sem precisar ficar olhando a tela."
+            title="Portfólio diversificado"
+            description="Combine robôs de ativos e comportamentos diferentes para diluir risco, com sugestões prontas."
           />
         </div>
       </section>
 
       {/* Preço e Call to Action */}
       <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-offwhite">O investimento que se paga em poucas operações</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-offwhite">Acesso completo à vitrine</h2>
         <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
-          Tenha acesso ilimitado à plataforma pelo preço de um único stop loss bobo que você evitará logo no primeiro dia.
+          Uma assinatura, todos os robôs. Sem taxa por robô, sem pacotes escondidos.
         </p>
 
         <div className="mt-10 mx-auto max-w-sm rounded-3xl border border-emerald-500/20 bg-[#141414] p-8 shadow-2xl relative overflow-hidden text-left">
           <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500/[0.03] blur-2xl pointer-events-none" />
-          
+
           <div className="flex justify-between items-center">
             <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Assinatura Profissional</span>
             <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
-              3 Dias Grátis
+              Acesso imediato
             </span>
           </div>
 
@@ -182,17 +185,19 @@ export default async function BillingPage({
           </div>
 
           <p className="mt-3 text-xs text-zinc-400 leading-relaxed">
-            Seu cartão não será cobrado hoje. O período de teste é totalmente gratuito por 3 dias, cancelável a qualquer momento.
+            Cobrança mensal recorrente via Asaas. O acesso é liberado assim que o pagamento é
+            confirmado. Cancele quando quiser, sem multa.
           </p>
 
           <div className="mt-6 border-t border-[#f5f5f5]/5 pt-6 space-y-3.5">
             {[
-              "Leitura computacional de setups de fotos",
-              "Varredura automática e radar de sinais ativos",
-              "Modos SMC Avançado e Price Action Clássico",
-              "Relação R:R mínima garantida de 1:1 por sinal",
-              "Suporte técnico priorizado",
-              "Cancelamento simplificado sem burocracia",
+              "Acesso a toda a vitrine de robôs",
+              "Robôs prontos para MetaTrader 5 (.ex5)",
+              "Validação de robustez em cada robô",
+              "Revalidação mensal com dados novos",
+              "Kill-switch remoto automático",
+              "Drawdown real e transparente por robô",
+              "Cancelamento simplificado e imediato",
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-2.5 text-xs text-zinc-300">
                 <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -206,13 +211,13 @@ export default async function BillingPage({
               type="submit"
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-charcoal shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 hover:shadow-emerald-500/35 focus:outline-none"
             >
-              Começar Teste de 3 Dias Grátis
+              Assinar agora
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
 
           <p className="mt-3 text-center text-[10px] text-zinc-500">
-            Processamento 100% seguro pelo Asaas. Cancele com um clique.
+            Processamento 100% seguro pelo Asaas (Pix ou Cartão). Cancele com um clique.
           </p>
         </div>
       </section>
@@ -226,27 +231,31 @@ export default async function BillingPage({
 
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           <div>
-            <h4 className="text-sm font-semibold text-offwhite">Como funciona o teste gratuito de 3 dias?</h4>
+            <h4 className="text-sm font-semibold text-offwhite">Como funciona a cobrança?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              Você cria sua assinatura hoje via cartão ou pix e seu acesso é liberado na hora. O valor só será cobrado no final do terceiro dia. Se cancelar antes, nada será cobrado.
+              A assinatura é mensal (R$ 47,90) via Asaas, no Pix ou cartão. O acesso à vitrine é
+              liberado assim que o pagamento é confirmado e renova automaticamente todo mês.
             </p>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-offwhite">O sistema realiza operações sozinho (Robô)?</h4>
+            <h4 className="text-sm font-semibold text-offwhite">Preciso saber programar?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              Não. A ZaionVest é uma ferramenta de auxílio analítico. Ela mapeia os pontos ideais de entrada, alvo e stop, mas você executa as ordens na sua corretora favorita.
+              Não. Os robôs vêm prontos, com os parâmetros embutidos. Você baixa o arquivo e coloca
+              no MetaTrader 5 — o passo a passo fica dentro da plataforma.
             </p>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-offwhite">Quais mercados a ZaionVest suporta?</h4>
+            <h4 className="text-sm font-semibold text-offwhite">O que é o kill-switch?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              Qualquer par de moedas Forex (principais e cruzados) e as maiores Criptomoedas do mercado (Bitcoin, Ethereum, etc.).
+              Se um robô deixar de cumprir os critérios de robustez na revalidação, ele recebe a
+              ordem de parar e não abre novas operações no seu MetaTrader.
             </p>
           </div>
           <div>
             <h4 className="text-sm font-semibold text-offwhite">Como faço para cancelar?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              A qualquer momento você pode acessar o seu painel de configurações na plataforma e solicitar o cancelamento em um clique, sem pegadinhas.
+              A qualquer momento, pelo painel de configurações da plataforma, em um clique, sem
+              pegadinhas.
             </p>
           </div>
         </div>
@@ -256,7 +265,9 @@ export default async function BillingPage({
       <footer className="relative z-10 border-t border-[#f5f5f5]/5 py-10 text-center text-xs text-zinc-500">
         <p>© 2026 ZaionVest. Todos os direitos reservados.</p>
         <p className="mt-1.5 text-[10px] text-zinc-600 max-w-lg mx-auto leading-relaxed">
-          A ZaionVest fornece ferramentas de análise de padrões técnicos. Todo conteúdo disponibilizado tem caráter exclusivamente educacional. Não realizamos recomendações de investimentos ou promessas de lucros.
+          A ZaionVest disponibiliza robôs de trading automático (Expert Advisors). Conteúdo com
+          caráter informativo e educacional. Não realizamos recomendações de investimento nem
+          promessas de lucro. Investir envolve risco de perda de capital.
         </p>
       </footer>
     </main>
@@ -282,4 +293,3 @@ function FeatureCard({
     </div>
   );
 }
-

@@ -34,14 +34,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // Calcula o vencimento da primeira parcela
-    // Se o trial de 3 dias ainda estiver ativo, cobra quando ele expirar.
-    // Caso contrário, cobra amanhã.
-    let trialDate = user.currentPeriodEnd;
-    if (!trialDate || trialDate < new Date()) {
-      trialDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    }
-    const nextDueDate = trialDate.toISOString().split("T")[0];
+    // Sem período grátis: a primeira parcela vence hoje (acesso só após pagar).
+    const nextDueDate = new Date().toISOString().split("T")[0];
 
     const checkoutUrl = await createAsaasSubscriptionCheckout({
       customerId: asaasCustomerId,

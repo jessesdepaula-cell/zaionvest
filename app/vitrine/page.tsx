@@ -172,7 +172,7 @@ export default async function VitrinePage({
               href="/sign-up"
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-bold text-white hover:bg-[#1D4ED8] transition"
             >
-              3 Dias Grátis <ArrowRight className="h-3.5 w-3.5" />
+              Assinar agora <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
