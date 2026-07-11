@@ -191,6 +191,11 @@ def run_backtest(
                                spread_points=spread_points,
                                commission_per_trade=commission_per_trade)
 
+    if family == "nv7":
+        return _run_nv7(df, params, point=point, contract_size=contract_size,
+                        lot=lot, spread_points=spread_points,
+                        commission_per_trade=commission_per_trade)
+
     sig = _signals(df, family, params)
     # filtro de direção: long-only zera sinais de venda e vice-versa
     if direction == "long":
@@ -467,6 +472,132 @@ def _run_grid_hedge(
                 long_basket = [px]; long_tp0 = a
             elif s == -1 and not short_basket and direction in ("both", "short"):
                 short_basket = [px]; short_tp0 = a
+
+        equity_bar.append(float(round(eq, 2)))
+        equity_dates.append(str(pd.Timestamp(times[i]).date()))
+
+    return BacktestResult(trades=trades, equity_bar=equity_bar,
+                          equity_dates=equity_dates, lot=lot)
+
+
+def _run_nv7(
+    df: pd.DataFrame,
+    params: dict,
+    *,
+    point: float,
+    contract_size: float,
+    lot: float,
+    spread_points: float,
+    commission_per_trade: float,
+) -> BacktestResult:
+    """Réplica do NV7 ENGINE (grid Fibonacci hedgeado) — inputs reais da conta
+    do Jessé. Só opera na ZONA de Fibonacci (retração 38.2-50% de um swing de
+    N barras): abre grid de COMPRA e de VENDA (hedge), adiciona níveis a cada
+    step×ATR, fecha o cesto por TP de posição OU cluster-netting (≥N pos e lucro
+    líquido ≥ alvo). DD-guard fecha o lado perdedor; Max DD de conta protege.
+    A zona de reversão é a âncora que impede o grid de explodir em tendência."""
+    close = df["close"].values
+    high = df["high"].values
+    low = df["low"].values
+    times = df["time"].values
+    atr = _atr(df, int(params.get("atr_period", 14))).values
+
+    swing = int(params.get("swing_bars", 75))         # 150 M30 ≈ 75 H1
+    fib_lo = float(params.get("fib_low_pct", 38.2)) / 100.0
+    fib_hi = float(params.get("fib_high_pct", 50.0)) / 100.0
+    step = float(params.get("grid_step", 1.2))         # ATRs
+    tp_atr = float(params.get("tp_atr", 2.5))          # TP por posição, ATRs
+    max_lvl = int(params.get("max_positions", 8))
+    dd_guard = float(params.get("dd_guard_pct", 5.0))  # fecha lado perdedor
+    max_dd_pct = float(params.get("max_dd_pct", 30.0))
+    cluster_min = int(params.get("cluster_min", 10))
+    cluster_net_atr = float(params.get("cluster_net_atr", 0.3))  # lucro líq mín (ATRs)
+
+    roll_hi = pd.Series(high).rolling(swing).max().values
+    roll_lo = pd.Series(low).rolling(swing).min().values
+
+    value = contract_size * lot
+    cost = spread_points * point * contract_size * lot + commission_per_trade
+
+    trades: list[Trade] = []
+    equity_bar: list[float] = []
+    equity_dates: list[str] = []
+    realized = START_CAPITAL
+    peak = START_CAPITAL
+    cooldown = 0
+    longs: list[float] = []
+    shorts: list[float] = []
+
+    def bfloat(basket, d, px):
+        return sum(d * (px - e) * value for e in basket)
+
+    def close_basket(basket, d, px, i):
+        nonlocal realized
+        p = round(float(bfloat(basket, d, px)) - cost * len(basket), 2)
+        realized += p
+        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=d))
+
+    for i in range(swing, len(df)):
+        px = close[i]
+        a = atr[i] if not np.isnan(atr[i]) else 0.0
+        rng = roll_hi[i] - roll_lo[i]
+        if a <= 0 or rng <= 0:
+            equity_bar.append(float(round(realized, 2)))
+            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            continue
+
+        # zona de Fibonacci (banda entre 50% e 38.2% da retração desde o topo)
+        z_hi = roll_hi[i] - fib_lo * rng   # nível 38.2%
+        z_lo = roll_hi[i] - fib_hi * rng   # nível 50%
+        in_zone = z_lo <= px <= z_hi
+
+        lf = bfloat(longs, 1, px) if longs else 0.0
+        sf = bfloat(shorts, -1, px) if shorts else 0.0
+        eq = realized + lf + sf
+        peak = max(peak, eq)
+
+        # Max DD de conta → fecha tudo + cooldown
+        if peak > 0 and (peak - eq) / peak * 100.0 >= max_dd_pct:
+            if longs: close_basket(longs, 1, px, i); longs = []
+            if shorts: close_basket(shorts, -1, px, i); shorts = []
+            cooldown = 30
+            equity_bar.append(float(round(realized, 2)))
+            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            continue
+
+        # DD-guard: fecha o lado cujo prejuízo passa do limite (% sobre capital)
+        if longs and lf < -dd_guard / 100.0 * START_CAPITAL:
+            close_basket(longs, 1, px, i); longs = []
+        if shorts and sf < -dd_guard / 100.0 * START_CAPITAL:
+            close_basket(shorts, -1, px, i); shorts = []
+
+        # cluster-netting: muitas posições + lucro líquido → fecha o cesto
+        tot = len(longs) + len(shorts)
+        net = (bfloat(longs, 1, px) if longs else 0) + (bfloat(shorts, -1, px) if shorts else 0)
+        if tot >= cluster_min and net >= cluster_net_atr * a * value:
+            if longs: close_basket(longs, 1, px, i); longs = []
+            if shorts: close_basket(shorts, -1, px, i); shorts = []
+
+        # TP por lado (netting do lado no alvo)
+        if longs and bfloat(longs, 1, px) >= tp_atr * a * value:
+            close_basket(longs, 1, px, i); longs = []
+        if shorts and bfloat(shorts, -1, px) >= tp_atr * a * value:
+            close_basket(shorts, -1, px, i); shorts = []
+
+        # adiciona níveis de grid contra a última entrada
+        if longs and len(longs) < max_lvl and px <= longs[-1] - step * a:
+            longs.append(px)
+        if shorts and len(shorts) < max_lvl and px >= shorts[-1] + step * a:
+            shorts.append(px)
+
+        # abre hedge (compra E venda) ao entrar na zona, fora de cooldown
+        if cooldown > 0:
+            cooldown -= 1
+        elif in_zone:
+            if not longs:
+                longs = [px]
+            if not shorts:
+                shorts = [px]
 
         equity_bar.append(float(round(eq, 2)))
         equity_dates.append(str(pd.Timestamp(times[i]).date()))
