@@ -1,27 +1,23 @@
 import Link from "next/link";
 import Image from "next/image";
-import { TrackRecordSection } from "@/components/landing/TrackRecordSection";
 import {
   ArrowRight,
   Check,
   Sparkles,
   Shield,
-  Target,
-  Zap,
-  TrendingUp,
+  RefreshCw,
+  Power,
+  Gauge,
+  Layers,
+  Bot,
+  Download,
   HelpCircle,
-  Mail,
-  X,
-  MessageCircle,
 } from "lucide-react";
 
-// ISR: o track record real vem do banco; revalida a cada 5 minutos.
-export const revalidate = 300;
-
 export const metadata = {
-  title: "ZaionVest — Sinais SMC e Price Action com IA | 3 Dias Grátis",
+  title: "ZaionVest — Robôs de Trading Automático para MetaTrader 5 | 3 Dias Grátis",
   description:
-    "A única plataforma brasileira com scanner automático multiativo, alertas por e-mail e histórico de assertividade auditável. Opere como os grandes com precisão de IA.",
+    "Vitrine de robôs (Expert Advisors) validados para MetaTrader 5. Revalidação mensal, kill-switch remoto e drawdown real e transparente. Teste 3 dias grátis.",
 };
 
 export default function LandingPage() {
@@ -60,21 +56,23 @@ export default function LandingPage() {
       <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center">
         <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#DC1F2E]/40 bg-[#DC1F2E]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
           <Sparkles className="h-3.5 w-3.5 text-[#DC1F2E] animate-pulse" />
-          Scanner automático 24h · Alertas por e-mail · 3 Dias 100% Grátis
+          Robôs para MetaTrader 5 · Revalidação mensal · 3 Dias 100% Grátis
         </div>
 
         <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-7xl">
-          Opere como as Instituições.{" "}
-          <br />
+          Robôs de trading que{" "}
           <span className="bg-gradient-to-r from-[#F5F5F5] via-[#F5F5F5] to-[#DC1F2E] bg-clip-text text-transparent">
-            Sem achismos.
+            não escondem o risco.
           </span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
-          Pare de ser o stop dos grandes bancos. A ZaionVest traduz gráficos complexos em
-          planos de trade claros com Entrada, Stop Loss e Alvos objetivos — e te avisa por{" "}
-          <span className="text-[#DC1F2E] font-semibold">e-mail</span> quando a hora certa chega.
+          A maioria dos robôs vendidos por aí brilha no backtest e quebra na conta real. Na
+          ZaionVest, cada robô passa por uma <span className="text-[#F5F5F5] font-semibold">validação
+          de robustez</span> antes de entrar na vitrine, é reavaliado todo mês e tem um{" "}
+          <span className="text-[#DC1F2E] font-semibold">kill-switch</span> que o desliga sozinho se
+          parar de funcionar. E mostramos o <span className="text-[#F5F5F5] font-semibold">drawdown
+          real</span> — não o número bonito de marketing.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -97,7 +95,7 @@ export default function LandingPage() {
         <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-[10px] text-zinc-500">
           <span className="flex items-center gap-1">🔒 Pagamento seguro via Asaas</span>
           <span className="flex items-center gap-1">⚡ 3 Dias de Acesso Grátis</span>
-          <span className="flex items-center gap-1">📧 Alertas por e-mail inclusos</span>
+          <span className="flex items-center gap-1">🤖 Robôs prontos para MetaTrader 5</span>
           <span className="flex items-center gap-1">📅 Cancele a qualquer momento</span>
         </div>
       </section>
@@ -109,11 +107,11 @@ export default function LandingPage() {
             Teste de 3 Dias Grátis
           </span>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-            Lucre antes de pagar
+            Explore antes de pagar
           </h2>
           <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
-            Você tem 3 dias completos para testar, receber sinais, ver o scanner em ação e
-            decidir se quer continuar. Sem cobrança antecipada.
+            Você tem 3 dias completos para acessar a vitrine, baixar os robôs e colocá-los para
+            rodar. Sem cobrança antecipada.
           </p>
         </div>
 
@@ -122,16 +120,16 @@ export default function LandingPage() {
             {
               day: "Dia 1",
               icon: "🚀",
-              title: "Acesso imediato",
-              desc: "Crie sua conta e já entra tudo pronto: a mesa monitora os melhores ativos em tempo real e os sinais aparecem no seu painel em segundos.",
+              title: "Acesso imediato à vitrine",
+              desc: "Crie sua conta e entre direto na vitrine: veja todos os robôs disponíveis, com o drawdown real e as métricas de cada um.",
               color: "border-blue-500/20 bg-blue-500/[0.03]",
               textColor: "text-blue-400",
             },
             {
               day: "Dias 2–3",
-              icon: "📧",
-              title: "Receba sinais no e-mail",
-              desc: "Quando a IA detectar uma confluência de alta probabilidade, você recebe um e-mail completo: Entrada, Stop Loss, Alvos e análise estrutural.",
+              icon: "🤖",
+              title: "Coloque para rodar",
+              desc: "Baixe os robôs que fizerem sentido, instale no seu MetaTrader 5 (conta demo ou real) e acompanhe funcionando.",
               color: "border-emerald-500/20 bg-emerald-500/[0.03]",
               textColor: "text-emerald-400",
             },
@@ -139,7 +137,7 @@ export default function LandingPage() {
               day: "Após 3 dias",
               icon: "✅",
               title: "Você decide",
-              desc: "Se gostar, continue por apenas R$ 47,90/mês. Se não, cancele com um clique. Sem multa, sem burocracia, sem julgamento.",
+              desc: "Se gostar, continue por apenas R$ 47,90/mês. Se não, cancele com um clique. Sem multa, sem burocracia.",
               color: "border-zinc-500/20 bg-zinc-500/[0.02]",
               textColor: "text-zinc-400",
             },
@@ -172,35 +170,35 @@ export default function LandingPage() {
         <div className="grid gap-8 md:grid-cols-2">
           <div className="rounded-2xl border border-[#f5f5f5]/5 bg-[#0A0A0A] p-6 sm:p-8">
             <h3 className="text-lg font-semibold text-rose-400 flex items-center gap-2">
-              ⚠️ A Armadilha dos Indicadores Clássicos
+              ⚠️ O “robô perfeito” que só funciona no passado
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              Robôs e indicadores convencionais reagem com atraso. Eles dizem para você comprar
-              no topo e vender no fundo porque analisam apenas médias passadas. Os grandes
-              investidores (Smart Money) utilizam essas zonas de stop do varejo como liquidez para
-              suas próprias operações.
+              É fácil encontrar um robô com uma curva de backtest impecável. O problema é que muitos
+              foram ajustados demais ao histórico — e desandam assim que encontram um mercado que
+              nunca viram. Pior: continuam operando mesmo depois de parar de funcionar, drenando a
+              conta em silêncio.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-zinc-500">
-              <li className="flex items-center gap-2">❌ Entradas atrasadas que causam ansiedade</li>
-              <li className="flex items-center gap-2">❌ Rompimentos falsos que acionam seu stop loss</li>
-              <li className="flex items-center gap-2">❌ Sem clareza de onde as ordens reais estão</li>
+              <li className="flex items-center gap-2">❌ Curvas de backtest perfeitas que não se repetem ao vivo</li>
+              <li className="flex items-center gap-2">❌ Drawdown escondido ou maquiado no marketing</li>
+              <li className="flex items-center gap-2">❌ Robô que segue operando mesmo depois de “quebrar”</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border border-emerald-500/10 bg-[#141414] p-6 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-500/[0.02] blur-xl" />
             <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-              🛡️ A Vantagem de Operar com Estrutura
+              🛡️ Robôs que precisam provar valor — e continuar provando
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              A ZaionVest rastreia o fluxo institucional mapeando Fair Value Gaps, Order
-              Blocks ativos e confirmando quebras de estrutura (BOS/CHoCH) — e te avisa{" "}
-              <strong className="text-emerald-400">antes do movimento acontecer</strong>.
+              Só entra na vitrine o robô que passa na nossa validação de robustez. E não para por aí:
+              reavaliamos <strong className="text-emerald-400">todo mês</strong> com dados novos de
+              mercado — o que degrada é retirado e desligado automaticamente na sua conta.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-emerald-500/80">
-              <li className="flex items-center gap-2">✔ Identificação precisa de regiões de oferta e demanda</li>
-              <li className="flex items-center gap-2">✔ Alerta por e-mail no momento exato da oportunidade</li>
-              <li className="flex items-center gap-2">✔ Operações com Risco/Retorno matematicamente calculado</li>
+              <li className="flex items-center gap-2">✔ Validação de robustez antes de qualquer robô ir para a vitrine</li>
+              <li className="flex items-center gap-2">✔ Revalidação mensal com dados atualizados — o que degrada, sai</li>
+              <li className="flex items-center gap-2">✔ Kill-switch remoto: robô que perde robustez para de operar sozinho</li>
             </ul>
           </div>
         </div>
@@ -209,145 +207,98 @@ export default function LandingPage() {
       {/* ─── RECURSOS ─── */}
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-          Recursos projetados para Traders Profissionais
+          Uma vitrine construída sobre confiança
         </h2>
         <p className="text-center text-sm text-zinc-400 mt-2 max-w-md mx-auto">
-          Deixe a tecnologia pesada conosco e foque apenas no que importa: executar seu plano.
+          Você escolhe o robô. Nós cuidamos de garantir que ele merece estar lá — e continuar lá.
         </p>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <FeatureCard
-            icon={<Target className="h-5 w-5 text-emerald-400" />}
-            title="Mapeamento por Imagem"
-            description="Tire print de qualquer gráfico (TradingView, MT5, Corretora) e envie. Nossa IA gera a marcação técnica exata em instantes."
-          />
-          <FeatureCard
-            icon={<Zap className="h-5 w-5 text-emerald-400" />}
-            title="SMC e Price Action Integrado"
-            description="Mapeie blocos de ordens, quebras estruturais (BOS/CHoCH) e suportes/resistências clássicas no mesmo gráfico."
-          />
-          <FeatureCard
-            icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
-            title="Radar de Varredura Automática"
-            description="A mesa varre os melhores ativos constantemente, em múltiplos timeframes, nos nossos servidores — você só recebe os sinais prontos."
-          />
-          <FeatureCard
-            icon={<Mail className="h-5 w-5 text-emerald-400" />}
-            title="Alertas por E-mail em Tempo Real"
-            description="Quando a IA detectar uma entrada de alta probabilidade, você recebe um e-mail completo com Entrada, Stop, Alvos e análise da IA. Nenhum concorrente faz isso."
-            highlight
+            icon={<Bot className="h-5 w-5 text-emerald-400" />}
+            title="Robôs prontos para o MetaTrader 5"
+            description="Baixe o Expert Advisor, coloque no MT5 e opere. Sem programar, sem configurar parâmetros — tudo já vem embutido no robô."
           />
           <FeatureCard
             icon={<Shield className="h-5 w-5 text-emerald-400" />}
-            title="Alvos e Stops Técnicos"
-            description="Acabe com as dúvidas de saída de trade. Receba preços exatos de entrada, stop de proteção e 3 alvos progressivos com cálculo de R:R."
+            title="Validação de robustez"
+            description="Cada robô passa por um processo proprietário de validação antes de aparecer para você. Só o que se prova robusto entra na vitrine."
           />
           <FeatureCard
-            icon={<Check className="h-5 w-5 text-emerald-400" />}
-            title="Auditor de Assertividade"
-            description="O sistema calcula automaticamente a taxa de acerto histórica de cada sinal e setup de forma 100% transparente — algo que nenhum concorrente publica."
+            icon={<RefreshCw className="h-5 w-5 text-emerald-400" />}
+            title="Revalidação mensal"
+            description="Todo mês reavaliamos cada robô com dados novos de mercado. Se deixar de cumprir os critérios, é retirado da vitrine."
+          />
+          <FeatureCard
+            icon={<Power className="h-5 w-5 text-emerald-400" />}
+            title="Kill-switch remoto"
+            description="Se um robô perder robustez, ele é desativado automaticamente no seu MetaTrader — para de abrir novas ordens sem você precisar fazer nada."
+            highlight
+          />
+          <FeatureCard
+            icon={<Gauge className="h-5 w-5 text-emerald-400" />}
+            title="Drawdown real e transparente"
+            description="Mostramos o rebaixamento real de cada robô, não um número de marketing. Você conhece o risco antes de ligar o robô."
+          />
+          <FeatureCard
+            icon={<Layers className="h-5 w-5 text-emerald-400" />}
+            title="Portfólio diversificado"
+            description="Combine robôs de ativos e comportamentos diferentes para diluir risco. A vitrine sugere composições de portfólio prontas."
           />
         </div>
       </section>
 
-      {/* ─── COMPARATIVO COM CONCORRENTES ─── */}
+      {/* ─── COMO COLOCAR PARA RODAR ─── */}
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
         <div className="text-center mb-12">
           <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
-            Comparativo
+            Simples assim
           </span>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-            Por que nos escolher?
-          </h2>
-          <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
-            Analisamos as alternativas disponíveis no mercado. Veja onde a ZaionVest se
-            destaca.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto rounded-2xl border border-[#f5f5f5]/5">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02]">
-                <th className="px-5 py-3 text-left text-zinc-400 font-medium">Recurso</th>
-                <th className="px-5 py-3 text-center text-zinc-400 font-medium">Plataforma A<br /><span className="text-zinc-600 text-[10px]">R$ 220/mês</span></th>
-                <th className="px-5 py-3 text-center text-zinc-400 font-medium">Plataforma B<br /><span className="text-zinc-600 text-[10px]">R$ 44,90/mês</span></th>
-                <th className="px-5 py-3 text-center font-bold text-emerald-400">ZaionVest<br /><span className="text-emerald-300 text-[10px]">R$ 47,90/mês</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Trial gratuito", "❓ Incerto", "❌ Não", "✅ 3 dias grátis"],
-                ["Scanner automático multiativo", "✅ Sim", "❌ Não", "✅ Sim"],
-                ["Alertas por e-mail", "❌ Não", "❌ Não", "✅ Sim"],
-                ["Cobertura Forex + Cripto", "Parcial", "❌ Não", "✅ Sim"],
-                ["Histórico de assertividade", "❌ Não", "❌ Não", "✅ Auditável"],
-                ["Sinais SMC + Price Action Clássico", "Parcial", "❌ Não", "✅ Sim"],
-                ["Análise de gráfico por imagem", "❌ Não", "❌ Não", "✅ Sim"],
-                ["100% no navegador", "✅ Sim", "Parcial", "✅ Sim"],
-                ["Gráfico com E/SL/TP plotados", "✅ Sim", "✅ Sim", "✅ Sim"],
-              ].map(([feature, a, b, us], i) => (
-                <tr key={i} className="border-b border-[#f5f5f5]/[0.03] hover:bg-[#f5f5f5]/[0.015]">
-                  <td className="px-5 py-3 text-zinc-300">{feature}</td>
-                  <td className="px-5 py-3 text-center text-zinc-500">{a}</td>
-                  <td className="px-5 py-3 text-center text-zinc-500">{b}</td>
-                  <td className="px-5 py-3 text-center font-semibold text-emerald-400">{us}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* ─── PROVA SOCIAL ─── */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
-        <div className="text-center mb-12">
-          <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
-            Depoimentos
-          </span>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-            O que nossos traders dizem
+            Do clique ao robô operando
           </h2>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           {[
             {
-              text: "Pela primeira vez entendi onde estou errando. Parei de entrar em trades sem contexto estrutural. Em 3 dias já vi a diferença.",
-              name: "Carlos M.",
-              sub: "Trader de Forex",
+              n: "1",
+              icon: <Bot className="h-5 w-5 text-emerald-400" />,
+              title: "Escolha o robô",
+              desc: "Navegue pela vitrine, compare drawdown real, métricas e ativo de cada robô e escolha o que combina com você.",
             },
             {
-              text: "Recebi o alerta por e-mail, abri a plataforma, o setup estava lá exatamente como a IA descreveu. Fechei o trade no alvo 2.",
-              name: "Priscila R.",
-              sub: "Day trader — BTCUSD",
+              n: "2",
+              icon: <Download className="h-5 w-5 text-emerald-400" />,
+              title: "Baixe o arquivo",
+              desc: "Um clique baixa o Expert Advisor (.ex5) pronto. O passo a passo de instalação fica dentro da plataforma.",
             },
             {
-              text: "Achei que era mais um robô qualquer. Mas a análise de confluência SMC é diferente do que eu já vi. Renovei sem hesitar.",
-              name: "Fábio L.",
-              sub: "Trader desde 2019",
+              n: "3",
+              icon: <Power className="h-5 w-5 text-emerald-400" />,
+              title: "Ligue no MetaTrader",
+              desc: "Arraste o robô para o gráfico do ativo indicado no MetaTrader 5 e pronto — ele opera e obedece ao kill-switch remoto.",
             },
-          ].map((d, i) => (
-            <div key={i} className="rounded-2xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.015] p-5">
-              <p className="text-sm text-zinc-300 leading-relaxed">"{d.text}"</p>
-              <div className="mt-4 border-t border-[#f5f5f5]/5 pt-3">
-                <p className="text-xs font-semibold text-[#F5F5F5]">{d.name}</p>
-                <p className="text-[10px] text-zinc-500">{d.sub}</p>
+          ].map((s, i) => (
+            <div key={i} className="rounded-2xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.01] p-6">
+              <div className="flex items-center gap-3">
+                <div className="grid h-9 w-9 place-items-center rounded-lg border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.02]">
+                  {s.icon}
+                </div>
+                <span className="num text-2xl font-extrabold text-[#f5f5f5]/15">{s.n}</span>
               </div>
+              <h3 className="mt-4 text-sm font-semibold text-[#F5F5F5]">{s.title}</h3>
+              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
-
       </section>
-
-      {/* ─── TRACK RECORD REAL (dados do banco, sem números editados) ─── */}
-      <TrackRecordSection />
 
       {/* ─── PREÇO ─── */}
       <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-[#F5F5F5]">Domine o mercado sem gastar uma fortuna</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-[#F5F5F5]">Acesso completo à vitrine</h2>
         <p className="mt-3 text-sm text-zinc-400 max-w-md mx-auto">
-          Um único stop evitado por conta de uma análise correta já paga a mensalidade por meses.
+          Uma assinatura, todos os robôs. Sem taxa por robô, sem pacotes escondidos.
         </p>
 
         <div className="mt-10 mx-auto max-w-sm rounded-3xl border border-emerald-500/20 bg-[#141414] p-8 shadow-2xl relative overflow-hidden text-left">
@@ -372,20 +323,20 @@ export default function LandingPage() {
           <div className="mt-4 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
             <p className="text-xs font-semibold text-emerald-300">🎯 Seus 3 primeiros dias são 100% gratuitos</p>
             <p className="mt-1 text-[11px] text-zinc-400">
-              Cadastre-se hoje e veja a IA trabalhando na hora. Nenhuma cobrança
+              Cadastre-se hoje e explore a vitrine na hora. Nenhuma cobrança
               até o 4º dia. Cancele antes e não paga nada.
             </p>
           </div>
 
           <div className="mt-6 border-t border-[#f5f5f5]/5 pt-6 space-y-3.5">
             {[
-              "Scanner automático 24h em múltiplos ativos",
-              "Alertas por e-mail quando sinal é detectado",
-              "Gráfico com E, SL e TP plotados visualmente",
-              "Gestão de risco com R:R calculado",
-              "Histórico de assertividade auditável",
-              "Modos SMC e Price Action Clássico",
-              "Análise de gráfico por imagem (visão computacional)",
+              "Acesso a toda a vitrine de robôs",
+              "Robôs prontos para MetaTrader 5 (.ex5)",
+              "Validação de robustez em cada robô",
+              "Revalidação mensal com dados novos",
+              "Kill-switch remoto automático",
+              "Drawdown real e transparente por robô",
+              "Sugestões de portfólio diversificado",
               "Cancelamento simplificado e imediato",
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-2.5 text-xs text-zinc-300">
@@ -420,27 +371,27 @@ export default function LandingPage() {
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           <FaqItem
             q="O que acontece ao final dos 3 dias de teste?"
-            a="Se você gostar da plataforma e decidir continuar, o Asaas processará a primeira mensalidade de R$ 47,90 automaticamente. Se decidir cancelar antes do final do terceiro dia, nenhuma cobrança será efetuada."
+            a="Se você gostar e decidir continuar, o Asaas processará a primeira mensalidade de R$ 47,90 automaticamente. Se cancelar antes do final do terceiro dia, nenhuma cobrança será efetuada."
           />
           <FaqItem
-            q="Como funcionam os alertas por e-mail?"
-            a="Quando a IA detectar uma confluência de alta probabilidade em qualquer ativo monitorado pela mesa, você recebe automaticamente um e-mail com o símbolo, direção (Compra/Venda), preço de entrada, stop loss, alvos e a análise estrutural completa."
+            q="Preciso saber programar ou configurar algo complicado?"
+            a="Não. Os robôs vêm prontos, com os parâmetros já embutidos. Você só baixa o arquivo e coloca no MetaTrader 5 — o passo a passo está dentro da plataforma."
           />
           <FaqItem
-            q="Eu preciso instalar algum robô ou indicador?"
-            a="Não. A ZaionVest roda 100% em nuvem e através do seu navegador. Basta abrir o site e aguardar os sinais chegarem por e-mail e no painel."
+            q="Como instalo um robô no MetaTrader?"
+            a="Baixe o arquivo do robô na vitrine, coloque na pasta de Experts do MetaTrader 5 e arraste-o para o gráfico do ativo indicado. Leva menos de um minuto e mostramos cada passo."
           />
           <FaqItem
-            q="Qual a assertividade média dos setups?"
-            a="Nosso auditor interno calcula e exibe em tempo real o histórico detalhado para que você tenha total clareza matemática da performance. A taxa é 100% auditável — algo que os concorrentes não publicam."
+            q="O que é o kill-switch?"
+            a="É uma proteção automática. Se um robô deixar de cumprir nossos critérios de robustez na revalidação, ele recebe a ordem de parar e não abre novas operações no seu MetaTrader. As operações já abertas seguem sendo geridas normalmente até fechar."
           />
           <FaqItem
-            q="Posso usar em contas de mesas proprietárias?"
-            a="Com certeza. As marcações técnicas de Entrada, Stop Loss e Alvos progressivos são geradas dentro das regras de risco conservadoras recomendadas por mesas proprietárias de Forex e Cripto."
+            q="Qual corretora e plataforma eu preciso?"
+            a="Você opera no MetaTrader 5. Alguns robôs são otimizados para a nossa corretora parceira (RoboForex); isso fica indicado na página de cada robô."
           />
           <FaqItem
-            q="Quais ativos são suportados?"
-            a="Forex (EUR/USD, GBP/USD, USD/JPY e mais), Cripto (BTC, ETH e outros pares) e Ouro (XAUUSD). A mesa seleciona e monitora os melhores ativos para você."
+            q="Vocês garantem lucro?"
+            a="Não. Nenhum robô garante lucro e todo investimento envolve risco de perda. Nosso trabalho é validar a robustez de cada robô, reavaliá-lo todo mês e ser transparente sobre o risco (drawdown real) — não prometer retorno."
           />
         </div>
       </section>
@@ -448,11 +399,11 @@ export default function LandingPage() {
       {/* ─── CTA FINAL ─── */}
       <section className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
         <h2 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
-          Comece agora. Sem risco.
+          Comece agora. Sem risco de assinatura.
         </h2>
         <p className="mt-4 text-sm text-zinc-400 max-w-sm mx-auto">
-          3 dias para testar, receber sinais no e-mail e ver a IA trabalhando pelos seus trades.
-          Se não gostar, cancela e não paga nada.
+          3 dias para explorar a vitrine, baixar robôs e vê-los operando. Se não gostar, cancela e
+          não paga nada.
         </p>
         <Link
           href="/sign-up"
@@ -475,10 +426,10 @@ export default function LandingPage() {
           </div>
           <p>© 2026 ZaionVest. Todos os direitos reservados.</p>
           <p className="mt-1.5 text-[10px] text-zinc-600 max-w-lg mx-auto leading-relaxed">
-            A ZaionVest fornece ferramentas de análise de padrões técnicos. Todo conteúdo
-            disponibilizado tem caráter exclusivamente educacional e informativo. Não realizamos
-            recomendações de investimentos nem promessas de lucros. Investir em mercados
-            financeiros envolve riscos significativos de perda de capital.
+            A ZaionVest disponibiliza robôs de trading automático (Expert Advisors) e ferramentas
+            relacionadas, com caráter informativo e educacional. Não realizamos recomendações de
+            investimento nem promessas de lucro. Resultados passados não garantem resultados futuros.
+            Investir em mercados financeiros envolve riscos significativos de perda de capital.
           </p>
         </div>
       </footer>
