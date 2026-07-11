@@ -142,7 +142,7 @@ export default async function DashboardLayout({
             >
               Ativar assinatura
             </Link>{" "}
-            para não perder acesso aos sinais.
+            para não perder acesso à vitrine de EAs.
           </div>
         )}
         {children}

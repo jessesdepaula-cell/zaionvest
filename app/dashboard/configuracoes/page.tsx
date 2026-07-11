@@ -102,17 +102,6 @@ export default async function ConfiguracoesPage() {
               </div>
             </div>
           </div>
-          {/* Notificações do navegador */}
-          <p className="text-xs text-zinc-400">
-            As preferências de notificação do navegador (som, alerta visual) ficam na página{" "}
-            <Link
-              href="/dashboard/sinais"
-              className="text-emerald-400 underline-offset-2 hover:underline"
-            >
-              Sinais ao vivo
-            </Link>
-            .
-          </p>
         </Section>
 
         <Section
