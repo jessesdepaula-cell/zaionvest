@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Settings, Users } from "lucide-react";
+import { Bell, Bot, Download, GraduationCap, LifeBuoy, Map, User, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,12 @@ import { cn } from "@/lib/utils";
 // foram descontinuadas (decisão Jessé 2026-07-11).
 const NAV = [
   { href: "/dashboard/vitrine", icon: Bot, label: "Vitrine de EAs" },
-  { href: "/dashboard/configuracoes", icon: Settings, label: "Configurações" },
+  { href: "/dashboard/downloads", icon: Download, label: "Meus Downloads" },
+  { href: "/dashboard/academia", icon: GraduationCap, label: "Academia" },
+  { href: "/dashboard/notificacoes", icon: Bell, label: "Notificações" },
+  { href: "/dashboard/roadmap", icon: Map, label: "Roadmap" },
+  { href: "/dashboard/suporte", icon: LifeBuoy, label: "Suporte" },
+  { href: "/dashboard/configuracoes", icon: User, label: "Minha Conta" },
 ];
 
 // Itens exclusivos do administrador (dono): gestão de assinantes e dos EAs.

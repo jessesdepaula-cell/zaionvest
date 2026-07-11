@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { Activity, CreditCard, Mail, Shield, User } from "lucide-react";
+import { CreditCard, KeyRound, Mail, Shield, User } from "lucide-react";
 import { getOrCreateUser } from "@/lib/subscription";
 import { cn } from "@/lib/utils";
 import { DeleteAccountButton } from "@/components/dashboard/SettingsActions";
+import { ManageAccountButton } from "@/components/dashboard/ManageAccountButton";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,9 @@ export default async function ConfiguracoesPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Minha Conta</h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Perfil, assinatura, exportações e zona de risco da conta.
+          Perfil, assinatura, segurança e zona de risco da conta.
         </p>
       </div>
 
@@ -82,26 +83,12 @@ export default async function ConfiguracoesPage() {
           </Link>
         </Section>
 
-        <Section icon={<Activity className="h-3.5 w-3.5" />} title="Notificações de sinal">
-          {/* E-mail de alertas */}
-          <div className="rounded-md border border-emerald-500/15 bg-emerald-500/[0.03] p-3 mb-3">
-            <div className="flex items-start gap-2.5">
-              <Mail className="h-4 w-4 shrink-0 mt-0.5 text-emerald-400" />
-              <div>
-                <p className="text-xs font-semibold text-emerald-300">Alertas por e-mail ativados</p>
-                <p className="mt-0.5 text-[11px] text-zinc-400 leading-relaxed">
-                  Quando a IA detectar um setup de alta probabilidade, você receberá automaticamente um e-mail com{" "}
-                  <span className="text-zinc-300">Entrada, Stop Loss, Alvos e análise estrutural</span> para:
-                </p>
-                <p className="mt-1.5 rounded bg-[#f5f5f5]/[0.04] border border-[#f5f5f5]/10 px-2 py-1 text-xs font-mono text-offwhite">
-                  {email}
-                </p>
-                <p className="mt-1.5 text-[10px] text-zinc-500">
-                  Este é o e-mail cadastrado na sua conta. Para alterar, atualize pelo perfil do Clerk.
-                </p>
-              </div>
-            </div>
-          </div>
+        <Section icon={<KeyRound className="h-3.5 w-3.5" />} title="Segurança">
+          <p className="mb-3 text-xs text-zinc-400 leading-relaxed">
+            Troque sua senha e gerencie os dados de login (e-mail, dispositivos) pelo
+            painel seguro de conta.
+          </p>
+          <ManageAccountButton />
         </Section>
 
         <Section
