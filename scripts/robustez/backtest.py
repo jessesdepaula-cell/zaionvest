@@ -64,6 +64,11 @@ def _signals(df: pd.DataFrame, family: str, p: dict) -> np.ndarray:
     close = df["close"]
     sig = np.zeros(len(df), dtype=int)
 
+    if family == "multi":
+        # Estratégia multi-condição (1-3 blocos AND, estilo SQX).
+        import blocks
+        return blocks.build_signals(df, p["blocks"])
+
     if family == "trend":
         fast = _ema(close, int(p.get("ema_fast", 12)))
         slow = _ema(close, int(p.get("ema_slow", 48)))
@@ -125,11 +130,11 @@ def _signals(df: pd.DataFrame, family: str, p: dict) -> np.ndarray:
 # Risco-alvo em $ por movimento de 1 ATR com 1 posição. Normaliza o lote entre
 # símbolos: lote fixo 0.1 em XAUUSD arrisca ~10x mais que em EURUSD e distorcia
 # o DD% (ex.: DD 81% no card). Com isso, curvas/DDs ficam comparáveis.
-TARGET_ATR_RISK = 10.0
-
-# Base de capital do SQX/QuantMiner ($10k + ~0.1 lot): DD% dos cards passa a
-# ler na mesma régua deles (bons = 2-5%, não 20-30% sobre $1k).
+# Base de capital do SQX/QuantMiner ($10k). Risco-alvo ~1% do capital por 1 ATR
+# de movimento (normaliza o lote entre símbolos — lote fixo distorcia o DD do
+# XAUUSD) e dá retornos/DD na mesma faixa dos cards deles (DD 2-8%).
 START_CAPITAL = 10_000.0
+TARGET_ATR_RISK = 100.0
 
 
 @dataclass
@@ -209,7 +214,7 @@ def run_backtest(
         gross = pos * (exit_px - entry_px) * value
         p = round(float(gross) - cost_per_trade, 2)
         realized += p
-        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date())))
+        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=pos))
         pos = 0
 
     for i in range(1, len(df)):
@@ -308,7 +313,7 @@ def _run_grid(
             gross = sum(bdir * (px - e) * value for e in basket)
             p = round(float(gross) - cost * len(basket), 2)
             realized += p
-            trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date())))
+            trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=bdir))
             basket, bdir = [], 0
             equity_bar.append(float(round(realized, 2)))
             equity_dates.append(str(pd.Timestamp(times[i]).date()))
@@ -329,7 +334,7 @@ def _run_grid(
                 gross = sum(bdir * (px - e) * value for e in basket)
                 p = round(float(gross) - cost * len(basket), 2)
                 realized += p
-                trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date())))
+                trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=bdir))
                 basket, bdir = [], 0
 
         if not basket and not np.isnan(rsi[i]):
@@ -346,8 +351,11 @@ def _run_grid(
                           equity_dates=equity_dates, lot=lot)
 
 
-def count_params(family: str) -> int:
-    """Nº de parâmetros otimizáveis por família (pra mín. trades DQ Labs)."""
+def count_params(family: str, params: dict | None = None) -> int:
+    """Nº de parâmetros otimizáveis (pra mín. trades DQ Labs).
+    'multi' = ~2 params por bloco (o funil exige mais trades qto mais complexa)."""
+    if family == "multi" and params:
+        return max(2, 2 * len(params.get("blocks", [])))
     return {"trend": 3, "mean_reversion": 3, "breakout": 2, "grid": 4,
             "macd_cross": 3, "bollinger_fade": 2, "bollinger_break": 2,
-            "stochastic": 3}.get(family, 3)
+            "stochastic": 3, "multi": 2}.get(family, 3)

@@ -26,9 +26,11 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from wfa import Trade, walk_forward_analysis, generate_report_md
 from metrics import (compute_metrics, min_trades_required,
-                     equity_r_squared, drawdown_of_curve)
+                     equity_r_squared, drawdown_of_curve, sqx_metrics)
 from montecarlo import monte_carlo, RISK_PROFILES
 from backtest import run_backtest, count_params, START_CAPITAL
+
+MIN_SHARPE = 0.5   # qualidade (SQX aceitos: 0.53-0.98)
 
 # Gates calibrados pelos filtros REAIS do SQX do Jessé (prints 2026-07-10):
 # Ranking: PF > 1.3, Ret/DD > 4, trades/mês > 2; Stability aceita 0.67-0.86.
@@ -165,6 +167,11 @@ def evaluate(
         months = max(1.0, (d1 - d0).days / 30.44)
     tpm = m.total_trades / months
 
+    # Suíte completa (vocabulário SQX): Sharpe, R-exp, symmetry, ret/dd, cagr, etc.
+    dates = [t.date or "" for t in trades]
+    sides = [getattr(t, "side", 0) for t in trades]
+    sq = sqx_metrics(profits, dates, sides, dd_abs, dd_pct, START_CAPITAL)
+
     # ── Gates DQ Labs + filtros SQX ───────────────────────────────────────────
     pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
     gates = {
@@ -177,6 +184,7 @@ def evaluate(
         "dd_max": (dd_pct <= MAX_DD_PCT, f"{dd_pct:.1f}% ≤ {MAX_DD_PCT:.0f}%"),
         "linearity_r2": (r2 >= MIN_R2, f"{r2:.3f} ≥ {MIN_R2}"),
         "recovery": (recovery >= MIN_RECOVERY, f"{recovery:.2f} ≥ {MIN_RECOVERY}"),
+        "sharpe": (sq.sharpe >= MIN_SHARPE, f"{sq.sharpe:.2f} ≥ {MIN_SHARPE}"),
     }
     approved = all(ok for ok, _ in gates.values())
     # sobrescreve o DD reportado com o flutuante (o honesto)
@@ -196,6 +204,7 @@ def evaluate(
              "wfe": w.wfe, "approved": w.approved} for w in wfa.windows
         ],
         "metrics": m.__dict__,
+        "sqx": sq.__dict__,
         "curve": {"r2": r2, "recovery_factor": round(recovery, 2),
                   "dd_pct_mtm": dd_pct},
         "montecarlo": {"dd_p95_abs": mc.dd_p95_abs, "recommended_capital": mc.recommended_capital},

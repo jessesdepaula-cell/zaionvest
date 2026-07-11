@@ -28,6 +28,7 @@ class Trade:
     profit: float
     date: Optional[str] = None
     params: Optional[dict] = None
+    side: int = 0   # +1 long / -1 short (para métricas de simetria long/short)
 
 
 @dataclass

@@ -101,3 +101,114 @@ def drawdown_of_curve(equity: list[float], start_capital: float = 1000.0) -> tup
         if peak > 0:
             dd_pct = max(dd_pct, dd / peak * 100.0)
     return round(dd_abs, 2), round(dd_pct, 2)
+
+
+# ─── Suíte completa (vocabulário do StrategyQuant databank) ───────────────────
+
+@dataclass
+class SqxMetrics:
+    sharpe: float            # anualizado (retornos mensais)
+    r_expectancy: float      # Van Tharp: R médio por trade
+    sqn: float               # System Quality Number
+    symmetry: float          # 0-100: lucro distribuído no tempo (1ª vs 2ª metade)
+    ret_dd: float            # lucro líq / DD máx abs (= Recovery Factor)
+    cagr: float              # % ao ano composto
+    annual_return: float     # % média por ano (linear)
+    avg_trades_month: float
+    win_loss_ratio: float    # payoff (ganho médio / perda média)
+    long_short_balance: float  # 0-100: equilíbrio long vs short (100 = perfeito)
+
+
+def _months_span(dates: list[str]) -> float:
+    d = [s for s in dates if s]
+    if len(d) < 2:
+        return 1.0
+    import datetime as _dt
+    try:
+        a = _dt.date.fromisoformat(min(d))
+        b = _dt.date.fromisoformat(max(d))
+        return max(1.0, (b - a).days / 30.4375)
+    except ValueError:
+        return 1.0
+
+
+def sqx_metrics(
+    profits: list[float],
+    dates: list[str],
+    directions: list[int],   # +1 long / -1 short por trade (paralelo a profits)
+    dd_abs: float,
+    dd_pct: float,
+    start_capital: float = 1000.0,
+) -> SqxMetrics:
+    n = len(profits)
+    if n == 0:
+        return SqxMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+    net = sum(profits)
+    months = _months_span(dates)
+    years = months / 12.0
+
+    # Sharpe anualizado a partir de retornos mensais
+    import collections
+    monthly = collections.defaultdict(float)
+    for p, d in zip(profits, dates):
+        key = d[:7] if d else "0000-00"   # AAAA-MM
+        monthly[key] += p
+    mret = [v / start_capital for v in monthly.values()]
+    if len(mret) >= 2:
+        mu = sum(mret) / len(mret)
+        var = sum((x - mu) ** 2 for x in mret) / (len(mret) - 1)
+        sd = var ** 0.5
+        sharpe = (mu / sd * (12 ** 0.5)) if sd > 0 else 0.0
+    else:
+        sharpe = 0.0
+
+    # R-expectancy (Van Tharp) usando perda média como unidade de risco (R)
+    losses = [-p for p in profits if p < 0]
+    avg_loss = (sum(losses) / len(losses)) if losses else 0.0
+    if avg_loss > 0:
+        r_mult = [p / avg_loss for p in profits]
+        mr = sum(r_mult) / n
+        vr = sum((x - mr) ** 2 for x in r_mult) / n
+        sr = vr ** 0.5
+        r_expectancy = mr
+        sqn = (mr / sr * (min(n, 100) ** 0.5)) if sr > 0 else 0.0
+    else:
+        r_expectancy = sqn = 0.0
+
+    # Symmetry: lucro distribuído no tempo (1ª metade vs 2ª metade dos trades)
+    half = n // 2
+    p1, p2 = sum(profits[:half]), sum(profits[half:])
+    denom = abs(p1) + abs(p2)
+    symmetry = 100.0 * (1 - abs(p1 - p2) / denom) if denom > 0 else 0.0
+
+    # Equilíbrio long/short (mercado real: robô que só ganha num lado é frágil)
+    lp = sum(p for p, d in zip(profits, directions) if d > 0)
+    sp = sum(p for p, d in zip(profits, directions) if d < 0)
+    if lp > 0 and sp > 0:
+        long_short_balance = 100.0 * min(lp, sp) / max(lp, sp)
+    elif lp > 0 or sp > 0:
+        long_short_balance = 100.0  # estratégia intencionalmente unidirecional
+    else:
+        long_short_balance = 0.0
+
+    ret_dd = (net / dd_abs) if dd_abs > 0 else 0.0
+    final = start_capital + net
+    cagr = ((final / start_capital) ** (1 / years) - 1) * 100 if final > 0 and years > 0 else -100.0
+    annual_return = (net / start_capital / years * 100) if years > 0 else 0.0
+    avg_trades_month = n / months
+    gains = [p for p in profits if p > 0]
+    lsr = ((sum(gains) / len(gains)) / avg_loss) if gains and avg_loss > 0 else 0.0
+
+    return SqxMetrics(
+        sharpe=round(sharpe, 3),
+        r_expectancy=round(r_expectancy, 3),
+        sqn=round(sqn, 3),
+        symmetry=round(symmetry, 2),
+        ret_dd=round(ret_dd, 2),
+        cagr=round(cagr, 2),
+        annual_return=round(annual_return, 2),
+        avg_trades_month=round(avg_trades_month, 2),
+        win_loss_ratio=round(lsr, 3),
+        long_short_balance=round(long_short_balance, 2),
+    )
