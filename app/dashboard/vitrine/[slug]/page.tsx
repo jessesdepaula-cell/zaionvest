@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
-import { WFATable } from "@/components/vitrine/WFATable";
 import { EACard } from "@/components/vitrine/EACard";
-import { Download, ChevronLeft, History } from "lucide-react";
+import { ChevronLeft, History, ShieldCheck, RefreshCw, Power } from "lucide-react";
 import Link from "next/link";
 
 export const revalidate = 300;
@@ -40,12 +39,6 @@ export default async function EADetailPage({
   if (!ea) notFound();
 
   const latestValidation = ea.validations[0] ?? null;
-  const windows = (latestValidation?.windowsJson as Array<{
-    window: number;
-    isProfit: number;
-    oosProfit: number;
-    wfe: number;
-  }>) ?? [];
 
   return (
     <div className="min-h-screen bg-[#000] text-zinc-300">
@@ -80,22 +73,45 @@ export default async function EADetailPage({
               </p>
             </div>
 
-            {/* Tabela WFA */}
-            {windows.length > 0 && latestValidation ? (
-              <WFATable
-                windows={windows}
-                wfeAvg={latestValidation.wfe}
-                oosWins={latestValidation.oosWins}
-                oosTotalWindows={latestValidation.oosTotalWin}
-                validatedAt={latestValidation.validatedAt}
-              />
-            ) : (
-              <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-8 text-center">
-                <p className="text-sm text-zinc-600">
-                  Ainda não há dados de revalidação disponíveis.
-                </p>
+            {/* Validação (resumo — sem expor a metodologia) */}
+            <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
+              <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-4">
+                Validação
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-emerald-400" />
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Aprovado na nossa validação de robustez antes de entrar na vitrine.
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <RefreshCw className="h-4 w-4 shrink-0 mt-0.5 text-[#2563EB]" />
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Revalidado todo mês com dados novos de mercado.
+                    {latestValidation && (
+                      <>
+                        {" "}Última revalidação em{" "}
+                        <strong className="text-zinc-200">
+                          {new Date(latestValidation.validatedAt).toLocaleDateString("pt-BR")}
+                        </strong>
+                        {" "}—{" "}
+                        <span className={latestValidation.approved ? "text-emerald-400" : "text-rose-400"}>
+                          {latestValidation.approved ? "aprovado" : "reprovado"}
+                        </span>.
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Power className="h-4 w-4 shrink-0 mt-0.5 text-zinc-400" />
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Se deixar de cumprir os critérios, o kill-switch o desativa
+                    automaticamente no seu MetaTrader.
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
 
             {/* Histórico de revalidações */}
             {ea.validations.length > 0 && (
@@ -134,20 +150,8 @@ export default async function EADetailPage({
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p
-                          className={`text-xs font-mono font-semibold ${
-                            v.wfe > 50 ? "text-emerald-400" : "text-rose-400"
-                          }`}
-                        >
-                          WFE: {v.wfe.toFixed(1)}%
-                        </p>
-                        <p className="text-[10px] text-zinc-600">
-                          {v.oosWins}/{v.oosTotalWin} janelas OOS positivas
-                        </p>
-                      </div>
                       {i === 0 && (
-                        <span className="ml-3 rounded-full bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 px-2 py-0.5 text-[9px] text-zinc-500">
+                        <span className="ml-auto rounded-full bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 px-2 py-0.5 text-[9px] text-zinc-500">
                           Mais recente
                         </span>
                       )}

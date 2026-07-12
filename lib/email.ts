@@ -319,8 +319,8 @@ export async function sendEARejectedEmail({
                 </p>
 
                 <p style="margin:0 0 20px;font-size:14px;color:#A1A1AA;line-height:1.6;">
-                  O Expert Advisor que você baixou não passou nos critérios mínimos
-                  de robustez da nossa <strong style="color:#F5F5F5;">Esteira DQ Labs</strong>
+                  O Expert Advisor que você baixou não passou na nossa
+                  <strong style="color:#F5F5F5;"> validação de robustez</strong>
                   neste ciclo de revalidação:
                 </p>
 
@@ -357,9 +357,10 @@ export async function sendEARejectedEmail({
             <tr>
               <td style="border-top:1px solid rgba(245,245,245,0.06);padding:20px 32px;background:#050505;">
                 <p style="margin:0;font-size:11px;color:#52525B;line-height:1.6;">
-                  <strong style="color:#71717A;">Critérios de reprovação (DQ Labs):</strong><br>
-                  WFE médio abaixo de 50% ou mais de 50% das janelas OOS negativas.
-                  A revalidação é executada mensalmente com dados atualizados do mercado.
+                  <strong style="color:#71717A;">Sobre a revalidação:</strong><br>
+                  Reavaliamos cada robô mensalmente com dados atualizados do mercado.
+                  Quando um robô deixa de cumprir nossos critérios de robustez, ele é
+                  retirado e desativado automaticamente na sua conta.
                 </p>
               </td>
             </tr>

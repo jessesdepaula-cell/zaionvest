@@ -200,9 +200,9 @@ export function EACard({
         {/* Métricas */}
         <div className="grid grid-cols-2 gap-2">
           <Metric
-            label="WFE"
+            label="Robustez"
             value={wfe != null ? `${wfe.toFixed(1)}%` : "—"}
-            good={wfe != null && wfe > 50}
+            good={wfe != null && wfe >= 15}
             icon={<Activity className="h-3 w-3" />}
           />
           <Metric
@@ -219,7 +219,7 @@ export function EACard({
             icon={<TrendingDown className="h-3 w-3" />}
           />
           <Metric
-            label="OOS Pass Rate"
+            label="Consistência"
             value={oosRate != null ? `${oosRate}%` : "—"}
             good={oosRate != null && oosRate >= 50}
             icon={<Activity className="h-3 w-3" />}

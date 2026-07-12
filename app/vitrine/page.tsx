@@ -18,7 +18,7 @@ export const revalidate = 300;
 export const metadata = {
   title: "Vitrine de EAs — ZaionVest | Expert Advisors Validados",
   description:
-    "Marketplace de Expert Advisors validados estatisticamente pela metodologia DQ Labs. Walk Forward Analysis, WFE > 50%, Monte Carlo — só os melhores passam.",
+    "Vitrine de Expert Advisors validados para MetaTrader 5. Cada robô é revalidado todo mês, com kill-switch remoto e drawdown real e transparente.",
 };
 
 interface SearchParams {
@@ -134,7 +134,7 @@ export default async function VitrinePage({
               href="/sign-up"
               className="rounded-lg bg-[#2563EB] px-4 py-2 font-semibold text-white transition hover:bg-[#1D4ED8]"
             >
-              Começar grátis
+              Área de Membros
             </Link>
           </nav>
         </div>
@@ -145,22 +145,17 @@ export default async function VitrinePage({
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#2563EB]/30 bg-[#2563EB]/[0.06] px-3.5 py-1.5 text-xs text-[#2563EB] font-medium mb-4">
             <Bot className="h-3.5 w-3.5" />
-            Esteira de Robustez DQ Labs
+            Robôs validados e revalidados
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5] mb-3">
             Vitrine de Expert Advisors
           </h1>
           <p className="text-sm text-zinc-400 max-w-xl">
-            Todos os EAs passam pela esteira de robustez:{" "}
-            <strong className="text-zinc-200">
-              Walk Forward Analysis (6 janelas)
-            </strong>
-            , critério{" "}
-            <strong className="text-zinc-200">WFE &gt; 50%</strong> e{" "}
-            <strong className="text-zinc-200">
-              janelas OOS negativas &lt; 50%
-            </strong>
-            . Só os aprovados aparecem aqui.
+            Cada robô passa por uma validação de robustez antes de entrar na
+            vitrine e é <strong className="text-zinc-200">revalidado todo mês</strong>{" "}
+            com dados novos de mercado. O que degrada é retirado e desligado pelo
+            kill-switch. Só os aprovados aparecem aqui — com o{" "}
+            <strong className="text-zinc-200">drawdown real</strong>, sem maquiagem.
           </p>
 
           {/* CTA para assinar */}

@@ -84,8 +84,7 @@ export default async function DashboardVitrinePage({
               </h1>
             </div>
             <p className="text-xs text-zinc-500">
-              {eas.length} estratégi{eas.length === 1 ? "a aprovada" : "as aprovadas"}{" "}
-              pela esteira DQ Labs ·{" "}
+              {eas.length} estratégi{eas.length === 1 ? "a aprovada" : "as aprovadas"} e revalidadas ·{" "}
               {downloadedIds.size > 0
                 ? `${downloadedIds.size} baixad${downloadedIds.size === 1 ? "a" : "as"} por você`
                 : "nenhuma baixada ainda"}

@@ -21,7 +21,7 @@ const STYLES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "wfe_desc", label: "Maior WFE" },
+  { value: "wfe_desc", label: "Maior Robustez" },
   { value: "pf_desc", label: "Maior Profit Factor" },
   { value: "dd_asc", label: "Menor Drawdown" },
   { value: "newest", label: "Mais recentes" },
