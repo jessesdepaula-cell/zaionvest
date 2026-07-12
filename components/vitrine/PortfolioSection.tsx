@@ -64,7 +64,7 @@ export function PortfolioSection({ portfolios }: { portfolios: PortfolioView[] }
                     className="flex items-center justify-between text-xs"
                   >
                     <Link
-                      href={`/vitrine/${ea.slug}`}
+                      href="/sign-up"
                       className="text-zinc-300 hover:text-white transition truncate"
                     >
                       {ea.name}

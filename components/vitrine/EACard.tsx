@@ -208,7 +208,7 @@ export function EACard({
             icon={<TrendingUp className="h-3 w-3" />}
           />
           <Metric
-            label="Lucro"
+            label="Lucro (6 anos)"
             value={lucroPct != null ? `${lucroPct >= 0 ? "+" : ""}${lucroPct.toFixed(0)}%` : "—"}
             good={lucroPct != null && lucroPct > 0}
             icon={<TrendingUp className="h-3 w-3" />}

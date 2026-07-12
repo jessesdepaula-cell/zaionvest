@@ -40,20 +40,15 @@ export default async function EADetailPage({
 
   const latestValidation = ea.validations[0] ?? null;
 
-  // Capital mínimo recomendado por perfil de risco. O robô é calibrado para
-  // uma base de US$ 10.000 (lote padrão embutido). Como a perda máxima em $ é
-  // fixa para esse lote, o capital que mantém o drawdown dentro da tolerância
-  // de cada perfil é: capital = perdaMax$ / tolerância. Arredondado p/ cima.
+  // Capital recomendado. O robô é calibrado para uma conta-base de US$ 10.000
+  // (o lote padrão já vem embutido no .ex5, dimensionado para esse capital).
+  // Recomendamos o capital que mantém o drawdown observado em ~20% da conta e
+  // NUNCA abaixo da base (rodar com menos over-alavanca o lote). Com mais
+  // capital, o drawdown relativo cai proporcionalmente.
+  const BASE_CAPITAL = 10000;
   const ddPct = ea.maxDrawdown ?? 0;
-  const roundUp = (v: number) => Math.ceil(v / 100) * 100;
-  const capital =
-    ddPct > 0
-      ? {
-          conservador: roundUp(ddPct * 500), // tolera DD até ~20%
-          moderado: roundUp(ddPct * 250), //    ~40%
-          agressivo: roundUp((ddPct * 10000) / 60), // ~60%
-        }
-      : null;
+  const capitalRec =
+    ddPct > 0 ? Math.max(BASE_CAPITAL, Math.ceil((ddPct * 500) / 500) * 500) : null;
   const brl = (v: number) => v.toLocaleString("pt-BR");
 
   return (
@@ -82,10 +77,9 @@ export default async function EADetailPage({
               </div>
               <h1 className="text-2xl font-bold text-[#F5F5F5]">{ea.name}</h1>
               <p className="text-sm text-zinc-500 mt-1">
-                Modo de saída:{" "}
-                {ea.exitMode === "reversal"
-                  ? "Stop & Reversão (Modo A)"
-                  : "SL/TP Fixos (Modo B)"}
+                Métricas calculadas sobre backtest de{" "}
+                <strong className="text-zinc-300">6 anos</strong>, com base de conta de{" "}
+                <strong className="text-zinc-300">US$ 10.000</strong>.
               </p>
             </div>
 
@@ -204,35 +198,25 @@ export default async function EADetailPage({
             />
 
             {/* Capital recomendado */}
-            {capital && (
+            {capitalRec && (
               <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-4">
                 <h4 className="text-xs font-semibold text-[#F5F5F5] mb-1">
                   Capital recomendado
                 </h4>
-                <p className="text-[10px] text-zinc-500 leading-relaxed mb-3">
-                  Para o lote padrão do robô, por perfil de risco — quanto mais
-                  capital, menor o drawdown relativo na sua conta.
-                </p>
-                <div className="space-y-1.5">
-                  {[
-                    { k: "Conservador", v: capital.conservador, t: "DD ~20%" },
-                    { k: "Moderado", v: capital.moderado, t: "DD ~40%" },
-                    { k: "Agressivo", v: capital.agressivo, t: "DD ~60%" },
-                  ].map((r) => (
-                    <div
-                      key={r.k}
-                      className="flex items-center justify-between rounded-lg border border-[#f5f5f5]/[0.06] bg-[#f5f5f5]/[0.02] px-3 py-2"
-                    >
-                      <div className="flex flex-col">
-                        <span className="text-xs text-zinc-300">{r.k}</span>
-                        <span className="text-[9px] text-zinc-600">{r.t}</span>
-                      </div>
-                      <span className="num text-sm font-semibold text-[#F5F5F5]">
-                        US$ {brl(r.v)}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex items-baseline gap-1.5 mt-2 mb-2">
+                  <span className="num text-2xl font-extrabold text-[#F5F5F5]">
+                    US$ {brl(capitalRec)}
+                  </span>
+                  <span className="text-[10px] text-zinc-500">mínimo</span>
                 </div>
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  O robô já vem com o lote calibrado para uma conta de
+                  <strong className="text-zinc-300"> US$ {brl(BASE_CAPITAL)}</strong>.
+                  Neste capital, o drawdown máximo observado foi de{" "}
+                  <strong className="text-zinc-300">{ddPct.toFixed(1)}%</strong>.
+                  Com mais capital, o drawdown relativo na sua conta diminui.
+                  Se usar um capital diferente, ajuste o lote proporcionalmente.
+                </p>
               </div>
             )}
 

@@ -72,7 +72,7 @@ export default async function DashboardLayout({
           <SignOutButton redirectUrl="/">
             <button
               type="button"
-              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-rose-500/20 bg-rose-500/[0.04] px-3 py-2 text-xs font-medium text-rose-300 transition hover:border-rose-500/40 hover:bg-rose-500/[0.10] hover:text-rose-200"
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#2563EB]/20 bg-[#2563EB]/[0.06] px-3 py-2 text-xs font-medium text-[#2563EB] transition hover:border-[#2563EB]/40 hover:bg-[#2563EB]/[0.12] hover:text-white"
             >
               <LogOut className="h-3.5 w-3.5" />
               Sair
@@ -106,7 +106,7 @@ export default async function DashboardLayout({
             <SignOutButton redirectUrl="/">
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/[0.06] px-2.5 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-500/[0.12]"
+                className="inline-flex items-center gap-1.5 rounded-md border border-[#2563EB]/30 bg-[#2563EB]/[0.06] px-2.5 py-1.5 text-xs font-medium text-[#2563EB] hover:bg-[#2563EB]/[0.12]"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sair
