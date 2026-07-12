@@ -18,22 +18,25 @@ const NAV = [
   { href: "/dashboard/configuracoes", icon: User, label: "Minha Conta" },
 ];
 
-// Itens exclusivos do administrador (dono): gestão de assinantes e dos EAs.
+// Itens exclusivos do administrador (dono): painel de assinantes e dos EAs.
 const ADMIN_NAV = [
-  { href: "/dashboard/admin", icon: Users, label: "Assinantes" },
+  { href: "/dashboard/admin", icon: Users, label: "Painel Admin" },
   { href: "/dashboard/admin/eas", icon: Bot, label: "Admin — EAs" },
 ];
 
 export function SidebarNav({ owner = false }: { owner?: boolean }) {
   const pathname = usePathname();
   const items = owner ? [...NAV, ...ADMIN_NAV] : NAV;
+  // Só o href MAIS ESPECÍFICO (mais longo) que casa com a rota fica ativo —
+  // evita "/dashboard/admin" e "/dashboard/admin/eas" acenderem juntos.
+  const activeHref = items.reduce<string | null>((best, it) => {
+    const match = pathname === it.href || pathname.startsWith(it.href + "/");
+    return match && it.href.length > (best?.length ?? 0) ? it.href : best;
+  }, null);
   return (
     <nav className="flex flex-col gap-1 p-3">
       {items.map((item) => {
-        const isActive =
-          item.href === "/dashboard"
-            ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+        const isActive = item.href === activeHref;
         const Icon = item.icon;
         return (
           <Link

@@ -142,10 +142,12 @@ export function EACard({
   const cfg = STATUS_CONFIG[status];
   const approved = status === "APPROVED";
 
-  const oosRate =
-    oosWins != null && oosTotalWindows != null && oosTotalWindows > 0
-      ? Math.round((oosWins / oosTotalWindows) * 100)
-      : null;
+  // Lucro do período = variação da curva de capital do backtest.
+  const lucroPct = (() => {
+    const c = equityCurveOos;
+    if (!c || c.length < 2 || !c[0]?.value) return null;
+    return ((c[c.length - 1].value - c[0].value) / c[0].value) * 100;
+  })();
 
   return (
     <div
@@ -200,15 +202,15 @@ export function EACard({
         {/* Métricas */}
         <div className="grid grid-cols-2 gap-2">
           <Metric
-            label="Robustez"
-            value={wfe != null ? `${wfe.toFixed(1)}%` : "—"}
-            good={wfe != null && wfe >= 15}
-            icon={<Activity className="h-3 w-3" />}
-          />
-          <Metric
             label="Profit Factor"
             value={profitFactor != null ? profitFactor.toFixed(2) : "—"}
             good={profitFactor != null && profitFactor > 1.35}
+            icon={<TrendingUp className="h-3 w-3" />}
+          />
+          <Metric
+            label="Lucro"
+            value={lucroPct != null ? `${lucroPct >= 0 ? "+" : ""}${lucroPct.toFixed(0)}%` : "—"}
+            good={lucroPct != null && lucroPct > 0}
             icon={<TrendingUp className="h-3 w-3" />}
           />
           <Metric
@@ -219,19 +221,12 @@ export function EACard({
             icon={<TrendingDown className="h-3 w-3" />}
           />
           <Metric
-            label="Consistência"
-            value={oosRate != null ? `${oosRate}%` : "—"}
-            good={oosRate != null && oosRate >= 50}
+            label="Trades"
+            value={totalTrades != null ? String(totalTrades) : "—"}
+            good={totalTrades != null && totalTrades >= 100}
             icon={<Activity className="h-3 w-3" />}
           />
         </div>
-
-        {totalTrades != null && (
-          <p className="text-[10px] text-zinc-600 text-center">
-            {totalTrades} trades · Modo:{" "}
-            {exitMode === "reversal" ? "Stop & Reversão" : "SL/TP Fixos"}
-          </p>
-        )}
 
         {/* Ações */}
         <div className="flex gap-2 mt-auto pt-2 border-t border-[#f5f5f5]/[0.04]">

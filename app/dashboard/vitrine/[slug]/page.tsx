@@ -40,6 +40,22 @@ export default async function EADetailPage({
 
   const latestValidation = ea.validations[0] ?? null;
 
+  // Capital mínimo recomendado por perfil de risco. O robô é calibrado para
+  // uma base de US$ 10.000 (lote padrão embutido). Como a perda máxima em $ é
+  // fixa para esse lote, o capital que mantém o drawdown dentro da tolerância
+  // de cada perfil é: capital = perdaMax$ / tolerância. Arredondado p/ cima.
+  const ddPct = ea.maxDrawdown ?? 0;
+  const roundUp = (v: number) => Math.ceil(v / 100) * 100;
+  const capital =
+    ddPct > 0
+      ? {
+          conservador: roundUp(ddPct * 500), // tolera DD até ~20%
+          moderado: roundUp(ddPct * 250), //    ~40%
+          agressivo: roundUp((ddPct * 10000) / 60), // ~60%
+        }
+      : null;
+  const brl = (v: number) => v.toLocaleString("pt-BR");
+
   return (
     <div className="min-h-screen bg-[#000] text-zinc-300">
       <div className="mx-auto max-w-5xl px-6 py-10">
@@ -186,6 +202,39 @@ export default async function EADetailPage({
               }
               canDownload={canDownload}
             />
+
+            {/* Capital recomendado */}
+            {capital && (
+              <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-4">
+                <h4 className="text-xs font-semibold text-[#F5F5F5] mb-1">
+                  Capital recomendado
+                </h4>
+                <p className="text-[10px] text-zinc-500 leading-relaxed mb-3">
+                  Para o lote padrão do robô, por perfil de risco — quanto mais
+                  capital, menor o drawdown relativo na sua conta.
+                </p>
+                <div className="space-y-1.5">
+                  {[
+                    { k: "Conservador", v: capital.conservador, t: "DD ~20%" },
+                    { k: "Moderado", v: capital.moderado, t: "DD ~40%" },
+                    { k: "Agressivo", v: capital.agressivo, t: "DD ~60%" },
+                  ].map((r) => (
+                    <div
+                      key={r.k}
+                      className="flex items-center justify-between rounded-lg border border-[#f5f5f5]/[0.06] bg-[#f5f5f5]/[0.02] px-3 py-2"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-xs text-zinc-300">{r.k}</span>
+                        <span className="text-[9px] text-zinc-600">{r.t}</span>
+                      </div>
+                      <span className="num text-sm font-semibold text-[#F5F5F5]">
+                        US$ {brl(r.v)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Instrução de uso */}
             {ea.status === "APPROVED" && (
