@@ -18,6 +18,8 @@ interface SearchParams {
   timeframe?: string;
   style?: string;
   sort?: string;
+  top?: string;
+  corr?: string;
 }
 
 export default async function DashboardVitrinePage({
@@ -71,6 +73,48 @@ export default async function DashboardVitrinePage({
     },
   });
 
+  // 1. Filtragem por TOP 25% mais robustos (por WFE)
+  let filteredEas = [...eas];
+  if (params.top === "25") {
+    const sortedByWfe = [...filteredEas].sort((a, b) => (b.wfe ?? 0) - (a.wfe ?? 0));
+    const limit = Math.ceil(sortedByWfe.length * 0.25);
+    const top25Ids = new Set(sortedByWfe.slice(0, limit).map((ea) => ea.id));
+    filteredEas = filteredEas.filter((ea) => top25Ids.has(ea.id));
+  }
+
+  // 2. Filtragem por correlação máxima de retornos de curva (Pearson)
+  const maxCorr = params.corr ? parseFloat(params.corr) : null;
+  if (maxCorr !== null && !isNaN(maxCorr)) {
+    const accepted: typeof eas = [];
+    for (const ea of filteredEas) {
+      const curve = (ea.equityCurveOos as any[]) || [];
+      if (curve.length < 3) {
+        accepted.push(ea);
+        continue;
+      }
+      
+      const rets = getReturns(curve);
+      let isClone = false;
+      
+      for (const other of accepted) {
+        const otherCurve = (other.equityCurveOos as any[]) || [];
+        if (otherCurve.length < 3) continue;
+        const otherRets = getReturns(otherCurve);
+        
+        const corrVal = pearson(rets, otherRets);
+        if (Math.abs(corrVal) > maxCorr) {
+          isClone = true;
+          break;
+        }
+      }
+      
+      if (!isClone) {
+        accepted.push(ea);
+      }
+    }
+    filteredEas = accepted;
+  }
+
   return (
     <div className="min-h-screen bg-[#000] text-zinc-300">
       <div className="mx-auto max-w-6xl px-6 py-10">
@@ -84,7 +128,7 @@ export default async function DashboardVitrinePage({
               </h1>
             </div>
             <p className="text-xs text-zinc-500">
-              {eas.length} estratégi{eas.length === 1 ? "a aprovada" : "as aprovadas"} e revalidadas ·{" "}
+              {filteredEas.length} estratégi{filteredEas.length === 1 ? "a aprovada" : "as aprovadas"} e revalidadas ·{" "}
               {downloadedIds.size > 0
                 ? `${downloadedIds.size} baixad${downloadedIds.size === 1 ? "a" : "as"} por você`
                 : "nenhuma baixada ainda"}
@@ -121,12 +165,12 @@ export default async function DashboardVitrinePage({
         {/* Filtros */}
         <Suspense fallback={null}>
           <div className="mb-6">
-            <EAFilters total={eas.length} />
+            <EAFilters total={filteredEas.length} />
           </div>
         </Suspense>
 
         {/* Grid */}
-        {eas.length === 0 ? (
+        {filteredEas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Bot className="h-10 w-10 text-zinc-700 mb-4" />
             <p className="text-sm text-zinc-500">
@@ -135,7 +179,7 @@ export default async function DashboardVitrinePage({
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {eas.map((ea) => (
+            {filteredEas.map((ea) => (
               <div key={ea.id} className="relative">
                 {downloadedIds.has(ea.id) && (
                   <div className="absolute -top-2 -right-2 z-10 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-400">
@@ -161,3 +205,41 @@ export default async function DashboardVitrinePage({
     </div>
   );
 }
+
+// ─── Funções Matemáticas de Correlação (Pearson) ──────────────────────────────
+
+function getReturns(curve: any[]): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < curve.length - 1; i++) {
+    const a = curve[i].value;
+    const b = curve[i + 1].value;
+    if (a > 0) {
+      out.push((b - a) / a);
+    }
+  }
+  return out;
+}
+
+function pearson(a: number[], b: number[]): number {
+  const n = Math.min(a.length, b.length);
+  if (n < 3) return 0.0;
+  const x = a.slice(-n);
+  const y = b.slice(-n);
+
+  const ma = x.reduce((acc, v) => acc + v, 0) / n;
+  const mb = y.reduce((acc, v) => acc + v, 0) / n;
+
+  let num = 0;
+  let da = 0;
+  let db = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = x[i] - ma;
+    const dy = y[i] - mb;
+    num += dx * dy;
+    da += dx * dx;
+    db += dy * dy;
+  }
+  if (da * db === 0) return 0.0;
+  return num / (Math.sqrt(da) * Math.sqrt(db));
+}
+

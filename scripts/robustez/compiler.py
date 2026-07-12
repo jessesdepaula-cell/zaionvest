@@ -192,6 +192,18 @@ def _gen_multi(blocks_list: list[dict]) -> tuple[str, str, str]:
             h = H("iMA(_Symbol,_Period,200,0,MODE_EMA,PRICE_CLOSE)")
             body.append(f"   {{ double e=Buf({h},1); long_ok=long_ok&&(c>e); short_ok=short_ok&&(c<e); }}")
 
+        elif name == "t3_trend":
+            body.append(f"   {{ double t=GetT3({int(p['period'])},{_d(p.get('vfactor',0.7))},1); "
+                        f"long_ok=long_ok&&(c>t); short_ok=short_ok&&(c<t); }}")
+
+        elif name == "supertrend_state":
+            body.append(f"   {{ double st=GetSupertrend({int(p['period'])},{_d(p['multiplier'])},1); "
+                        f"long_ok=long_ok&&(st==1.0); short_ok=short_ok&&(st==-1.0); }}")
+
+        elif name == "hma_cross":
+            body.append(f"   {{ double hf=GetHMA({int(p['fast'])},1); double hs=GetHMA({int(p['slow'])},1); "
+                        f"long_ok=long_ok&&(hf>hs); short_ok=short_ok&&(hf<hs); }}")
+
         else:
             raise ValueError(f"bloco desconhecido no strategyDef: {name}")
 

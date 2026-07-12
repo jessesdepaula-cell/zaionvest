@@ -1,0 +1,115 @@
+import { loadEnvConfig } from "@next/env";
+import * as path from "path";
+import * as fs from "fs";
+
+loadEnvConfig(process.cwd());
+
+if (process.env.DIRECT_URL) {
+  process.env.DATABASE_URL = process.env.DIRECT_URL;
+}
+
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
+
+interface PublishRow {
+  table: "EA" | "EAValidation";
+  data: any;
+}
+
+async function main() {
+  const jsonPath = path.join(__dirname, "to_publish.json");
+  if (!fs.existsSync(jsonPath)) {
+    console.error(`❌ Arquivo ${jsonPath} não encontrado.`);
+    process.exit(1);
+  }
+
+  const rows: PublishRow[] = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+  console.log(`\n🌱 Carregados ${rows.length} registros para publicação.`);
+
+  let easCreated = 0;
+  let validationsCreated = 0;
+
+  for (const row of rows) {
+    if (row.table === "EA") {
+      const ea = row.data;
+      console.log(`- Publicando EA: ${ea.name} (${ea.symbol} ${ea.timeframe})...`);
+      
+      // Upsert para evitar duplicidade de slug
+      await prisma.eA.upsert({
+        where: { slug: ea.slug },
+        create: {
+          id: ea.id,
+          name: ea.name,
+          slug: ea.slug,
+          symbol: ea.symbol,
+          timeframe: ea.timeframe,
+          style: ea.style,
+          exitMode: ea.exitMode,
+          wfe: ea.wfe,
+          profitFactor: ea.profitFactor,
+          maxDrawdown: ea.maxDrawdown,
+          totalTrades: ea.totalTrades,
+          oosWins: ea.oosWins,
+          oosTotalWindows: ea.oosTotalWindows,
+          status: ea.status,
+          fileUrl: ea.fileUrl,
+          strategyDef: ea.strategyDef,
+          equityCurveOos: ea.equityCurveOos,
+          lastValidatedAt: new Date(ea.lastValidatedAt),
+          createdAt: new Date(ea.createdAt),
+          updatedAt: new Date(ea.updatedAt),
+        },
+        update: {
+          name: ea.name,
+          wfe: ea.wfe,
+          profitFactor: ea.profitFactor,
+          maxDrawdown: ea.maxDrawdown,
+          totalTrades: ea.totalTrades,
+          oosWins: ea.oosWins,
+          oosTotalWindows: ea.oosTotalWindows,
+          status: ea.status,
+          fileUrl: ea.fileUrl,
+          strategyDef: ea.strategyDef,
+          equityCurveOos: ea.equityCurveOos,
+          lastValidatedAt: new Date(ea.lastValidatedAt),
+          updatedAt: new Date(ea.updatedAt),
+        }
+      });
+      easCreated++;
+    } else if (row.table === "EAValidation") {
+      const val = row.data;
+      console.log(`- Adicionando histórico de validação para EA ID: ${val.eaId}...`);
+      
+      await prisma.eAValidation.create({
+        data: {
+          id: val.id,
+          eaId: val.eaId,
+          wfe: val.wfe,
+          oosWins: val.oosWins,
+          oosTotalWin: val.oosTotalWin,
+          approved: val.approved,
+          reportMd: val.reportMd,
+          windowsJson: val.windowsJson,
+          validatedAt: new Date(val.validatedAt),
+        }
+      });
+      validationsCreated++;
+    }
+  }
+
+  console.log(`\n🎉 Publicação concluída!`);
+  console.log(`   └─ EAs publicados/atualizados: ${easCreated}`);
+  console.log(`   └─ Registros de validação inseridos: ${validationsCreated}`);
+
+  // Opcional: deletar arquivo temporário to_publish.json
+  try {
+    fs.unlinkSync(jsonPath);
+    console.log(`🧹 Arquivo temporário to_publish.json removido.`);
+  } catch (err) {
+    // ignora se não conseguir apagar
+  }
+}
+
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

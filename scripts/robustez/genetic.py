@@ -303,8 +303,9 @@ def main():
     ap = argparse.ArgumentParser(description="Mineração genética (multi-condição, holdout OOS)")
     ap.add_argument("--symbols", default="XAUUSD,EURUSD,GBPUSD,USDJPY,AUDUSD,EURAUD")
     ap.add_argument("--timeframes", default="H4,H1")
-    ap.add_argument("--years", type=float, default=10.0)
+    ap.add_argument("--years", type=float, default=3.0)
     ap.add_argument("--pop", type=int, default=70)
+
     ap.add_argument("--gen", type=int, default=20)
     ap.add_argument("--keep", type=int, default=6)
     ap.add_argument("--seed", type=int, default=11)

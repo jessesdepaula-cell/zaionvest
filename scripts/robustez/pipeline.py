@@ -43,7 +43,7 @@ MAX_DD_PCT = 25.0       # DD m2m no sizing base ($10k, 1%/ATR) sobre 10 anos
 MIN_R2 = 0.65           # linearidade full-period (SQX Stability aceitou até 0.67)
 MIN_RECOVERY = 1.5      # Ret/DD full-period OOS-honesto (degradação esperada)
 MIN_PF = 1.15           # Profit Factor
-MIN_TRADES_PER_MONTH = 2.0  # filtro literal do SQX
+MIN_TRADES_PER_MONTH = 4.0  # filtro literal do SQX calibrado
 
 # Params default por família (ponto de partida; a otimização refina depois).
 DEFAULT_PARAMS = {
@@ -105,7 +105,7 @@ def run_pipeline(
     direction: str = "both",
     params: dict | None = None,
     n_windows: int = 6,
-    years: float = 10.0,
+    years: float = 3.0,
 ) -> dict:
     params = {**DEFAULT_PARAMS.get(family, {}), **(params or {})}
     bt, trades, source = _get_result(symbol, timeframe, family, params,
@@ -266,8 +266,9 @@ def main_stdin():
         ea_id=p.get("ea_id", "unknown"), ea_name=p.get("ea_name", "EA"),
         symbol=p.get("symbol", "EURUSD"), timeframe=p.get("timeframe", "H1"),
         family=p.get("family", "trend"), exit_mode=p.get("exit_mode", "reversal"),
-        params=p.get("params"), years=p.get("years", 10.0),
+        params=p.get("params"), years=p.get("years", 3.0),
     )
+
     print(json.dumps(out, ensure_ascii=False))
 
 
@@ -279,7 +280,8 @@ def main_cli():
     ap.add_argument("--timeframe", default="H1")
     ap.add_argument("--family", default="trend", choices=["trend", "mean_reversion", "breakout"])
     ap.add_argument("--exit-mode", default="reversal", choices=["reversal", "fixed_sltp"])
-    ap.add_argument("--years", type=float, default=10.0)
+    ap.add_argument("--years", type=float, default=3.0)
+
     ap.add_argument("--output-md")
     args = ap.parse_args()
 

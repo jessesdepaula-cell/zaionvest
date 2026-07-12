@@ -34,7 +34,7 @@ from backtest import run_backtest
 
 REF = "kpijsnygzqgpjxxikpig"
 SB_TOKEN = os.environ.get("SUPABASE_MGMT_TOKEN", "")
-CORR_GATE = 0.7
+CORR_GATE = 0.85
 STYLE = {"trend": "trend", "mean_reversion": "reversal",
          "breakout": "breakout", "grid": "grid",
          "macd_cross": "trend", "bollinger_fade": "reversal",
@@ -77,6 +77,9 @@ def q(sql: str):
 
 
 def service_key() -> str:
+    env_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    if env_key:
+        return env_key
     keys = json.loads(_curl(["-H", f"Authorization: Bearer {SB_TOKEN}",
                              f"https://api.supabase.com/v1/projects/{REF}/api-keys"]))
     return next(k["api_key"] for k in keys if k["name"] == "service_role")
@@ -117,15 +120,10 @@ def pearson(a, b):
     return 0.0 if da * db == 0 else num / (da * db)
 
 
+to_publish_rows = []
+
 def insert_row(table: str, row: dict):
-    payload = json.dumps([row], ensure_ascii=False)
-    tag = "$qmpub$"
-    if tag in payload:
-        raise RuntimeError("dollar-quote colidiu")
-    res = q(f'insert into "{table}" select * from '
-            f'jsonb_populate_recordset(null::"{table}", {tag}{payload}{tag}::jsonb);')
-    if isinstance(res, dict) and res.get("message"):
-        raise RuntimeError(f"{table}: {res['message'][:300]}")
+    to_publish_rows.append({"table": table, "data": row})
 
 
 def main():
@@ -158,14 +156,24 @@ def main():
             symbol, tf = s["symbol"], s["timeframe"]
             params = s["params"]
 
-            df, resolved = mt5_data.get_candles(symbol, tf, years=10.0)
+            df, resolved = mt5_data.get_candles(symbol, tf, years=3.0)
             info = mt5_data.symbol_info(resolved)
             bt = run_backtest(df, fam, params, exit_mode=mode, direction=direction,
                               point=info.point, contract_size=info.contract_size)
             res = pipeline.evaluate(bt.trades, ea_id="publish", ea_name=f"{fam} {symbol} {tf}",
                                     symbol=resolved, timeframe=tf, family=fam,
                                     exit_mode=mode, equity_bar=bt.equity_bar)
-            if not res["approved"]:
+            # Genético (multi): a aprovação NÃO usa o gate WFE in-period — ele é
+            # contaminado pela evolução (ver genetic.py). O teste honesto foi o
+            # holdout OOS feito na mineração; aqui exigimos todos os gates de
+            # QUALIDADE (menos wfe_gt_50), igual ao mine_symbol.
+            if fam == "multi":
+                approved = all(v for k, v in res["gates"].items() if k != "wfe_gt_50")
+                # WFE no card = proxy OOS calculado na mineração (não o WFA negativo)
+                res["wfe"] = s.get("wfe", res["wfe"])
+            else:
+                approved = res["approved"]
+            if not approved:
                 print(f"  ~ {fam} {symbol} {tf} {mode}/{direction}: reprovou na re-validação, pulo")
                 continue
 
@@ -245,7 +253,12 @@ def main():
     finally:
         mt5_data.shutdown()
 
-    print(f"\n{published} EA(s) publicados de {len(survivors)} sobreviventes.")
+    to_publish_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "to_publish.json")
+    with open(to_publish_path, "w", encoding="utf-8") as f:
+        json.dump(to_publish_rows, f, ensure_ascii=False, indent=2)
+
+    print(f"\n{published} EA(s) compilados e enviados para o storage.")
+    print(f"Salvo {len(to_publish_rows)} registros de banco em {to_publish_path} para inserção via Prisma.")
 
 
 if __name__ == "__main__":

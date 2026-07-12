@@ -63,10 +63,70 @@ def _cci(df, n):
 
 def _mom(close, n): return (close - close.shift(n)).fillna(0.0)
 
+def _t3(s, n, vfactor=0.7):
+    e1 = s.ewm(span=n, adjust=False).mean()
+    e2 = e1.ewm(span=n, adjust=False).mean()
+    e3 = e2.ewm(span=n, adjust=False).mean()
+    e4 = e3.ewm(span=n, adjust=False).mean()
+    e5 = e4.ewm(span=n, adjust=False).mean()
+    e6 = e5.ewm(span=n, adjust=False).mean()
+    c1 = -vfactor**3
+    c2 = 3*vfactor**2 + 3*vfactor**3
+    c3 = -6*vfactor**2 - 3*vfactor - 3*vfactor**3
+    c4 = 1 + 3*vfactor + 3*vfactor**2 + vfactor**3
+    return c1*e6 + c2*e5 + c3*e4 + c4*e3
+
+def _wma(s, n):
+    weights = np.arange(1, n + 1)
+    return s.rolling(n).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
+
+def _hma(s, n):
+    half_length = int(n / 2)
+    sqrt_length = int(np.sqrt(n))
+    wma_half = _wma(s, half_length)
+    wma_full = _wma(s, n)
+    diff = 2 * wma_half - wma_full
+    return _wma(diff, sqrt_length)
+
+def _supertrend(df, period=10, multiplier=3.0):
+    hl2 = (df["high"] + df["low"]) / 2
+    atr = _atr(df, period)
+    up = hl2 + multiplier * atr
+    dn = hl2 - multiplier * atr
+    
+    trend = np.ones(len(df))
+    close_arr = df["close"].to_numpy()
+    up_arr = up.to_numpy()
+    dn_arr = dn.to_numpy()
+    
+    curr_up = up_arr[0]
+    curr_dn = dn_arr[0]
+    curr_trend = 1
+    
+    for i in range(1, len(df)):
+        if close_arr[i-1] > curr_dn:
+            curr_dn = max(dn_arr[i], curr_dn)
+        else:
+            curr_dn = dn_arr[i]
+            
+        if close_arr[i-1] < curr_up:
+            curr_up = min(up_arr[i], curr_up)
+        else:
+            curr_up = up_arr[i]
+            
+        if close_arr[i] > curr_up:
+            curr_trend = 1
+        elif close_arr[i] < curr_dn:
+            curr_trend = -1
+            
+        trend[i] = curr_trend
+        
+    return pd.Series(trend, index=df.index)
 
 def _b(x) -> np.ndarray:
     """Series booleana → array bool com NaN=False."""
     return x.fillna(False).to_numpy(dtype=bool)
+
 
 
 # ─── Blocos: cada um retorna (long_cond, short_cond) como arrays bool ─────────
@@ -138,12 +198,30 @@ def _blk_ema200_filter(df, p):
     e = _ema(df["close"], 200)
     return _b(df["close"] > e), _b(df["close"] < e)
 
+def _blk_t3_trend(df, p):
+    t = _t3(df["close"], p["period"], p.get("vfactor", 0.7))
+    return _b(df["close"] > t), _b(df["close"] < t)
+
+def _blk_supertrend_state(df, p):
+    trend = _supertrend(df, p["period"], p["multiplier"])
+    return _b(trend == 1), _b(trend == -1)
+
+def _blk_hma_cross(df, p):
+    hf = _hma(df["close"], p["fast"])
+    hs = _hma(df["close"], p["slow"])
+    return _b(hf > hs), _b(hf < hs)
+
+
 
 # nome → (func, directional?, gerador de params)
 _R = random
 BLOCKS = {
     "rsi_extreme":  (_blk_rsi_extreme,  True,  lambda r: {"period": r.choice([7,9,14,21]), "level": r.choice([20,25,30])}),
     "rsi_trend":    (_blk_rsi_trend,    True,  lambda r: {"period": r.choice([9,14,21])}),
+    "t3_trend":     (_blk_t3_trend,     True,  lambda r: {"period": r.choice([7,9,14,21]), "vfactor": 0.7}),
+    "supertrend_state": (_blk_supertrend_state, True, lambda r: {"period": r.choice([7,10,14]), "multiplier": r.choice([1.5,2.0,3.0])}),
+    "hma_cross":    (_blk_hma_cross,    True,  lambda r: {"fast": r.choice([9,14,21]), "slow": r.choice([35,50,80])}),
+
     "ema_stack":    (_blk_ema_stack,    True,  lambda r: _fast_slow(r)),
     "ema_cross":    (_blk_ema_cross,    True,  lambda r: _fast_slow(r)),
     "price_ema":    (_blk_price_ema,    True,  lambda r: {"period": r.choice([20,50,100,150])}),
