@@ -38,14 +38,20 @@ foreach ($Ativo in $Ativos) {
         
         $OutFile = "scripts/robustez/survivors_temp_$($Ativo)_$($Tf).json"
         
+        # Determina o executável do Python (usa o venv-numba se existir)
+        $PythonExe = "python"
+        if (Test-Path "scripts/robustez/.venv-numba/Scripts/python.exe") {
+            $PythonExe = "scripts/robustez/.venv-numba/Scripts/python.exe"
+        }
+        
         # 1. Roda a evolucao genetica com holdout OOS
-        & python scripts/robustez/genetic.py --symbols $Ativo --timeframes $Tf --pop 80 --gen 30 --keep 12 --out $OutFile
+        & $PythonExe scripts/robustez/genetic.py --symbols $Ativo --timeframes $Tf --pop 80 --gen 30 --keep 12 --out $OutFile
         
         if (Test-Path $OutFile) {
             Write-Host "Sobreviventes gerados. Iniciando compilacao e upload..." -ForegroundColor Green
             
             # 2. Compila os EAs, faz upload dos binarios (.ex5) para o Storage e gera o JSON do banco
-            & python scripts/robustez/publish.py --survivors $OutFile
+            & $PythonExe scripts/robustez/publish.py --survivors $OutFile
             
             # 3. Insere de forma consistente no banco de dados Supabase via Prisma ORM
             & npx tsx scripts/robustez/publish_db.ts

@@ -22,7 +22,7 @@ from metrics import compute_metrics, drawdown_of_curve, equity_r_squared
 
 # SQX "SL & PT required": TODA estratégia tem stop obrigatório. reversal (sem
 # stop por trade) dava DD/Ret-DD ruins no OOS — fora.
-EXIT_MODES = ["fixed_sltp"]
+EXIT_MODES = ["fixed_sltp", "reversal"]
 DIRECTIONS = ["both", "long", "short"]
 
 
@@ -136,7 +136,7 @@ def _evaluate_fitness(ind: Individual, df_train, info) -> None:
         ind.fitness = -1e9
         return
     n = len(bt.trades)
-    if n < 60:
+    if n < 340: # Exige pelo menos ~10 trades por mês no IS (cerca de 33.6 meses)
         ind.fitness = -1e9
         return
     profits = [t.profit for t in bt.trades]
@@ -218,8 +218,8 @@ def _oos_holdout(df_full, split_idx: int, ind: Individual, info) -> dict:
     split_date = str(pd.Timestamp(df_full["time"].iloc[split_idx]).date())
     hold = [t for t in bt.trades if (t.date or "") >= split_date]
     hp = [t.profit for t in hold]
-    if len(hp) < 15:
-        return {"ok": False, "bt": bt, "reason": "poucos trades OOS"}
+    if len(hp) < 140: # Exige pelo menos ~10 trades por mês no OOS (cerca de 14.4 meses)
+        return {"ok": False, "bt": bt, "reason": "poucos trades OOS (exige >=140 para ~10/mês)"}
     eq, acc = [], START_CAPITAL
     for p in hp:
         acc += p
@@ -303,7 +303,7 @@ def main():
     ap = argparse.ArgumentParser(description="Mineração genética (multi-condição, holdout OOS)")
     ap.add_argument("--symbols", default="XAUUSD,EURUSD,GBPUSD,USDJPY,AUDUSD,EURAUD")
     ap.add_argument("--timeframes", default="H4,H1")
-    ap.add_argument("--years", type=float, default=3.0)
+    ap.add_argument("--years", type=float, default=4.0)
     ap.add_argument("--pop", type=int, default=70)
 
     ap.add_argument("--gen", type=int, default=20)

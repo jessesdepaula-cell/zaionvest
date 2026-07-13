@@ -57,6 +57,59 @@ export default async function DownloadsPage() {
         </p>
       </div>
 
+      {/* Tutorial de Instalação e Ativação */}
+      <div className="mb-8 rounded-xl border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.01] p-6">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-offwhite">
+          <Bot className="h-4 w-4 text-[#2563EB]" />
+          Como Instalar e Ativar seus Robôs no MetaTrader 5
+        </h2>
+        <p className="mt-1 text-xs text-zinc-400">
+          Siga estes 4 passos simples para colocar qualquer robô da ZaionVest para operar na sua conta.
+        </p>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2563EB] text-[10px] font-bold text-white">
+              1
+            </div>
+            <h3 className="mt-3 text-xs font-semibold text-zinc-300">Mover para o MT5</h3>
+            <p className="mt-1 text-[11px] text-zinc-500 leading-relaxed">
+              Baixe o arquivo do robô (<code className="text-zinc-400">.ex5</code>). No MetaTrader 5, acesse <span className="font-medium text-zinc-400">Arquivo &gt; Abrir Pasta de Dados</span>. Navegue até <span className="font-medium text-zinc-400">MQL5 &gt; Experts</span> e cole o arquivo lá.
+            </p>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2563EB] text-[10px] font-bold text-white">
+              2
+            </div>
+            <h3 className="mt-3 text-xs font-semibold text-zinc-300">Liberar WebRequest</h3>
+            <p className="mt-1 text-[11px] text-zinc-500 leading-relaxed">
+              No MT5, vá em <span className="font-medium text-zinc-400">Ferramentas &gt; Opções &gt; Expert Advisors</span>. Marque a caixa de WebRequest e adicione a URL exata: <code className="text-zinc-300 font-medium">https://zaionvest.com.br</code>
+            </p>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2563EB] text-[10px] font-bold text-white">
+              3
+            </div>
+            <h3 className="mt-3 text-xs font-semibold text-zinc-300">Vincular seu E-mail</h3>
+            <p className="mt-1 text-[11px] text-zinc-500 leading-relaxed">
+              Arraste o robô para o gráfico do ativo e período corretos. Na aba de <span className="font-medium text-zinc-400">Parâmetros de Entrada</span>, preencha o campo <span className="font-medium text-[#2563EB]">e-mail do assinante (obrigatório)</span> com o e-mail da sua conta ZaionVest.
+            </p>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2563EB] text-[10px] font-bold text-white">
+              4
+            </div>
+            <h3 className="mt-3 text-xs font-semibold text-zinc-300">Ativar AlgoTrading</h3>
+            <p className="mt-1 text-[11px] text-zinc-500 leading-relaxed">
+              Certifique-se de que a opção <span className="font-medium text-zinc-400">Permitir AlgoTrading</span> e <span className="font-medium text-zinc-400">Permitir DLL externa</span> estão marcadas. Ative o botão <span className="font-medium text-emerald-400">AlgoTrading (Play Verde)</span> no menu superior do MT5.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {downloads.length === 0 ? (
         <div className="rounded-2xl border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.015] p-10 text-center">
           <Bot className="mx-auto h-8 w-8 text-zinc-600" />

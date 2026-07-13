@@ -148,6 +148,12 @@ export function EACard({
     if (!c || c.length < 2 || !c[0]?.value) return null;
     return ((c[c.length - 1].value - c[0].value) / c[0].value) * 100;
   })();
+  
+  // Fator de Recuperação = Lucro % / Drawdown Máximo %
+  const recoveryFactor = (() => {
+    if (lucroPct == null || maxDrawdown == null || maxDrawdown <= 0) return null;
+    return lucroPct / maxDrawdown;
+  })();
 
   return (
     <div
@@ -208,9 +214,9 @@ export function EACard({
             icon={<TrendingUp className="h-3 w-3" />}
           />
           <Metric
-            label="Lucro (6 anos)"
-            value={lucroPct != null ? `${lucroPct >= 0 ? "+" : ""}${lucroPct.toFixed(0)}%` : "—"}
-            good={lucroPct != null && lucroPct > 0}
+            label="Fator Recuperação"
+            value={recoveryFactor != null ? `${recoveryFactor.toFixed(1)}x` : "—"}
+            good={recoveryFactor != null && recoveryFactor >= 3.0}
             icon={<TrendingUp className="h-3 w-3" />}
           />
           <Metric

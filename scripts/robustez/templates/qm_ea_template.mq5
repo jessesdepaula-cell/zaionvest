@@ -78,6 +78,7 @@ int OnInit()
 
    if(InpEmail=="")
       Print("ZaionVest: informe seu e-mail de assinante no input InpEmail.");
+   UpdateDashboard();
    return(INIT_SUCCEEDED);
 }
 
@@ -297,11 +298,143 @@ int PosDir()
 }
 
 //+------------------------------------------------------------------+
+//| Helpers de Dashboard Grafico                                     |
+//+------------------------------------------------------------------+
+void DrawBg(string name, int x, int y, int width, int height, color bgCol, color borderCol)
+{
+   ObjectCreate(0, name, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, name, OBJPROP_XSIZE, width);
+   ObjectSetInteger(0, name, OBJPROP_YSIZE, height);
+   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, name, OBJPROP_BGCOLOR, bgCol);
+   ObjectSetInteger(0, name, OBJPROP_BORDER_TYPE, BORDER_FLAT);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, borderCol);
+   ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, borderCol);
+   ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+   ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+   ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+}
+
+void DrawLabel(string name, string text, int x, int y, color col, int fontSize=9, string font="Arial")
+{
+   ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetString(0, name, OBJPROP_TEXT, text);
+   ObjectSetString(0, name, OBJPROP_FONT, font);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, col);
+   ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+   ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+   ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+}
+
+string TimeframeToString(ENUM_TIMEFRAMES tf)
+{
+   if(tf == PERIOD_M1)  return "M1";
+   if(tf == PERIOD_M5)  return "M5";
+   if(tf == PERIOD_M15) return "M15";
+   if(tf == PERIOD_M30) return "M30";
+   if(tf == PERIOD_H1)  return "H1";
+   if(tf == PERIOD_H4)  return "H4";
+   if(tf == PERIOD_D1)  return "D1";
+   return "TF";
+}
+
+double GetProfit(datetime fromTime)
+{
+   HistorySelect(fromTime, TimeCurrent());
+   int total = HistoryDealsTotal();
+   double p = 0;
+   for(int i=0; i<total; i++)
+   {
+      ulong ticket = HistoryDealGetTicket(i);
+      if(HistoryDealGetString(ticket, DEAL_SYMBOL) == _Symbol && HistoryDealGetInteger(ticket, DEAL_MAGIC) == InpMagic)
+      {
+         p += HistoryDealGetDouble(ticket, DEAL_PROFIT) + HistoryDealGetDouble(ticket, DEAL_COMMISSION) + HistoryDealGetDouble(ticket, DEAL_SWAP);
+      }
+   }
+   return p;
+}
+
+double GetFloatingProfit()
+{
+   double p = 0;
+   for(int i=PositionsTotal()-1; i>=0; i--)
+   {
+      string sym = PositionGetSymbol(i);
+      if(sym == _Symbol)
+      {
+         ulong magic = PositionGetInteger(POSITION_MAGIC);
+         if(magic == InpMagic)
+         {
+            p += PositionGetDouble(POSITION_PROFIT);
+         }
+      }
+   }
+   return p;
+}
+
+void UpdateDashboard()
+{
+   double daily = GetProfit(TimeCurrent() - (TimeCurrent() % 86400));
+   double weekly = GetProfit(TimeCurrent() - (TimeCurrent() % (86400 * 7)));
+   double total = GetProfit(0);
+   double floating = GetFloatingProfit();
+   
+   double bal = AccountInfoDouble(ACCOUNT_BALANCE);
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   double dd = (bal > 0) ? ((bal - eq) / bal * 100.0) : 0.0;
+   
+   int longs=0, shorts=0;
+   for(int i=PositionsTotal()-1; i>=0; i--)
+   {
+      ulong tk=PositionGetTicket(i);
+      if(tk==0) continue;
+      if(PositionGetString(POSITION_SYMBOL)!=_Symbol) continue;
+      if(PositionGetInteger(POSITION_MAGIC)!=(long)InpMagic) continue;
+      long type=PositionGetInteger(POSITION_TYPE);
+      if(type==POSITION_TYPE_BUY) longs++;
+      else if(type==POSITION_TYPE_SELL) shorts++;
+   }
+
+   color cDaily = (daily >= 0) ? C'16,185,129' : C'244,63,94';
+   color cTotal = (total >= 0) ? C'16,185,129' : C'244,63,94';
+   color cLic = g_licenseOk ? C'16,185,129' : C'244,63,94';
+   string sLic = g_licenseOk ? "LICENCA ATIVA" : "SEM LICENCA / INATIVO";
+
+   DrawBg("ZV_BG", 10, 10, 240, 240, C'10,10,10', C'37,99,235');
+   DrawLabel("ZV_HEADER", "ZAIONVEST EA v3", 20, 20, C'245,245,245', 10, "Arial Bold");
+   DrawLabel("ZV_SUB", "Mag: " + (string)InpMagic + " | " + _Symbol + "," + TimeframeToString(_Period), 20, 38, C'113,113,122', 8);
+   
+   DrawLabel("ZV_L_LUCROS", "LUCROS", 20, 60, C'113,113,122', 8, "Arial Bold");
+   DrawLabel("ZV_VAL_DAILY", "Diario: $" + DoubleToString(daily, 2), 20, 75, cDaily, 9);
+   DrawLabel("ZV_VAL_WEEK", "Semanal: $" + DoubleToString(weekly, 2), 20, 90, C'200,200,200', 9);
+   DrawLabel("ZV_VAL_TOTAL", "Total: $" + DoubleToString(total, 2), 20, 105, cTotal, 9);
+   
+   DrawLabel("ZV_L_RISK", "EXPOSICAO E RISCO", 20, 130, C'113,113,122', 8, "Arial Bold");
+   DrawLabel("ZV_VAL_POS", "Posicoes: L: " + (string)longs + " | S: " + (string)shorts, 20, 145, C'200,200,200', 9);
+   DrawLabel("ZV_VAL_FLOAT", "Flutuante: $" + DoubleToString(floating, 2), 20, 160, (floating >= 0 ? C'16,185,129' : C'244,63,94'), 9);
+   DrawLabel("ZV_VAL_DD", "Drawdown Conta: " + DoubleToString(dd, 1) + "%", 20, 175, (dd > 15.0 ? C'244,63,94' : C'200,200,200'), 9);
+   
+   DrawBg("ZV_LINE", 20, 198, 220, 1, C'30,30,30', C'30,30,30');
+   DrawLabel("ZV_VAL_LIC", sLic, 20, 205, cLic, 9, "Arial Bold");
+   DrawLabel("ZV_VAL_TIME", "Atualizado: " + TimeToString(TimeLocal(), TIME_SECONDS), 20, 222, C'113,113,122', 8);
+   
+   ChartRedraw();
+}
+
+//+------------------------------------------------------------------+
 void OnTick()
 {
    CheckLicense();
+   UpdateDashboard();
    if(!NewBar()) return;
    if(FridayShutdown()) return;
+
 
    if(InpFamily==3){ GridTick(); return; }
 
@@ -332,5 +465,10 @@ void OnTick()
       if(sig==1) trade.Buy(InpLot,_Symbol,0.0,sl,tp);
       else       trade.Sell(InpLot,_Symbol,0.0,sl,tp);
    }
+}
+
+void OnDeinit(const int reason)
+{
+   ObjectsDeleteAll(0, "ZV_");
 }
 //+------------------------------------------------------------------+

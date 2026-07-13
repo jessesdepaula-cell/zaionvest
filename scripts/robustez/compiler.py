@@ -30,9 +30,10 @@ STATUS_URL_BASE = os.environ.get("EA_STATUS_URL_BASE", "https://zaionvest.com.br
 
 FAMILY_CODE = {"trend": 0, "mean_reversion": 1, "breakout": 2, "grid": 3,
                "macd_cross": 4, "bollinger_fade": 5, "bollinger_break": 6,
-               "stochastic": 7}
+               "stochastic": 7, "nv7": 8}
 EXIT_CODE = {"reversal": 0, "fixed_sltp": 1}
 DIRECTION_CODE = {"both": 0, "long": 1, "short": 2}
+
 
 # Lote PADRÃO embutido no .ex5 = 0.01 (mínimo), decisão Jessé: todo robô entra
 # no MT5 já com 0.01. É só o DEFAULT do input InpLot; o usuário pode alterar.
@@ -239,6 +240,31 @@ def render_multi(ea_id: str, params: dict, direction: str = "both", lot: float =
     return tpl
 
 
+def render_nv7(ea_id: str, params: dict, direction: str = "both", lot: float = 0.1) -> str:
+    tpl = open(os.path.join(_HERE, "templates", "qm_nv7_template.mq5"), encoding="utf-8").read()
+    subs = {
+        "__EA_ID__": ea_id,
+        "__STATUS_URL__": f"{STATUS_URL_BASE}/{ea_id}/status",
+        "__DIRECTION__": DIRECTION_CODE.get(direction, 0),
+        "__LOT__": FIXED_LOT,
+        "__MAGIC__": _magic_of(ea_id),
+        "__SWING_BARS__": int(params.get("swing_bars", 75)),
+        "__FIB_LOW_PCT__": _d(params.get("fib_low_pct", 38.2)),
+        "__FIB_HIGH_PCT__": _d(params.get("fib_high_pct", 50.0)),
+        "__ATR_PERIOD__": int(params.get("atr_period", 14)),
+        "__GRID_STEP__": _d(params.get("grid_step", 1.2)),
+        "__TP_ATR__": _d(params.get("tp_atr", 2.5)),
+        "__MAX_POSITIONS__": int(params.get("max_positions", 8)),
+        "__DD_GUARD_PCT__": _d(params.get("dd_guard_pct", 5.0)),
+        "__MAX_DD_PCT__": _d(params.get("max_dd_pct", 30.0)),
+        "__CLUSTER_MIN__": int(params.get("cluster_min", 10)),
+        "__CLUSTER_NET_ATR__": _d(params.get("cluster_net_atr", 0.3)),
+    }
+    for token, val in subs.items():
+        tpl = tpl.replace(token, str(val))
+    return tpl
+
+
 def _read_log(path: str) -> str:
     for enc in ("utf-16", "utf-16-le", "utf-8", "cp1252"):
         try:
@@ -258,8 +284,13 @@ def compile_ea(
     ex5 = os.path.join(EXPERTS_DIR, f"{name}.ex5")
     log = os.path.join(EXPERTS_DIR, f"{name}.log")
 
-    src = (render_multi(ea_id, params, direction, lot) if family == "multi"
-           else render(ea_id, family, exit_mode, params, direction, lot))
+    if family == "multi":
+        src = render_multi(ea_id, params, direction, lot)
+    elif family == "nv7":
+        src = render_nv7(ea_id, params, direction, lot)
+    else:
+        src = render(ea_id, family, exit_mode, params, direction, lot)
+
     with open(mq5, "w", encoding="utf-8") as f:
         f.write(src)
 
