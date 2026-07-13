@@ -13,3 +13,12 @@ prisma/migrations/dev.db*
 next-env.d.ts
 
 .vercel
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# token de gerenciamento Supabase (local, nunca commitar)
+scripts/robustez/.mgmt_token
+
+# venv isolado com Numba (mineração rápida) — não commitar
+scripts/robustez/.venv-numba/

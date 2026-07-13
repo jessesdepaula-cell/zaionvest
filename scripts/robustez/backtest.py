@@ -155,6 +155,23 @@ def normalized_lot(atr_mean: float, contract_size: float) -> float:
     return float(max(0.01, round(lot, 2)))
 
 
+_NUMBA_ENGINE = None
+_NUMBA_TRIED = False
+
+
+def _get_numba_engine():
+    """Importa lazy o motor Numba (evita import circular; None se indisponível)."""
+    global _NUMBA_ENGINE, _NUMBA_TRIED
+    if not _NUMBA_TRIED:
+        _NUMBA_TRIED = True
+        try:
+            import backtest_numba
+            _NUMBA_ENGINE = backtest_numba.run_backtest_numba
+        except Exception:
+            _NUMBA_ENGINE = None
+    return _NUMBA_ENGINE
+
+
 def run_backtest(
     df: pd.DataFrame,
     family: str,
@@ -169,6 +186,16 @@ def run_backtest(
     commission_per_trade: float = 0.7,
 ) -> BacktestResult:
     """Roda a estratégia; devolve trades + equity mark-to-market por barra."""
+    # Fast-path: kernel Numba (quando disponível — venv .venv-numba) para as
+    # famílias multi/simples. Resultado IDÊNTICO ao loop Python (verificado
+    # 300/300); ~2-7x mais rápido. grid/grid_hedge/nv7 seguem no loop Python.
+    if family not in ("grid", "grid_hedge", "nv7"):
+        _eng = _get_numba_engine()
+        if _eng is not None:
+            return _eng(df, family, params, exit_mode=exit_mode, direction=direction,
+                        point=point, contract_size=contract_size, lot=lot,
+                        spread_points=spread_points, commission_per_trade=commission_per_trade)
+
     close = df["close"].values
     high = df["high"].values
     low = df["low"].values
