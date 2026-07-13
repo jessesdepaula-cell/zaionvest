@@ -61,19 +61,21 @@ def insert(table: str, row: dict):
 def main():
     print(">>> Iniciando publicacao do Zaion Sniper (NV7)...")
     
-    # Paramentros do Zaion Sniper (NV7)
+    # Paramentros do Zaion Sniper (NV7) - Replicados exatamente do print do MT5
     params = {
-        "swing_bars": 75,
+        "lot_buy": 0.02,
+        "lot_sell": 0.01,
+        "grid_step_points": 1100,
+        "tp_points": 2775,
+        "fib_timeframe": "PERIOD_M30",
+        "swing_bars": 150,
         "fib_low_pct": 38.2,
         "fib_high_pct": 50.0,
-        "atr_period": 14,
-        "grid_step": 1.2,
-        "tp_atr": 2.5,
-        "max_positions": 8,
         "dd_guard_pct": 5.0,
         "max_dd_pct": 30.0,
         "cluster_min": 10,
-        "cluster_net_atr": 0.3
+        "cluster_sobra": 11.0,
+        "max_positions": 8
     }
     
     ea_id = "zaion-sniper"

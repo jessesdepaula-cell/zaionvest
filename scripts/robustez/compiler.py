@@ -242,23 +242,34 @@ def render_multi(ea_id: str, params: dict, direction: str = "both", lot: float =
 
 def render_nv7(ea_id: str, params: dict, direction: str = "both", lot: float = 0.1) -> str:
     tpl = open(os.path.join(_HERE, "templates", "qm_nv7_template.mq5"), encoding="utf-8").read()
+    
+    # Mapeamento do Timeframe do Fibonacci para constantes MQL5
+    tf_str = str(params.get("fib_timeframe", "PERIOD_M30"))
+    if tf_str in ("30 Minutes", "M30", "PERIOD_M30"):
+        tf_val = "PERIOD_M30"
+    elif tf_str in ("1 Hour", "H1", "PERIOD_H1"):
+        tf_val = "PERIOD_H1"
+    else:
+        tf_val = "PERIOD_M30"
+
     subs = {
         "__EA_ID__": ea_id,
         "__STATUS_URL__": f"{STATUS_URL_BASE}/{ea_id}/status",
         "__DIRECTION__": DIRECTION_CODE.get(direction, 0),
-        "__LOT__": FIXED_LOT,
         "__MAGIC__": _magic_of(ea_id),
-        "__SWING_BARS__": int(params.get("swing_bars", 75)),
+        "__LOT_BUY__": _d(params.get("lot_buy", 0.02)),
+        "__LOT_SELL__": _d(params.get("lot_sell", 0.01)),
+        "__GRID_STEP__": int(params.get("grid_step_points", 1100)),
+        "__TP_POINTS__": int(params.get("tp_points", 2775)),
+        "__FIB_TIMEFRAME__": tf_val,
+        "__SWING_BARS__": int(params.get("swing_bars", 150)),
         "__FIB_LOW_PCT__": _d(params.get("fib_low_pct", 38.2)),
         "__FIB_HIGH_PCT__": _d(params.get("fib_high_pct", 50.0)),
-        "__ATR_PERIOD__": int(params.get("atr_period", 14)),
-        "__GRID_STEP__": _d(params.get("grid_step", 1.2)),
-        "__TP_ATR__": _d(params.get("tp_atr", 2.5)),
-        "__MAX_POSITIONS__": int(params.get("max_positions", 8)),
         "__DD_GUARD_PCT__": _d(params.get("dd_guard_pct", 5.0)),
         "__MAX_DD_PCT__": _d(params.get("max_dd_pct", 30.0)),
         "__CLUSTER_MIN__": int(params.get("cluster_min", 10)),
-        "__CLUSTER_NET_ATR__": _d(params.get("cluster_net_atr", 0.3)),
+        "__CLUSTER_SOBRA__": _d(params.get("cluster_sobra", 11.0)),
+        "__MAX_POSITIONS__": int(params.get("max_positions", 8)),
     }
     for token, val in subs.items():
         tpl = tpl.replace(token, str(val))
