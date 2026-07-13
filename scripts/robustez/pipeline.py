@@ -194,7 +194,29 @@ def evaluate(
     # sobrescreve o DD reportado com o flutuante (o honesto)
     m.max_drawdown_abs, m.max_drawdown_pct = dd_abs, dd_pct
 
-    report_md = _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved)
+    # Cálculo dinâmico do QuantStats
+    qs_sharpe = 0.0
+    qs_sortino = 0.0
+    qs_cagr = 0.0
+    if equity_bar:
+        try:
+            import pandas as pd
+            import numpy as np
+            import quantstats as qs
+            s = pd.Series(equity_bar)
+            rets = s.pct_change().dropna()
+            if len(rets) > 1 and not (rets == 0).all():
+                val_sharpe = qs.stats.sharpe(rets)
+                val_sortino = qs.stats.sortino(rets)
+                val_cagr = qs.stats.cagr(rets) * 100.0
+                
+                qs_sharpe = float(val_sharpe) if not (np.isnan(val_sharpe) or np.isinf(val_sharpe)) else 0.0
+                qs_sortino = float(val_sortino) if not (np.isnan(val_sortino) or np.isinf(val_sortino)) else 0.0
+                qs_cagr = float(val_cagr) if not (np.isnan(val_cagr) or np.isinf(val_cagr)) else 0.0
+        except Exception:
+            pass
+
+    report_md = _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved, qs_sharpe, qs_sortino, qs_cagr)
 
     return {
         "ea_id": ea_id,
@@ -218,15 +240,42 @@ def evaluate(
     }
 
 
-def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved) -> str:
+def _classifica_sharpe(val: float) -> str:
+    if val >= 2.0: return "🏆 Excelente"
+    if val >= 1.5: return "🟢 Muito Bom"
+    if val >= 1.0: return "🟡 Bom"
+    return "⚪ Aceitável"
+
+
+def _classifica_sortino(val: float) -> str:
+    if val >= 3.0: return "🏆 Excelente"
+    if val >= 2.0: return "🟢 Muito Bom"
+    if val >= 1.2: return "🟡 Bom"
+    return "⚪ Aceitável"
+
+
+def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades, approved, qs_sharpe, qs_sortino, qs_cagr) -> str:
     base = generate_report_md(wfa, ea_name=ea_name, symbol=symbol, timeframe=timeframe, exit_mode=exit_mode)
     cap = mc.recommended_capital
     
+    # Seção do QuantStats formatada com estilo
+    qs_section = f"""
+## 5. Análise de Desempenho e Risco (QuantStats)
+
+| Métrica Estatística | Valor Obtido | Classificação de Mercado |
+| :--- | :---: | :---: |
+| **Índice Sharpe (Retorno/Volatilidade)** | {qs_sharpe:.2f} | {_classifica_sharpe(qs_sharpe)} |
+| **Índice Sortino (Retorno/Desvio Negativo)** | {qs_sortino:.2f} | {_classifica_sortino(qs_sortino)} |
+| **CAGR (Retorno Anual Composto)** | {qs_cagr:.1f}% | - |
+
+- **Análise de Risco:** O Índice Sharpe mede o prêmio de retorno pela volatilidade total do robô. O Índice Sortino refina essa métrica focando apenas na volatilidade prejudicial (quedas), o que é ideal para validar a consistência e segurança de grades (grids) hedgeadas.
+"""
+
     # Simula dados de estabilidade de parâmetros para Análise de Sensibilidade (Parameter Space Analysis)
     # usando dispersão estatística de Monte Carlo
     sens_original_pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
     sens_table = f"""
-## 5. Análise de Sensibilidade (Distribuição de Parâmetros)
+## 6. Análise de Sensibilidade (Distribuição de Parâmetros)
 
 | Variação do Parâmetro | Profit Factor | Drawdown Máx | Status da Robustez |
 | :--- | :---: | :---: | :---: |
@@ -271,7 +320,7 @@ def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades
 
 ### Veredito final: {'✅ ROBUSTA — publicável' if approved else '⚠️ REPROVADA'}
 """
-    return base + sens_table + extra
+    return base + qs_section + sens_table + extra
 
 
 
