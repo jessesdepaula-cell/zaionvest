@@ -206,6 +206,9 @@ def run_backtest(
     # Exit on Friday (SQX): fecha tudo no fim da sexta — sem gap de fim de semana
     dt_idx = pd.DatetimeIndex(df["time"])
     friday_close = (dt_idx.weekday == 4) & (dt_idx.hour >= 20)
+    # Datas pré-computadas 1x (vetorizado) — evita pd.Timestamp por barra, que
+    # dominava o custo do loop. Resultado idêntico ao str(Timestamp.date()).
+    date_strs = np.asarray(dt_idx.strftime("%Y-%m-%d"))
 
     sl_mult = float(params.get("sl_atr", 2.0))
     tp_mult = float(params.get("tp_atr", 3.0))
@@ -225,7 +228,7 @@ def run_backtest(
         gross = pos * (exit_px - entry_px) * value
         p = round(float(gross) - cost_per_trade, 2)
         realized += p
-        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=pos))
+        trades.append(Trade(profit=p, date=str(date_strs[i]), side=pos))
         pos = 0
 
     for i in range(1, len(df)):
@@ -236,7 +239,7 @@ def run_backtest(
             if pos != 0:
                 close_trade(close[i], i)
             equity_bar.append(float(round(realized, 2)))
-            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            equity_dates.append(str(date_strs[i]))
             continue
 
         if pos != 0:
@@ -268,7 +271,7 @@ def run_backtest(
         # equity mark-to-market da barra (realizado + posição aberta)
         floating = pos * (close[i] - entry_px) * value if pos != 0 else 0.0
         equity_bar.append(float(round(realized + floating, 2)))
-        equity_dates.append(str(pd.Timestamp(times[i]).date()))
+        equity_dates.append(str(date_strs[i]))
 
     return BacktestResult(trades=trades, equity_bar=equity_bar,
                           equity_dates=equity_dates, lot=lot)
