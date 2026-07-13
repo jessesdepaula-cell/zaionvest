@@ -212,6 +212,34 @@ def _blk_hma_cross(df, p):
     return _b(hf > hs), _b(hf < hs)
 
 
+def _blk_stoch_cross(df, p):
+    ll = df["low"].rolling(p["k"]).min()
+    hh = df["high"].rolling(p["k"]).max()
+    k_line = (100 * (df["close"] - ll) / (hh - ll).replace(0, np.nan)).rolling(3).mean()
+    d_line = k_line.rolling(3).mean()
+    up = (k_line > d_line) & (k_line.shift(1) <= d_line.shift(1))
+    dn = (k_line < d_line) & (k_line.shift(1) >= d_line.shift(1))
+    return _b(up), _b(dn)
+
+
+def _blk_di_cross(df, p):
+    up = df["high"].diff(); dn = -df["low"].diff()
+    plus = np.where((up > dn) & (up > 0), up, 0.0)
+    minus = np.where((dn > up) & (dn > 0), dn, 0.0)
+    atr = _atr(df, p["period"]).replace(0, np.nan)
+    pdi = 100 * pd.Series(plus, index=df.index).ewm(alpha=1/p["period"], adjust=False).mean() / atr
+    mdi = 100 * pd.Series(minus, index=df.index).ewm(alpha=1/p["period"], adjust=False).mean() / atr
+    up_c = (pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))
+    dn_c = (pdi < mdi) & (pdi.shift(1) >= mdi.shift(1))
+    return _b(up_c), _b(dn_c)
+
+
+def _blk_cci_zero_cross(df, p):
+    c = _cci(df, p["period"])
+    up = (c > 0) & (c.shift(1) <= 0)
+    dn = (c < 0) & (c.shift(1) >= 0)
+    return _b(up), _b(dn)
+
 
 # nome → (func, directional?, gerador de params)
 _R = random
@@ -231,9 +259,12 @@ BLOCKS = {
     "bb_break":     (_blk_bb_break,     True,  lambda r: {"period": r.choice([14,20,28]), "dev": r.choice([1.5,2.0,2.5])}),
     "donchian":     (_blk_donchian,     True,  lambda r: {"lookback": r.choice([10,20,30,40,55])}),
     "stoch":        (_blk_stoch,        True,  lambda r: {"k": r.choice([9,14,21]), "level": r.choice([15,20,25])}),
+    "stoch_cross":  (_blk_stoch_cross,  True,  lambda r: {"k": r.choice([9,14,21])}),
     "cci":          (_blk_cci,          True,  lambda r: {"period": r.choice([14,20,30]), "level": r.choice([100,150,200])}),
+    "cci_zero":     (_blk_cci_zero_cross, True, lambda r: {"period": r.choice([14,20,30])}),
     "momentum":     (_blk_momentum,     True,  lambda r: {"period": r.choice([10,20,40])}),
     "adx_filter":   (_blk_adx_filter,   False, lambda r: {"period": 14, "level": r.choice([20,25,30])}),
+    "di_cross":     (_blk_di_cross,     True,  lambda r: {"period": r.choice([9,14,21])}),
     "trend_filter": (_blk_ema200_filter,False, lambda r: {}),
 }
 _DIRECTIONAL = [k for k, v in BLOCKS.items() if v[1]]

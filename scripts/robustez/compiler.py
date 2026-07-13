@@ -178,11 +178,21 @@ def _gen_multi(blocks_list: list[dict]) -> tuple[str, str, str]:
             body.append(f"   {{ double st=Buf({h},1,0); long_ok=long_ok&&(st<{_d(lv)}); "
                         f"short_ok=short_ok&&(st>{_d(100-lv)}); }}")
 
+        elif name == "stoch_cross":
+            h = H(f"iStochastic(_Symbol,_Period,{int(p['k'])},3,3,MODE_SMA,STO_LOWHIGH)")
+            body.append(f"   {{ double k1=Buf({h},1,0), d1=Buf({h},1,1), k2=Buf({h},2,0), d2=Buf({h},2,1); "
+                        f"long_ok=long_ok&&(k1>d1&&k2<=d2); short_ok=short_ok&&(k1<d1&&k2>=d2); }}")
+
         elif name == "cci":
             h = H(f"iCCI(_Symbol,_Period,{int(p['period'])},PRICE_TYPICAL)")
             lv = float(p["level"])
             body.append(f"   {{ double cc=Buf({h},1); long_ok=long_ok&&(cc<{_d(-lv)}); "
                         f"short_ok=short_ok&&(cc>{_d(lv)}); }}")
+
+        elif name == "cci_zero":
+            h = H(f"iCCI(_Symbol,_Period,{int(p['period'])},PRICE_TYPICAL)")
+            body.append(f"   {{ double c1=Buf({h},1), c2=Buf({h},2); "
+                        f"long_ok=long_ok&&(c1>0.0&&c2<=0.0); short_ok=short_ok&&(c1<0.0&&c2>=0.0); }}")
 
         elif name == "momentum":
             per = int(p["period"])
@@ -193,6 +203,11 @@ def _gen_multi(blocks_list: list[dict]) -> tuple[str, str, str]:
             h = H(f"iADX(_Symbol,_Period,{int(p['period'])})")
             lv = float(p["level"])
             body.append(f"   {{ bool a=(Buf({h},1,0)>{_d(lv)}); long_ok=long_ok&&a; short_ok=short_ok&&a; }}")
+
+        elif name == "di_cross":
+            h = H(f"iADX(_Symbol,_Period,{int(p['period'])})")
+            body.append(f"   {{ double p1=Buf({h},1,1), m1=Buf({h},1,2), p2=Buf({h},2,1), m2=Buf({h},2,2); "
+                        f"long_ok=long_ok&&(p1>m1&&p2<=m2); short_ok=short_ok&&(p1<m1&&p2>=m2); }}")
 
         elif name == "trend_filter":
             h = H("iMA(_Symbol,_Period,200,0,MODE_EMA,PRICE_CLOSE)")
