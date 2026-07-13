@@ -34,6 +34,11 @@ FAMILY_CODE = {"trend": 0, "mean_reversion": 1, "breakout": 2, "grid": 3,
 EXIT_CODE = {"reversal": 0, "fixed_sltp": 1}
 DIRECTION_CODE = {"both": 0, "long": 1, "short": 2}
 
+# Lote PADRÃO embutido no .ex5 = 0.01 (mínimo), decisão Jessé: todo robô entra
+# no MT5 já com 0.01. É só o DEFAULT do input InpLot; o usuário pode alterar.
+# (O lote da mineração/backtest segue normalizado, para as métricas de %.)
+FIXED_LOT = 0.01
+
 # Defaults por token — garante que todo placeholder é substituído mesmo se o
 # param não vier no dict da estratégia.
 _TOKEN_DEFAULTS = {
@@ -72,7 +77,7 @@ def render(ea_id: str, family: str, exit_mode: str, params: dict,
         "__FAMILY__": FAMILY_CODE[family],
         "__EXIT_MODE__": EXIT_CODE[exit_mode],
         "__DIRECTION__": DIRECTION_CODE.get(direction, 0),
-        "__LOT__": lot,
+        "__LOT__": FIXED_LOT,
         "__MAGIC__": _magic_of(ea_id),
     }
     for key, default in _TOKEN_DEFAULTS.items():
@@ -220,7 +225,7 @@ def render_multi(ea_id: str, params: dict, direction: str = "both", lot: float =
         "__EA_ID__": ea_id,
         "__STATUS_URL__": f"{STATUS_URL_BASE}/{ea_id}/status",
         "__DIRECTION__": DIRECTION_CODE.get(direction, 0),
-        "__LOT__": lot,
+        "__LOT__": FIXED_LOT,
         "__MAGIC__": _magic_of(ea_id),
         "__ATR_PERIOD__": int(params.get("atr_period", 14)),
         "__SL_ATR__": _d(params.get("sl_atr", 2.0)),
