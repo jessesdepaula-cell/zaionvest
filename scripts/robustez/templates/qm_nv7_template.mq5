@@ -1,32 +1,36 @@
 //+------------------------------------------------------------------+
-//|  ZaionVest EA (Modelo A) — Zaion Sniper (NV7)                    |
-//|  Grid Fibonacci Hedgeado com Painel Gráfico (Dashboard) em tela  |
-//|  e verificação de licença via WebRequest.                        |
+//|  ZaionVest EA — Zaion Sniper (Replicando Inputs QuantMiner)      |
+//|  Grid Fibonacci Hedgeado com Painel Grafico em tela e WebRequest |
 //+------------------------------------------------------------------+
 #property strict
-#property version   "3.00"
+#property version   "4.00"
 #include <Trade/Trade.mqh>
 
-//--- Identidade / licença ---
+//--- Identidade / licenca ---
 input string InpEAId      = "__EA_ID__";      // id do EA na vitrine
-input string InpEmail     = "";               // e-mail do assinante (obrigatório)
-input string InpStatusUrl = "__STATUS_URL__"; // endpoint de licença
+input string InpEmail     = "";               // e-mail do assinante (obrigatorio)
+input string InpStatusUrl = "__STATUS_URL__"; // endpoint de licenca
 input int    InpDirection = __DIRECTION__;    // 0=both 1=long-only 2=short-only
-input double InpLot       = __LOT__;          // lote normalizado por volatilidade
 input ulong  InpMagic     = __MAGIC__;
 
-//--- Parâmetros do Operacional NV7 ---
-input int    InpSwingBars   = __SWING_BARS__;   // N barras do Swing do canal
-input double InpFibLowPct   = __FIB_LOW_PCT__;  // Retração mínima (ex: 38.2)
-input double InpFibHighPct  = __FIB_HIGH_PCT__; // Retração máxima (ex: 50.0)
-input int    InpAtrPeriod   = __ATR_PERIOD__;   // Período ATR
-input double InpGridStep    = __GRID_STEP__;    // Distância do Grid em ATRs
-input double InpTpAtr       = __TP_ATR__;       // TP de cesto em ATRs
-input int    InpMaxLvl      = __MAX_POSITIONS__;// Máx. níveis de grid por lado
-input double InpDdGuard     = __DD_GUARD_PCT__; // DD-guard por lado (% do capital)
-input double InpMaxDdPct    = __MAX_DD_PCT__;   // Max DD da conta (% de stop)
-input int    InpClusterMin  = __CLUSTER_MIN__;  // Mín. posições para cluster-netting
-input double InpClusterNet  = __CLUSTER_NET_ATR__; // Lucro mín. cluster (ATRs)
+//--- Parametros do Operacional (Replicados do Print QuantMiner) ---
+input double InpLotBuy      = __LOT_BUY__;      // Lote para compra (ex: 0.02)
+input double InpLotSell     = __LOT_SELL__;     // Lote para venda (ex: 0.01)
+input int    InpGridStep    = __GRID_STEP__;    // Distancia do grid (pontos, ex: 1100)
+input int    InpTpPoints    = __TP_POINTS__;    // Take profit por posicao (pontos, ex: 2775)
+
+//--- Filtro de Fibonacci ---
+input ENUM_TIMEFRAMES InpFibTimeframe = __FIB_TIMEFRAME__; // Timeframe do Fibonacci (ex: PERIOD_M30)
+input int    InpSwingBars   = __SWING_BARS__;   // No de barras para buscar swing H/L (ex: 150)
+input double InpFibLowPct   = __FIB_LOW_PCT__;  // Nivel Fibo inferior da zona (%) (ex: 38.2)
+input double InpFibHighPct  = __FIB_HIGH_PCT__; // Nivel Fibo superior da zona (%) (ex: 50.0)
+
+//--- Protecoes e Cluster ---
+input double InpDdGuard     = __DD_GUARD_PCT__; // DD das vendas/compras para fechar (% sobre ref) (ex: 5.0)
+input double InpMaxDdPct    = __MAX_DD_PCT__;   // Max DD da conta (% de stop) (ex: 30.0)
+input int    InpClusterMin  = __CLUSTER_MIN__;  // Minimo de posicoes para acionar cluster (ex: 10)
+input double InpClusterSobra = __CLUSTER_SOBRA__; // Sobra liquida minima (USD) para cluster (ex: 11.0)
+input int    InpMaxLvl      = __MAX_POSITIONS__;// Maximo de posicoes por lado (ex: 8)
 
 CTrade   trade;
 int      hAtr=INVALID_HANDLE;
@@ -36,14 +40,14 @@ bool     g_licenseOk=true;
 datetime g_lastBarTime=0;
 int      g_cooldown=0;
 
-// Arrays de posições abertas
+// Arrays de posicoes abertas
 double   g_longs[];
 double   g_shorts[];
 int      g_totalLongs=0;
 int      g_totalShorts=0;
 
 //+------------------------------------------------------------------+
-//| Helpers de Dashboard Gráfico                                     |
+//| Helpers de Dashboard Grafico                                     |
 //+------------------------------------------------------------------+
 void DrawBg(string name, int x, int y, int width, int height, color bgCol, color borderCol)
 {
@@ -269,43 +273,18 @@ void CloseBasket(int side)
 double BasketProfit(int side, double px)
 {
    double p = 0;
-   double val = InpLot * 100000.0; // Standard Contract Size default
    double targetSymVal = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);
-   if(targetSymVal > 0) val = InpLot * targetSymVal;
+   if(targetSymVal <= 0) targetSymVal = 100000.0;
    
    if(side == 1)
    {
-      for(int i=0; i<g_totalLongs; i++) p += (px - g_longs[i]) * val;
+      for(int i=0; i<g_totalLongs; i++) p += (px - g_longs[i]) * InpLotBuy * targetSymVal;
    }
    else if(side == -1)
    {
-      for(int i=0; i<g_totalShorts; i++) p += (g_shorts[i] - px) * val;
+      for(int i=0; i<g_totalShorts; i++) p += (g_shorts[i] - px) * InpLotSell * targetSymVal;
    }
    return p;
-}
-
-//+------------------------------------------------------------------+
-//| Inicializacao                                                    |
-//+------------------------------------------------------------------+
-int OnInit()
-{
-   trade.SetExpertMagicNumber(InpMagic);
-   hAtr = iATR(_Symbol,_Period,InpAtrPeriod);
-   g_lastGoodLicense = TimeCurrent();
-   
-   if(InpEmail=="")
-      Print("ZaionVest: informe seu e-mail de assinante no input InpEmail.");
-      
-   UpdatePositions();
-   UpdateDashboard();
-   
-   return(INIT_SUCCEEDED);
-}
-
-void OnDeinit(const int reason)
-{
-   // Limpa objetos graficos ao remover o robo do grafico
-   ObjectsDeleteAll(0, "ZV_");
 }
 
 //+------------------------------------------------------------------+
@@ -313,10 +292,10 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void DrawFiboGraphics(double hi, double lo, double z_hi, double z_lo, int highestIdx, int lowestIdx)
 {
-   datetime t_start = iTime(_Symbol, _Period, MathMax(highestIdx, lowestIdx));
-   datetime t_end   = TimeCurrent() + PeriodSeconds(_Period) * 10; // Projeta um pouco a frente
+   datetime t_start = iTime(_Symbol, InpFibTimeframe, MathMax(highestIdx, lowestIdx));
+   datetime t_end   = TimeCurrent() + PeriodSeconds(InpFibTimeframe) * 10;
    
-   // 1. Caixa Amarela / Laranja Translúcida (Zona de Fibonacci)
+   // 1. Caixa Amarela / Laranja Translucida (Zona de Fibonacci)
    string rectName = "ZV_FIBO_RECT";
    if(ObjectFind(0, rectName) < 0)
    {
@@ -361,12 +340,12 @@ void DrawFiboGraphics(double hi, double lo, double z_hi, double z_lo, int highes
       }
    }
 }
+
 //+------------------------------------------------------------------+
 //| Desenha as linhas horizontais dos proximos niveis do Grid e TP   |
 //+------------------------------------------------------------------+
-void DrawGridLevels(double a, double value)
+void DrawGridLevels()
 {
-   // Remove objetos de níveis antigos para atualizar
    ObjectsDeleteAll(0, "ZV_GRID_");
    
    // 1. COMPRAS (Longs)
@@ -375,7 +354,7 @@ void DrawGridLevels(double a, double value)
       // Proxima Compra planejada
       if(g_totalLongs < InpMaxLvl)
       {
-         double nextLongPr = g_longs[g_totalLongs-1] - InpGridStep * a;
+         double nextLongPr = g_longs[g_totalLongs-1] - InpGridStep * _Point;
          ObjectCreate(0, "ZV_GRID_NEXT_L", OBJ_HLINE, 0, 0, nextLongPr);
          ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_COLOR, C'244,63,94'); // Vermelho
          ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_STYLE, STYLE_DASH);
@@ -383,10 +362,10 @@ void DrawGridLevels(double a, double value)
          ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_HIDDEN, true);
       }
       
-      // TP Coletivo das Compras
+      // TP Coletivo das Compras (pontos fixos)
       double sumLongs = 0;
       for(int i=0; i<g_totalLongs; i++) sumLongs += g_longs[i];
-      double tpPrice = (sumLongs + InpTpAtr * a) / g_totalLongs;
+      double tpPrice = (sumLongs / g_totalLongs) + InpTpPoints * _Point;
       
       ObjectCreate(0, "ZV_GRID_TP_L", OBJ_HLINE, 0, 0, tpPrice);
       ObjectSetInteger(0, "ZV_GRID_TP_L", OBJPROP_COLOR, C'16,185,129'); // Verde
@@ -401,7 +380,7 @@ void DrawGridLevels(double a, double value)
       // Proxima Venda planejada
       if(g_totalShorts < InpMaxLvl)
       {
-         double nextShortPr = g_shorts[g_totalShorts-1] + InpGridStep * a;
+         double nextShortPr = g_shorts[g_totalShorts-1] + InpGridStep * _Point;
          ObjectCreate(0, "ZV_GRID_NEXT_S", OBJ_HLINE, 0, 0, nextShortPr);
          ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_COLOR, C'37,99,235'); // Azul
          ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_STYLE, STYLE_DASH);
@@ -409,10 +388,10 @@ void DrawGridLevels(double a, double value)
          ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_HIDDEN, true);
       }
       
-      // TP Coletivo das Vendas
+      // TP Coletivo das Vendas (pontos fixos)
       double sumShorts = 0;
       for(int i=0; i<g_totalShorts; i++) sumShorts += g_shorts[i];
-      double tpPriceS = (sumShorts - InpTpAtr * a) / g_totalShorts;
+      double tpPriceS = (sumShorts / g_totalShorts) - InpTpPoints * _Point;
       
       ObjectCreate(0, "ZV_GRID_TP_S", OBJ_HLINE, 0, 0, tpPriceS);
       ObjectSetInteger(0, "ZV_GRID_TP_S", OBJPROP_COLOR, C'16,185,129'); // Verde
@@ -421,6 +400,28 @@ void DrawGridLevels(double a, double value)
       ObjectSetInteger(0, "ZV_GRID_TP_S", OBJPROP_HIDDEN, true);
    }
    ChartRedraw();
+}
+
+//+------------------------------------------------------------------+
+//| Inicializacao                                                    |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   trade.SetExpertMagicNumber(InpMagic);
+   g_lastGoodLicense = TimeCurrent();
+   
+   if(InpEmail=="")
+      Print("ZaionVest: informe seu e-mail de assinante no input InpEmail.");
+      
+   UpdatePositions();
+   UpdateDashboard();
+   
+   return(INIT_SUCCEEDED);
+}
+
+void OnDeinit(const int reason)
+{
+   ObjectsDeleteAll(0, "ZV_");
 }
 
 //+------------------------------------------------------------------+
@@ -450,14 +451,6 @@ void OnTick()
    
    double px = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double a = 0.0;
-   double atrBuf[];
-   if(CopyBuffer(hAtr, 0, 0, 1, atrBuf) > 0) a = atrBuf[0];
-   
-   if(a <= 0) {
-      UpdateDashboard();
-      return;
-   }
 
    // 4. Checagem de Drawdown Maximo da Conta
    double bal = AccountInfoDouble(ACCOUNT_BALANCE);
@@ -465,12 +458,12 @@ void OnTick()
    if(bal > 0 && (bal - eq) / bal * 100.0 >= InpMaxDdPct)
    {
       CloseBasket(0);
-      g_cooldown = 30; // 30 ticks/barras de pausa de seguranca
+      g_cooldown = 30; // 30 ticks de pausa de seguranca
       UpdateDashboard();
       return;
    }
 
-   // 5. DD-Guard por lado
+   // 5. DD-Guard por lado (% sobre saldo)
    double lf = BasketProfit(1, px);
    double sf = BasketProfit(-1, px);
    double cap = AccountInfoDouble(ACCOUNT_BALANCE);
@@ -486,63 +479,100 @@ void OnTick()
       g_totalShorts = 0;
    }
 
-   // 6. Cluster-Netting (Fechamento Coletivo de Balanco)
+   // 6. Cluster-Netting Coletivo (lucro em USD real fixo, nao ATR)
    int tot = g_totalLongs + g_totalShorts;
    double net = lf + sf;
-   double value = InpLot * SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);
-   if(tot >= InpClusterMin && net >= InpClusterNet * a * value)
+   if(tot >= InpClusterMin && net >= InpClusterSobra)
    {
       CloseBasket(0);
       g_totalLongs = 0;
       g_totalShorts = 0;
    }
 
-   // 7. TP por Lado (Netting)
-   if(g_totalLongs > 0 && lf >= InpTpAtr * a * value)
+   // 7. TP por Lado (Netting por pontos fixos)
+   // Compras (Longs) fecha no TP calculado em pontos
+   if(g_totalLongs > 0)
    {
-      CloseBasket(1);
-      g_totalLongs = 0;
+      double sumLongs = 0;
+      for(int i=0; i<g_totalLongs; i++) sumLongs += g_longs[i];
+      double tpPrice = (sumLongs / g_totalLongs) + InpTpPoints * _Point;
+      if(px >= tpPrice)
+      {
+         CloseBasket(1);
+         g_totalLongs = 0;
+      }
    }
-   if(g_totalShorts > 0 && sf >= InpTpAtr * a * value)
+   // Vendas (Shorts) fecha no TP calculado em pontos
+   if(g_totalShorts > 0)
    {
-      CloseBasket(-1);
-      g_totalShorts = 0;
+      double sumShorts = 0;
+      for(int i=0; i<g_totalShorts; i++) sumShorts += g_shorts[i];
+      double tpPriceS = (sumShorts / g_totalShorts) - InpTpPoints * _Point;
+      if(px <= tpPriceS)
+      {
+         CloseBasket(-1);
+         g_totalShorts = 0;
+      }
    }
 
-   // 8. Checagem de Nova Barra
-   datetime t = iTime(_Symbol, _Period, 0);
+   // 8. Checagem de Nova Barra no Timeframe do Fibonacci
+   datetime t = iTime(_Symbol, InpFibTimeframe, 0);
    bool newBar = (t != g_lastBarTime);
    if(newBar) g_lastBarTime = t;
 
-   // 9. Zona de Fibonacci
-   // Apenas recalcula o canal se for nova barra
-   int highestIdx = iHighest(_Symbol, _Period, MODE_HIGH, InpSwingBars, 1);
-   int lowestIdx  = iLowest(_Symbol, _Period, MODE_LOW, InpSwingBars, 1);
-   double hi = iHigh(_Symbol, _Period, highestIdx);
-   double lo = iLow(_Symbol, _Period, lowestIdx);
-   double rng = hi - lo;
+   // 9. Zona de Fibonacci (Calculo Nativo MQL5 robusto por arrays)
+   double hiArr[];
+   double loArr[];
+   ArraySetAsSeries(hiArr, true);
+   ArraySetAsSeries(loArr, true);
    
+   double hi = 0.0;
+   double lo = 999999.0;
+   int highestIdx = 1;
+   int lowestIdx = 1;
+   
+   int copiedHigh = CopyHigh(_Symbol, InpFibTimeframe, 1, InpSwingBars, hiArr);
+   int copiedLow  = CopyLow(_Symbol, InpFibTimeframe, 1, InpSwingBars, loArr);
+   
+   if(copiedHigh > 0 && copiedLow > 0)
+   {
+      for(int i=0; i<InpSwingBars; i++)
+      {
+         if(i < copiedHigh && hiArr[i] > hi) { hi = hiArr[i]; highestIdx = i + 1; }
+         if(i < copiedLow  && loArr[i] < lo) { lo = loArr[i]; lowestIdx = i + 1; }
+      }
+   }
+   else
+   {
+      // Fallback para as de cache se der erro na copia inicial
+      highestIdx = iHighest(_Symbol, InpFibTimeframe, MODE_HIGH, InpSwingBars, 1);
+      lowestIdx  = iLowest(_Symbol, InpFibTimeframe, MODE_LOW, InpSwingBars, 1);
+      hi = iHigh(_Symbol, InpFibTimeframe, highestIdx);
+      lo = iLow(_Symbol, InpFibTimeframe, lowestIdx);
+   }
+   
+   double rng = hi - lo;
    double z_hi = hi - (InpFibLowPct / 100.0) * rng;
    double z_lo = hi - (InpFibHighPct / 100.0) * rng;
    bool inZone = (px >= z_lo && px <= z_hi);
    
    DrawFiboGraphics(hi, lo, z_hi, z_lo, highestIdx, lowestIdx);
 
-   // 10. Executa Grade / Grid de Niveis contra a ultima entrada
+   // 10. Executa Grade / Grid de Niveis contra a ultima entrada (pontos fixos)
    if(g_totalLongs > 0 && g_totalLongs < InpMaxLvl)
    {
       double lastLongPr = g_longs[g_totalLongs-1];
-      if(px <= lastLongPr - InpGridStep * a)
+      if(px <= lastLongPr - InpGridStep * _Point)
       {
-         trade.Buy(InpLot, _Symbol, ask, 0, 0, "ZV Sniper Long");
+         trade.Buy(InpLotBuy, _Symbol, ask, 0, 0, "ZV Sniper Long");
       }
    }
    if(g_totalShorts > 0 && g_totalShorts < InpMaxLvl)
    {
       double lastShortPr = g_shorts[g_totalShorts-1];
-      if(px >= lastShortPr + InpGridStep * a)
+      if(px >= lastShortPr + InpGridStep * _Point)
       {
-         trade.Sell(InpLot, _Symbol, px, 0, 0, "ZV Sniper Short");
+         trade.Sell(InpLotSell, _Symbol, px, 0, 0, "ZV Sniper Short");
       }
    }
 
@@ -550,13 +580,13 @@ void OnTick()
    if(inZone && g_totalLongs == 0 && g_totalShorts == 0)
    {
       if(InpDirection == 0 || InpDirection == 1)
-         trade.Buy(InpLot, _Symbol, ask, 0, 0, "ZV Sniper Long");
+         trade.Buy(InpLotBuy, _Symbol, ask, 0, 0, "ZV Sniper Long");
       if(InpDirection == 0 || InpDirection == 2)
-         trade.Sell(InpLot, _Symbol, px, 0, 0, "ZV Sniper Short");
+         trade.Sell(InpLotSell, _Symbol, px, 0, 0, "ZV Sniper Short");
    }
 
    // 12. Desenha linhas de Grid e TP
-   DrawGridLevels(a, value);
+   DrawGridLevels();
 
    // 13. Atualiza Dashboard grafico
    UpdateDashboard();
