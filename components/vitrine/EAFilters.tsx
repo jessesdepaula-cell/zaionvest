@@ -145,9 +145,9 @@ export function EAFilters({ total }: EAFiltersProps) {
           TOP 25%
         </button>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="corr" className="text-[11px] text-zinc-500 whitespace-nowrap">
-            Correlação máx
+        <div className="flex items-center gap-2.5 rounded-lg border border-[#f5f5f5]/10 bg-[#0A0A0A] px-3 py-2">
+          <label htmlFor="corr" className="text-[11px] font-medium text-zinc-300 whitespace-nowrap">
+            Diversificação
           </label>
           <input
             id="corr"
@@ -160,13 +160,25 @@ export function EAFilters({ total }: EAFiltersProps) {
               const v = parseFloat(e.target.value);
               setParam("corr", v >= 1 ? "" : v.toFixed(1));
             }}
-            className="h-1 w-40 cursor-pointer accent-[#2563EB]"
+            className="h-1 w-32 cursor-pointer accent-[#2563EB]"
           />
-          <span className="w-8 text-[11px] tabular-nums text-zinc-400">
-            {corr >= 1 ? "off" : corr.toFixed(1)}
+          <span
+            className={`w-14 text-[11px] font-semibold tabular-nums ${
+              corr >= 1 ? "text-zinc-500" : "text-[#2563EB]"
+            }`}
+          >
+            {corr >= 1 ? "Todas" : `máx ${corr.toFixed(1)}`}
           </span>
         </div>
       </div>
+
+      {/* Explicação do filtro de correlação */}
+      <p className="text-[10px] text-zinc-600 leading-relaxed max-w-2xl">
+        <span className="text-zinc-400">Diversificação:</span> arraste para a
+        esquerda para esconder robôs com curvas de capital parecidas entre si e
+        montar um portfólio realmente descorrelacionado. Em{" "}
+        <span className="text-zinc-400">Todas</span>, mostra a vitrine completa.
+      </p>
 
       {/* Contador */}
       {total != null && (
