@@ -1,27 +1,36 @@
+param(
+    [int]$Lote = 0
+)
+
 # Estacao de Mineracao Genetica em Massa ZaionVest (Fabrica de Robos)
 # =========================================================================
 # Este script automatiza o pipeline completo de ponta a ponta para minerar,
 # validar, compilar e publicar centenas de estrategias na vitrine da ZaionVest
 # de forma 100% autonoma na sua maquina.
-#
-# Uso: 
-#   $env:SUPABASE_MGMT_TOKEN="sbp_sua_chave_aqui"
-#   $env:SUPABASE_SERVICE_ROLE_KEY="sua_chave_service_role"
-#   .\scripts\robustez\auto_mine.ps1
 
 Write-Host "Fabrica de EAs ZaionVest..." -ForegroundColor Cyan
 
-# Lista de ativos principais para mineracao profunda
-$Ativos = @(
-    "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", 
-    "AUDUSD", "EURAUD", "GBPJPY", "EURJPY", 
-    "USDCAD", "NZDUSD", "AUDJPY"
-)
+# Lista de ativos principais dividida por lote para execucao paralela
+if ($Lote -eq 1) {
+    $Ativos = @("XAUUSD", "EURUSD", "GBPUSD", "USDJPY")
+    Write-Host "Iniciando Lote 1 (Ativos Principais): $($Ativos -join ', ')" -ForegroundColor Cyan
+} elseif ($Lote -eq 2) {
+    $Ativos = @("AUDUSD", "EURAUD", "GBPJPY", "EURJPY")
+    Write-Host "Iniciando Lote 2 (Ativos Cruzados): $($Ativos -join ', ')" -ForegroundColor Cyan
+} elseif ($Lote -eq 3) {
+    $Ativos = @("USDCAD", "NZDUSD", "AUDJPY")
+    Write-Host "Iniciando Lote 3 (Ativos de Carry/Reserva): $($Ativos -join ', ')" -ForegroundColor Cyan
+} else {
+    $Ativos = @(
+        "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", 
+        "AUDUSD", "EURAUD", "GBPJPY", "EURJPY", 
+        "USDCAD", "NZDUSD", "AUDJPY"
+    )
+    Write-Host "Iniciando Lote Completo (Todos os ativos): $($Ativos -join ', ')" -ForegroundColor Cyan
+}
 
 # Timeframes estaveis recomendados
 $Timeframes = @("H1", "H4", "M30")
-
-$TotalPublicado = 0
 
 foreach ($Ativo in $Ativos) {
     foreach ($Tf in $Timeframes) {

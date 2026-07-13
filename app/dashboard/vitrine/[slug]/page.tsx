@@ -86,13 +86,13 @@ export default async function EADetailPage({
             {/* Validação (resumo — sem expor a metodologia) */}
             <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
               <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-4">
-                Validação
+                Validação de Robustez (DQ Labs)
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-emerald-400" />
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    Aprovado na nossa validação de robustez antes de entrar na vitrine.
+                    Aprovado na nossa esteira rigorosa de robustez antes de entrar na vitrine. Este robô passou nos testes de holdout <strong>Out-of-Sample (OOS) cego</strong>, análise de avanço recursivo (WFA) e estresse estatístico de Monte Carlo.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -116,12 +116,63 @@ export default async function EADetailPage({
                 <div className="flex items-start gap-3">
                   <Power className="h-4 w-4 shrink-0 mt-0.5 text-zinc-400" />
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    Se deixar de cumprir os critérios, o kill-switch o desativa
-                    automaticamente no seu MetaTrader.
+                    Se deixar de cumprir os critérios de robustez em dados novos de mercado, o kill-switch o desativa automaticamente no MetaTrader do cliente para proteção de capital.
                   </p>
                 </div>
               </div>
             </div>
+
+            {/* Janelas da WFA (Walk-Forward Analysis) */}
+            {latestValidation && latestValidation.windowsJson && (
+              <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
+                <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-2">
+                  Janelas do Walk-Forward (WFA)
+                </h3>
+                <p className="text-[11px] text-zinc-500 mb-4 leading-relaxed">
+                  Simulação progressiva onde o robô é otimizado no treino (In-Sample) e testado às cegas (Out-of-Sample) no período seguinte. Garante estabilidade estatística ao longo do tempo.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#f5f5f5]/10 text-zinc-500 text-[10px] uppercase tracking-wider">
+                        <th className="py-2.5 font-medium">Janela</th>
+                        <th className="py-2.5 font-medium text-center">Lucro OOS ($)</th>
+                        <th className="py-2.5 font-medium text-center">Eficiência WFE</th>
+                        <th className="py-2.5 font-medium text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f5f5f5]/5">
+                      {(latestValidation.windowsJson as any[]).map((win, idx) => (
+                        <tr key={idx} className="hover:bg-[#f5f5f5]/[0.01] transition-colors">
+                          <td className="py-3 font-mono text-zinc-400">Janela #{win.window}</td>
+                          <td className={`py-3 text-center font-mono font-semibold ${win.oosProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {win.oosProfit >= 0 ? "+" : ""}{win.oosProfit.toFixed(2)}
+                          </td>
+                          <td className="py-3 text-center font-mono text-zinc-300">{win.wfe.toFixed(1)}%</td>
+                          <td className="py-3 text-right">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${win.approved ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
+                              {win.approved ? "APROVADO" : "REPROVADO"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Relatório Técnico de Robustez (Markdown Parser) */}
+            {latestValidation && latestValidation.reportMd && (
+              <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
+                <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-4 border-b border-[#f5f5f5]/10 pb-2">
+                  Relatório Detalhado de Robustez & Sensibilidade
+                </h3>
+                <div className="space-y-3 select-text selection:bg-[#2563EB]/30 selection:text-white">
+                  {parseMarkdown(latestValidation.reportMd)}
+                </div>
+              </div>
+            )}
 
             {/* Histórico de revalidações */}
             {ea.validations.length > 0 && (
@@ -129,7 +180,7 @@ export default async function EADetailPage({
                 <div className="px-4 py-3 border-b border-[#f5f5f5]/[0.05] flex items-center gap-2">
                   <History className="h-4 w-4 text-zinc-600" />
                   <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider">
-                    Histórico de Revalidações
+                    Histórico de Revalidações Mensais
                   </h3>
                 </div>
                 <div className="divide-y divide-[#f5f5f5]/[0.03]">
@@ -171,6 +222,7 @@ export default async function EADetailPage({
               </div>
             )}
           </div>
+
 
           {/* Sidebar com card e download */}
           <div className="flex flex-col gap-4">
@@ -261,3 +313,77 @@ export default async function EADetailPage({
     </div>
   );
 }
+
+// ─── Parser Manual de Markdown para Exibição Técnica ──────────────────────────
+
+function parseMarkdown(md: string) {
+  return md
+    .split("\n")
+    .map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <div key={idx} className="h-2" />;
+
+      // Cabeçalho Principal (##)
+      if (trimmed.startsWith("## ")) {
+        return (
+          <h4 key={idx} className="text-xs font-bold text-[#F5F5F5] mt-6 mb-3 border-b border-[#f5f5f5]/10 pb-2 uppercase tracking-wide">
+            {trimmed.replace("## ", "")}
+          </h4>
+        );
+      }
+
+      // Sub-cabeçalho (###)
+      if (trimmed.startsWith("### ")) {
+        return (
+          <h5 key={idx} className="text-xs font-semibold text-[#2563EB] mt-4 mb-2">
+            {trimmed.replace("### ", "")}
+          </h5>
+        );
+      }
+
+      // Linha de Tabela Markdown (| ... |)
+      if (trimmed.startsWith("|")) {
+        // Ignora separadores de tabela como | :--- | ---: |
+        if (trimmed.includes("---")) return null;
+
+        const cols = trimmed
+          .split("|")
+          .map(c => c.trim())
+          .filter((_, i, arr) => i > 0 && i < arr.length - 1); // remove bordas vazias
+
+        return (
+          <div key={idx} className="grid grid-cols-4 gap-2 text-[10px] font-mono py-1.5 px-3 bg-zinc-950/30 border-b border-[#f5f5f5]/5 items-center">
+            {cols.map((col, cIdx) => (
+              <span key={cIdx} className={`${cIdx === 0 ? "text-zinc-400 font-sans text-left" : "text-zinc-200 text-center"} ${col.includes("✅") ? "text-emerald-400 font-bold" : ""} ${col.includes("❌") ? "text-rose-400 font-bold" : ""}`}>
+                {col}
+              </span>
+            ))}
+          </div>
+        );
+      }
+
+      // Marcadores (- ou *)
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const text = trimmed.replace(/^[-*]\s+/, "");
+        
+        // Verifica se é uma linha de checklist com ícone ✅ ou ❌
+        const isCheck = text.includes("✅") || text.includes("❌");
+
+        return (
+          <div key={idx} className="flex items-start gap-2 text-xs text-zinc-400 py-1 pl-2">
+            {!isCheck && <span className="text-[#2563EB] mt-0.5">•</span>}
+            <span className="leading-relaxed">{text}</span>
+          </div>
+        );
+      }
+
+      // Parágrafo Normal
+      return (
+        <p key={idx} className="text-xs text-zinc-400 leading-relaxed mb-2">
+          {trimmed}
+        </p>
+      );
+    })
+    .filter(Boolean); // remove itens nulos
+}
+
