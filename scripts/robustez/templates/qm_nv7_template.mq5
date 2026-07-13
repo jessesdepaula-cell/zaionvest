@@ -361,6 +361,67 @@ void DrawFiboGraphics(double hi, double lo, double z_hi, double z_lo, int highes
       }
    }
 }
+//+------------------------------------------------------------------+
+//| Desenha as linhas horizontais dos proximos niveis do Grid e TP   |
+//+------------------------------------------------------------------+
+void DrawGridLevels(double a, double value)
+{
+   // Remove objetos de níveis antigos para atualizar
+   ObjectsDeleteAll(0, "ZV_GRID_");
+   
+   // 1. COMPRAS (Longs)
+   if(g_totalLongs > 0)
+   {
+      // Proxima Compra planejada
+      if(g_totalLongs < InpMaxLvl)
+      {
+         double nextLongPr = g_longs[g_totalLongs-1] - InpGridStep * a;
+         ObjectCreate(0, "ZV_GRID_NEXT_L", OBJ_HLINE, 0, 0, nextLongPr);
+         ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_COLOR, C'244,63,94'); // Vermelho
+         ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_STYLE, STYLE_DASH);
+         ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_SELECTABLE, false);
+         ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_HIDDEN, true);
+      }
+      
+      // TP Coletivo das Compras
+      double sumLongs = 0;
+      for(int i=0; i<g_totalLongs; i++) sumLongs += g_longs[i];
+      double tpPrice = (sumLongs + InpTpAtr * a) / g_totalLongs;
+      
+      ObjectCreate(0, "ZV_GRID_TP_L", OBJ_HLINE, 0, 0, tpPrice);
+      ObjectSetInteger(0, "ZV_GRID_TP_L", OBJPROP_COLOR, C'16,185,129'); // Verde
+      ObjectSetInteger(0, "ZV_GRID_TP_L", OBJPROP_STYLE, STYLE_SOLID);
+      ObjectSetInteger(0, "ZV_GRID_TP_L", OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(0, "ZV_GRID_TP_L", OBJPROP_HIDDEN, true);
+   }
+   
+   // 2. VENDAS (Shorts)
+   if(g_totalShorts > 0)
+   {
+      // Proxima Venda planejada
+      if(g_totalShorts < InpMaxLvl)
+      {
+         double nextShortPr = g_shorts[g_totalShorts-1] + InpGridStep * a;
+         ObjectCreate(0, "ZV_GRID_NEXT_S", OBJ_HLINE, 0, 0, nextShortPr);
+         ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_COLOR, C'37,99,235'); // Azul
+         ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_STYLE, STYLE_DASH);
+         ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_SELECTABLE, false);
+         ObjectSetInteger(0, "ZV_GRID_NEXT_S", OBJPROP_HIDDEN, true);
+      }
+      
+      // TP Coletivo das Vendas
+      double sumShorts = 0;
+      for(int i=0; i<g_totalShorts; i++) sumShorts += g_shorts[i];
+      double tpPriceS = (sumShorts - InpTpAtr * a) / g_totalShorts;
+      
+      ObjectCreate(0, "ZV_GRID_TP_S", OBJ_HLINE, 0, 0, tpPriceS);
+      ObjectSetInteger(0, "ZV_GRID_TP_S", OBJPROP_COLOR, C'16,185,129'); // Verde
+      ObjectSetInteger(0, "ZV_GRID_TP_S", OBJPROP_STYLE, STYLE_SOLID);
+      ObjectSetInteger(0, "ZV_GRID_TP_S", OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(0, "ZV_GRID_TP_S", OBJPROP_HIDDEN, true);
+   }
+   ChartRedraw();
+}
 
 //+------------------------------------------------------------------+
 //| Loop Principal (Tick)                                            |
@@ -494,6 +555,9 @@ void OnTick()
          trade.Sell(InpLot, _Symbol, px, 0, 0, "ZV Sniper Short");
    }
 
-   // 12. Atualiza Dashboard grafico
+   // 12. Desenha linhas de Grid e TP
+   DrawGridLevels(a, value);
+
+   // 13. Atualiza Dashboard grafico
    UpdateDashboard();
 }
