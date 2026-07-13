@@ -33,7 +33,11 @@ import compiler
 from backtest import run_backtest
 
 REF = "kpijsnygzqgpjxxikpig"
-SB_TOKEN = os.environ.get("SUPABASE_MGMT_TOKEN", "")
+SB_TOKEN = os.environ.get("SUPABASE_MGMT_TOKEN", "") or (
+    open(os.path.join(os.path.dirname(__file__), ".mgmt_token")).read().strip()
+    if os.path.exists(os.path.join(os.path.dirname(__file__), ".mgmt_token"))
+    else ""
+)
 CORR_GATE = 0.85
 STYLE = {"trend": "trend", "mean_reversion": "reversal",
          "breakout": "breakout", "grid": "grid",
