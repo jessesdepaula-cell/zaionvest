@@ -59,6 +59,34 @@ const STYLE_LABELS: Record<string, string> = {
   range: "Range",
 };
 
+function getIndicators(style: string, name: string): string[] {
+  const normalized = name.toLowerCase();
+  
+  if (normalized.includes("zaion sniper")) {
+    return ["Fibo Swing", "Médias Móveis", "RSI", "MACD", "CCI"];
+  }
+
+  const list: string[] = [];
+
+  if (normalized.includes("tendência") || style === "trend") {
+    list.push("Média Móvel (EMA)", "Filtro de Tendência");
+  }
+  if (normalized.includes("reversão") || style === "reversal" || style === "range") {
+    list.push("Oscilador RSI", "Bandas de Bollinger");
+  }
+  if (normalized.includes("rompimento") || style === "breakout") {
+    list.push("Canais de Donchian", "Filtro ATR");
+  }
+  if (normalized.includes("grid") || style === "grid") {
+    list.push("Grade Matemática", "Oscilador RSI");
+  }
+
+  // Quase todos usam ATR para dimensionamento
+  list.push("ATR (Sizing)");
+
+  return Array.from(new Set(list));
+}
+
 // Mini sparkline SVG da curva de capital OOS
 function SparkLine({
   data,
@@ -159,7 +187,7 @@ export function EACard({
     <div
       className={`group relative flex flex-col rounded-2xl border bg-[#0A0A0A] overflow-hidden transition-all duration-300 hover:-translate-y-0.5 ${
         approved
-          ? "border-[#f5f5f5]/8 hover:border-emerald-500/25 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.2)]"
+          ? "border-[#f5f5f5]/8 hover:border-blue-500/25 hover:shadow-[0_0_30px_-8px_rgba(37,99,235,0.2)]"
           : status === "REJECTED"
           ? "border-rose-500/10 opacity-70"
           : "border-[#f5f5f5]/5"
@@ -167,7 +195,7 @@ export function EACard({
     >
       {/* Glow de fundo sutil */}
       {approved && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/[0.03] to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] to-transparent" />
       )}
 
       <div className="p-5 flex flex-col gap-4 relative">
@@ -185,6 +213,18 @@ export function EACard({
             <h3 className="text-sm font-semibold text-[#F5F5F5] leading-tight">
               {name}
             </h3>
+            
+            {/* Indicadores da Estratégia */}
+            <div className="flex flex-wrap gap-1 mt-2.5">
+              {getIndicators(style, name).map((ind, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-400 border border-blue-500/10 shadow-[0_0_4px_rgba(59,130,246,0.05)]"
+                >
+                  {ind}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Badge de status */}
