@@ -70,7 +70,7 @@ do {
 
     if ($Loop) {
         Write-Host "=========================================================================" -ForegroundColor Yellow
-        Write-Host "Lote $Lote: Ciclo completo finalizado. Reiniciando loop em 30 segundos..." -ForegroundColor Yellow
+        Write-Host "Lote ${Lote}: Ciclo completo finalizado. Reiniciando loop em 30 segundos..." -ForegroundColor Yellow
         Write-Host "=========================================================================" -ForegroundColor Yellow
         Start-Sleep -Seconds 30
     }
