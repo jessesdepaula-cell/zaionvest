@@ -205,7 +205,10 @@ def main():
                 continue
 
             ea_id = cuid()
-            h = secrets.token_hex(3)
+            params_str = json.dumps(params, sort_keys=True)
+            dna_raw = f"{symbol}:{tf}:{fam}:{direction}:{mode}:{params_str}"
+            import hashlib
+            h = hashlib.sha256(dna_raw.encode("utf-8")).hexdigest()[:6]
             dir_tag = {"both": "", "long": " Long", "short": " Short"}[direction]
             # nome do card: multi usa o estilo (nome de família "multi" é interno)
             style_val = style_of(fam, params)
