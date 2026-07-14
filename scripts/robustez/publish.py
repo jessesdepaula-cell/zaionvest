@@ -24,6 +24,22 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+def load_env_file():
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for fn in (".env.local", ".env"):
+        p = os.path.join(base, fn)
+        if os.path.exists(p):
+            for line in open(p, encoding="utf-8", errors="replace"):
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    parts = line.split("=", 1)
+                    if len(parts) == 2:
+                        k = parts[0].strip()
+                        v = parts[1].strip().strip('"').strip("'")
+                        os.environ.setdefault(k, v)
+
+load_env_file()
+
 # URL de licença que vai BAKED no .ex5 — domínio real do app.
 os.environ.setdefault("EA_STATUS_URL_BASE", "https://zaionvest.com.br/api/ea")
 
