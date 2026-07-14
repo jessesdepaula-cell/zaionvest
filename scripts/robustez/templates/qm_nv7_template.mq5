@@ -293,7 +293,15 @@ double BasketProfit(int side, double px)
 void DrawFiboGraphics(double hi, double lo, double z_hi, double z_lo, int highestIdx, int lowestIdx)
 {
    datetime t_start = iTime(_Symbol, InpFibTimeframe, MathMax(highestIdx, lowestIdx));
-   datetime t_end   = TimeCurrent() + PeriodSeconds(InpFibTimeframe) * 10;
+   if(t_start <= 0)
+   {
+      t_start = iTime(_Symbol, _Period, MathMax(highestIdx, lowestIdx));
+      if(t_start <= 0)
+      {
+         t_start = TimeCurrent() - PeriodSeconds(_Period) * MathMax(highestIdx, lowestIdx);
+      }
+   }
+   datetime t_end   = TimeCurrent() + PeriodSeconds(_Period) * 10;
    
    // 1. Caixa Amarela / Laranja Translucida (Zona de Fibonacci)
    string rectName = "ZV_FIBO_RECT";
@@ -542,14 +550,37 @@ void OnTick()
          if(i < copiedLow  && loArr[i] < lo) { lo = loArr[i]; lowestIdx = i + 1; }
       }
    }
-   else
-   {
-      // Fallback para as de cache se der erro na copia inicial
-      highestIdx = iHighest(_Symbol, InpFibTimeframe, MODE_HIGH, InpSwingBars, 1);
-      lowestIdx  = iLowest(_Symbol, InpFibTimeframe, MODE_LOW, InpSwingBars, 1);
-      hi = iHigh(_Symbol, InpFibTimeframe, highestIdx);
-      lo = iLow(_Symbol, InpFibTimeframe, lowestIdx);
-   }
+    else
+    {
+       // Fallback para as de cache se der erro na copia inicial
+       highestIdx = iHighest(_Symbol, InpFibTimeframe, MODE_HIGH, InpSwingBars, 1);
+       lowestIdx  = iLowest(_Symbol, InpFibTimeframe, MODE_LOW, InpSwingBars, 1);
+       hi = iHigh(_Symbol, InpFibTimeframe, highestIdx);
+       lo = iLow(_Symbol, InpFibTimeframe, lowestIdx);
+    }
+    
+    // Fallback absoluto: se o swing do InpFibTimeframe falhar (ex: dados vazios), usa o timeframe do grafico atual
+    if(hi <= 0 || lo >= 999999.0 || hi <= lo)
+    {
+       int copiedHighAlt = CopyHigh(_Symbol, _Period, 1, InpSwingBars, hiArr);
+       int copiedLowAlt  = CopyLow(_Symbol, _Period, 1, InpSwingBars, loArr);
+       if(copiedHighAlt > 0 && copiedLowAlt > 0)
+       {
+          hi = 0.0; lo = 999999.0;
+          for(int i=0; i<InpSwingBars; i++)
+          {
+             if(hiArr[i] > hi) { hi = hiArr[i]; highestIdx = i + 1; }
+             if(loArr[i] < lo) { lo = loArr[i]; lowestIdx = i + 1; }
+          }
+       }
+       else
+       {
+          highestIdx = iHighest(_Symbol, _Period, MODE_HIGH, InpSwingBars, 1);
+          lowestIdx  = iLowest(_Symbol, _Period, MODE_LOW, InpSwingBars, 1);
+          hi = iHigh(_Symbol, _Period, highestIdx);
+          lo = iLow(_Symbol, _Period, lowestIdx);
+       }
+    }
    
    double rng = hi - lo;
    double z_hi = hi - (InpFibLowPct / 100.0) * rng;

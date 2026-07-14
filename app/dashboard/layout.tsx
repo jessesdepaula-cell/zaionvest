@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { requireActiveSubscription, isOwner } from "@/lib/subscription";
 import { redirect } from "next/navigation";
 import { SidebarNav } from "@/components/dashboard/Sidebar";
+import { NotificationsPopover } from "@/components/dashboard/NotificationsPopover";
 
 const BUILD_VERSION =
   process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
@@ -102,6 +103,7 @@ export default async function DashboardLayout({
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            <NotificationsPopover />
             <UserButton afterSignOutUrl="/" />
             <SignOutButton redirectUrl="/">
               <button
@@ -119,8 +121,18 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <main className="lg:pl-60">
-        {children}
+      <main className="lg:pl-60 flex flex-col min-h-screen">
+        {/* Topbar Desktop */}
+        <header className="sticky top-0 z-30 hidden lg:flex items-center justify-between border-b border-[#f5f5f5]/5 bg-charcoal/85 backdrop-blur-md px-8 py-4">
+          <div className="flex-1" />
+          <div className="flex items-center gap-4">
+            <NotificationsPopover />
+          </div>
+        </header>
+
+        <div className="flex-1 p-6 lg:p-8">
+          {children}
+        </div>
       </main>
     </div>
   );

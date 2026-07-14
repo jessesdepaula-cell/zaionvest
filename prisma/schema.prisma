@@ -27,6 +27,7 @@ model User {
   signals            Signal[]
   ticks              MarketTick[]
   eaDownloads        EADownload[]
+  accounts           Account[]
 }
 
 model Analysis {
@@ -258,4 +259,119 @@ model Job {
 
   @@index([status, type])
   @@index([eaId])
+}
+
+model Account {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  login           String         @unique
+  broker          String?
+  server          String?
+  currency        String         @default("USD")
+  leverage        Int?
+  initialBalance  Float?
+  initialCapturedAt DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  snapshots       Snapshot[]
+  monitorTrades   MonitorTrade[]
+  positions       OpenPosition[]
+  robots          RobotMetric[]
+  events          MonitorEvent[]
+
+  @@index([userId])
+}
+
+model Snapshot {
+  id            String   @id @default(cuid())
+  accountId     String
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  ts            DateTime @default(now())
+  balance       Float
+  equity        Float
+  margin        Float
+  freeMargin    Float
+  marginLevel   Float?
+  floatingPnL   Float
+  openPositions Int
+  peakEquity    Float?
+
+  @@index([accountId, ts])
+}
+
+model MonitorTrade {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  ticket      BigInt   @unique
+  symbol      String
+  side        String   // BUY | SELL
+  volume      Float
+  openPrice   Float
+  closePrice  Float
+  openTime    DateTime
+  closeTime   DateTime
+  profit      Float
+  commission  Float    @default(0)
+  swap        Float    @default(0)
+  netProfit   Float
+  magic       BigInt   @default(0)
+  comment     String?
+
+  @@index([accountId, closeTime])
+  @@index([accountId, magic])
+  @@index([symbol])
+}
+
+model OpenPosition {
+  id           String   @id @default(cuid())
+  accountId    String
+  account      Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  ticket       BigInt   @unique
+  symbol       String
+  side         String
+  volume       Float
+  openPrice    Float
+  currentPrice Float
+  sl           Float?
+  tp           Float?
+  openTime     DateTime
+  profit       Float
+  swap         Float    @default(0)
+  magic        BigInt   @default(0)
+  comment      String?
+  updatedAt    DateTime @updatedAt
+
+  @@index([accountId])
+}
+
+model RobotMetric {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  magic       BigInt
+  label       String?
+  trades      Int      @default(0)
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  netProfit   Float    @default(0)
+  grossProfit Float    @default(0)
+  grossLoss   Float    @default(0)
+  lastTradeAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([accountId, magic])
+}
+
+model MonitorEvent {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  ts        DateTime @default(now())
+  kind      String   // ingest | drawdown_alert | reconnect | error
+  message   String
+
+  @@index([accountId, ts])
 }

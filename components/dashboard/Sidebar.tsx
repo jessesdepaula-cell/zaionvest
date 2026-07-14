@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Bot, Download, GraduationCap, LifeBuoy, Map, User, Users } from "lucide-react";
+import { Bot, Download, LifeBuoy, User, Users, Activity } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,9 +11,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/dashboard/vitrine", icon: Bot, label: "Vitrine de EAs" },
   { href: "/dashboard/downloads", icon: Download, label: "Meus Downloads" },
-  { href: "/dashboard/academia", icon: GraduationCap, label: "Academia" },
-  { href: "/dashboard/notificacoes", icon: Bell, label: "Notificações" },
-  { href: "/dashboard/roadmap", icon: Map, label: "Roadmap" },
+  { href: "/dashboard/monitor", icon: Activity, label: "Monitor MT5" },
   { href: "/dashboard/suporte", icon: LifeBuoy, label: "Suporte" },
   { href: "/dashboard/configuracoes", icon: User, label: "Minha Conta" },
 ];
