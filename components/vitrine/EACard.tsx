@@ -30,18 +30,18 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
   APPROVED: {
-    label: "Aprovado",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    dot: "bg-emerald-400",
+    label: "Aprovado na Robustez",
+    color: "text-blue-400 font-bold tracking-wide",
+    bg: "bg-blue-600/20",
+    border: "border-blue-500/40 shadow-[0_0_8px_rgba(37,99,235,0.3)]",
+    dot: "bg-blue-500 shadow-[0_0_6px_#3b82f6]",
   },
   REJECTED: {
     label: "Reprovado",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/20",
-    dot: "bg-rose-400",
+    color: "text-zinc-500",
+    bg: "bg-zinc-800/20",
+    border: "border-zinc-700/20",
+    dot: "bg-zinc-600",
   },
   PENDING: {
     label: "Pendente",

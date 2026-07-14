@@ -90,7 +90,7 @@ export default async function EADetailPage({
               </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-emerald-400" />
+                  <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-blue-400" />
                   <p className="text-xs text-zinc-400 leading-relaxed">
                     Aprovado na nossa esteira rigorosa de robustez antes de entrar na vitrine. Este robô passou nos testes de holdout <strong>Out-of-Sample (OOS) cego</strong>, análise de avanço recursivo (WFA) e estresse estatístico de Monte Carlo.
                   </p>
@@ -106,8 +106,8 @@ export default async function EADetailPage({
                           {new Date(latestValidation.validatedAt).toLocaleDateString("pt-BR")}
                         </strong>
                         {" "}—{" "}
-                        <span className={latestValidation.approved ? "text-emerald-400" : "text-rose-400"}>
-                          {latestValidation.approved ? "aprovado" : "reprovado"}
+                        <span className={latestValidation.approved ? "text-blue-400 font-bold" : "text-zinc-500"}>
+                          {latestValidation.approved ? "aprovado na robustez" : "reprovado"}
                         </span>.
                       </>
                     )}
