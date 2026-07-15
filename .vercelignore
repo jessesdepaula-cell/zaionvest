@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.vercel
+scripts/robustez
+scripts/backtest
+public/robustez
+tmp
+*.log
+*.zip
+*.mq5
+*.ex5
