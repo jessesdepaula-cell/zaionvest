@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     accounts = [targetAcc];
   } else {
     // Requisição autenticada do Clerk
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
     if (!clerkId) {
       return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
     }
