@@ -87,13 +87,10 @@ export default function DashboardMonitorPage() {
             </h2>
             <ol className="space-y-4 text-xs text-zinc-400 list-decimal list-inside leading-relaxed">
               <li>
-                Baixe o robô coletor de dados abaixo e copie o arquivo <code className="text-[#F5F5F5] bg-[#141414] px-1 py-0.5 rounded font-mono">.mq5</code>.
+                Baixe o robô monitor compilado abaixo e copie o arquivo <code className="text-[#F5F5F5] bg-[#141414] px-1 py-0.5 rounded font-mono">.ex5</code>.
               </li>
               <li>
                 Abra o MT5 → **Arquivo → Pasta de Dados**, e cole o arquivo dentro de <code className="text-[#F5F5F5] bg-[#141414] px-1 py-0.5 rounded font-mono">MQL5/Experts/</code>.
-              </li>
-              <li>
-                No MetaEditor (F4), abra o arquivo e compile (F7).
               </li>
               <li>
                 No MT5, vá em **Ferramentas → Opções → Experts**:
@@ -129,12 +126,12 @@ export default function DashboardMonitorPage() {
             </div>
 
             <a
-              href="/ZaionVest_Monitor.mq5"
+              href="/ZaionVest_Monitor.ex5"
               download
               className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition cursor-pointer"
             >
               <Download className="h-4 w-4" />
-              Baixar ZaionVest_Monitor.mq5
+              Baixar ZaionVest_Monitor.ex5
             </a>
           </div>
         </div>
