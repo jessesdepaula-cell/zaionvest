@@ -45,6 +45,8 @@ double   g_longs[];
 double   g_shorts[];
 int      g_totalLongs=0;
 int      g_totalShorts=0;
+double   g_last_ordered_buy_price=0;
+double   g_last_ordered_sell_price=0;
 
 //+------------------------------------------------------------------+
 //| Helpers de Dashboard Grafico                                     |
@@ -247,6 +249,12 @@ void UpdatePositions()
          }
       }
    }
+   
+   if(g_totalLongs > 0) ArraySort(g_longs);
+   else g_last_ordered_buy_price = 0;
+   
+   if(g_totalShorts > 0) ArraySort(g_shorts);
+   else g_last_ordered_sell_price = 0;
 }
 
 void CloseBasket(int side)
@@ -362,7 +370,7 @@ void DrawGridLevels()
       // Proxima Compra planejada
       if(g_totalLongs < InpMaxLvl)
       {
-         double nextLongPr = g_longs[g_totalLongs-1] - InpGridStep * _Point;
+         double nextLongPr = g_longs[0] - InpGridStep * _Point;
          ObjectCreate(0, "ZV_GRID_NEXT_L", OBJ_HLINE, 0, 0, nextLongPr);
          ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_COLOR, C'244,63,94'); // Vermelho
          ObjectSetInteger(0, "ZV_GRID_NEXT_L", OBJPROP_STYLE, STYLE_DASH);
@@ -592,17 +600,21 @@ void OnTick()
    // 10. Executa Grade / Grid de Niveis contra a ultima entrada (pontos fixos)
    if(g_totalLongs > 0 && g_totalLongs < InpMaxLvl)
    {
-      double lastLongPr = g_longs[g_totalLongs-1];
-      if(px <= lastLongPr - InpGridStep * _Point)
+      double lowestLongPr = g_longs[0];
+      double nextLongPr = lowestLongPr - InpGridStep * _Point;
+      if(ask <= nextLongPr && (g_last_ordered_buy_price == 0 || ask < g_last_ordered_buy_price - InpGridStep * _Point * 0.8))
       {
+         g_last_ordered_buy_price = ask;
          trade.Buy(InpLotBuy, _Symbol, ask, 0, 0, "ZV Sniper Long");
       }
    }
    if(g_totalShorts > 0 && g_totalShorts < InpMaxLvl)
    {
-      double lastShortPr = g_shorts[g_totalShorts-1];
-      if(px >= lastShortPr + InpGridStep * _Point)
+      double highestShortPr = g_shorts[g_totalShorts-1];
+      double nextShortPr = highestShortPr + InpGridStep * _Point;
+      if(px >= nextShortPr && (g_last_ordered_sell_price == 0 || px > g_last_ordered_sell_price + InpGridStep * _Point * 0.8))
       {
+         g_last_ordered_sell_price = px;
          trade.Sell(InpLotSell, _Symbol, px, 0, 0, "ZV Sniper Short");
       }
    }
@@ -611,9 +623,15 @@ void OnTick()
    if(inZone && g_totalLongs == 0 && g_totalShorts == 0)
    {
       if(InpDirection == 0 || InpDirection == 1)
+      {
+         g_last_ordered_buy_price = ask;
          trade.Buy(InpLotBuy, _Symbol, ask, 0, 0, "ZV Sniper Long");
+      }
       if(InpDirection == 0 || InpDirection == 2)
+      {
+         g_last_ordered_sell_price = px;
          trade.Sell(InpLotSell, _Symbol, px, 0, 0, "ZV Sniper Short");
+      }
    }
 
    // 12. Desenha linhas de Grid e TP
