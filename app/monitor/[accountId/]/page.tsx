@@ -114,7 +114,7 @@ export default function PublicMonitorPage() {
             style={{ mixBlendMode: "lighten" }}
           />
           <span className="text-sm font-semibold tracking-tight text-[#F5F5F5]">
-            Zaion<span className="text-[#2563EB]">Vest</span> · <span className="text-zinc-500 font-normal">Monitor</span>
+            ZaionVest Monitor
           </span>
         </div>
         

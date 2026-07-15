@@ -72,7 +72,7 @@ export default function DashboardMonitorPage() {
           monitor_mt5::aguardando_conexao
         </div>
         <h1 className="text-3xl font-extrabold text-[#F5F5F5] tracking-tight mb-4">
-          Monitor de Contas MetaTrader 5
+          ZaionVest Monitor
         </h1>
         <p className="text-zinc-400 text-sm mb-8 leading-relaxed">
           Monitore o saldo, capital líquido, drawdown e lucros acumulados de todas as suas contas reais e demo do MetaTrader 5 em tempo real pelo navegador, celular ou compartilhe o link público com investidores.
@@ -99,7 +99,7 @@ export default function DashboardMonitorPage() {
                 No MT5, vá em **Ferramentas → Opções → Experts**:
                 <ul className="list-disc list-inside pl-4 mt-1 space-y-1">
                   <li>Marque a opção *Permitir WebRequest para as URLs listadas*</li>
-                  <li>Adicione a URL: <code className="text-blue-400 font-mono">https://zaionvest.com</code></li>
+                  <li>Adicione a URL: <code className="text-blue-400 font-mono">https://zaionvest.com.br</code></li>
                 </ul>
               </li>
               <li>
@@ -139,11 +139,21 @@ export default function DashboardMonitorPage() {
           </div>
         </div>
 
-        <div className="rounded-xl bg-blue-500/5 border border-blue-500/10 p-4 flex gap-3 text-xs text-zinc-400 leading-relaxed">
-          <AlertCircle className="h-5 w-5 text-blue-400 shrink-0" />
-          <div>
-            <strong className="text-[#F5F5F5] block mb-0.5">Uso Ilimitado</strong>
-            A sua assinatura ZaionVest permite monitorar quantas contas e robôs você quiser simultaneamente sem qualquer custo adicional! Basta utilizar a mesma chave de monitoramento em todos os seus terminais MT5.
+        <div className="space-y-4">
+          <div className="rounded-xl bg-blue-500/5 border border-blue-500/10 p-4 flex gap-3 text-xs text-zinc-400 leading-relaxed">
+            <AlertCircle className="h-5 w-5 text-blue-400 shrink-0" />
+            <div>
+              <strong className="text-[#F5F5F5] block mb-0.5">Uso Ilimitado</strong>
+              A sua assinatura ZaionVest permite monitorar quantas contas e robôs você quiser simultaneamente sem qualquer custo adicional! Basta utilizar a mesma chave de monitoramento em todos os seus terminais MT5.
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-zinc-500/5 border border-zinc-500/10 p-4 flex gap-3 text-xs text-zinc-400 leading-relaxed">
+            <AlertCircle className="h-5 w-5 text-zinc-500 shrink-0" />
+            <div>
+              <strong className="text-[#F5F5F5] block mb-0.5">Link Externo de Compartilhamento</strong>
+              Como cada usuário tem o seu próprio monitor de contas dedicado, o seu link de visualização externa pública (que você poderá enviar para investidores ou acessar do celular sem login) ficará disponível no topo direito deste painel assim que o seu robô no MT5 se conectar pela primeira vez.
+            </div>
           </div>
         </div>
       </div>

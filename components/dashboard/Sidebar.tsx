@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/dashboard/vitrine", icon: Bot, label: "Vitrine de EAs" },
   { href: "/dashboard/downloads", icon: Download, label: "Meus Downloads" },
-  { href: "/dashboard/monitor", icon: Activity, label: "Monitor MT5" },
+  { href: "/dashboard/monitor", icon: Activity, label: "ZaionVest Monitor" },
   { href: "/dashboard/suporte", icon: LifeBuoy, label: "Suporte" },
   { href: "/dashboard/configuracoes", icon: User, label: "Minha Conta" },
 ];
