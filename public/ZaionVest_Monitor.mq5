@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
-//|                                      MT5_Capital_Collector.mq5  |
-//|                                MT5 Capital Monitor - Read Only  |
+//|                                      ZaionVest_Monitor.mq5       |
+//|                                      ZaionVest Monitor - Read    |
 //|                                                                 |
 //|  Coleta saldo / equity / margem / posicoes / historico e envia  |
 //|  para o backend Next.js via WebRequest POST /api/monitor/ingest. |
@@ -10,7 +10,7 @@
 #property version   "1.00"
 #property strict
 
-input string ApiUrl     = "https://zaionvest.com/api/monitor/ingest";
+input string ApiUrl     = "https://zaionvest.com.br/api/monitor/ingest";
 input string ApiKey     = "COLE_SUA_CHAVE_AQUI"; // Chave de Monitoramento Exclusiva
 input int    IntervalSec = 2;       // intervalo de envio em segundos
 input int    HistoryDays = 30;      // dias de historico fechado a enviar
@@ -24,14 +24,14 @@ int OnInit()
   {
    EventSetTimer(IntervalSec > 0 ? IntervalSec : 2);
    g_lastHistoryStart = TimeCurrent() - HistoryDays * 86400;
-   PrintFormat("[MT5_Capital_Collector] iniciado. URL=%s intervalo=%ds", ApiUrl, IntervalSec);
+   PrintFormat("[ZaionVest_Monitor] iniciado. URL=%s intervalo=%ds", ApiUrl, IntervalSec);
    return INIT_SUCCEEDED;
   }
 
 void OnDeinit(const int reason)
   {
    EventKillTimer();
-  }
+   }
 
 void OnTimer()
   {
@@ -57,17 +57,17 @@ void SendSnapshot()
    if(code == -1)
      {
       int err = GetLastError();
-      PrintFormat("[MT5_Capital_Collector] WebRequest falhou err=%d. Adicione %s em Tools>Options>Expert Advisors>Allow WebRequest.", err, ApiUrl);
+      PrintFormat("[ZaionVest_Monitor] WebRequest falhou err=%d. Adicione %s em Tools>Options>Expert Advisors>Allow WebRequest.", err, ApiUrl);
       return;
      }
    string responseText = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
    if(code != 200)
      {
-      PrintFormat("[MT5_Capital_Collector] Erro HTTP %d: %s", code, responseText);
+      PrintFormat("[ZaionVest_Monitor] Erro HTTP %d: %s", code, responseText);
      }
    else if(VerboseLog)
      {
-      PrintFormat("[MT5_Capital_Collector] HTTP %d (%d bytes resposta)", code, ArraySize(result));
+      PrintFormat("[ZaionVest_Monitor] HTTP %d (%d bytes resposta)", code, ArraySize(result));
      }
   }
 

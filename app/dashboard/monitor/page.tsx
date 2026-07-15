@@ -103,7 +103,7 @@ export default function DashboardMonitorPage() {
                 </ul>
               </li>
               <li>
-                Arraste o robô <code className="text-[#F5F5F5] bg-[#141414] px-1 py-0.5 rounded font-mono">MT5_Capital_Collector</code> para qualquer gráfico e insira a sua **Chave de Monitoramento** no campo *ApiKey*.
+                Arraste o robô <code className="text-[#F5F5F5] bg-[#141414] px-1 py-0.5 rounded font-mono">ZaionVest_Monitor</code> para qualquer gráfico e insira a sua **Chave de Monitoramento** no campo *ApiKey*.
               </li>
             </ol>
           </div>
@@ -129,12 +129,12 @@ export default function DashboardMonitorPage() {
             </div>
 
             <a
-              href="/MT5_Capital_Collector.mq5"
+              href="/ZaionVest_Monitor.mq5"
               download
               className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition cursor-pointer"
             >
               <Download className="h-4 w-4" />
-              Baixar MT5_Capital_Collector.mq5
+              Baixar ZaionVest_Monitor.mq5
             </a>
           </div>
         </div>
