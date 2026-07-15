@@ -214,43 +214,13 @@ export default function PublicMonitorPage() {
         {/* Gráficos Mensais e por Robô */}
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Panel title="Lucro Diário">
-            <BarChart data={data.series.daily} width={250} height={200} margin={{ top: 6, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(245,245,245,0.05)" strokeDasharray="3 6" vertical={false} />
-              <XAxis dataKey="date" tick={AXIS} minTickGap={20} />
-              <YAxis tick={AXIS} />
-              <Tooltip content={<CompactTip />} />
-              <Bar dataKey="profit" radius={[3, 3, 0, 0]}>
-                {data.series.daily.map((d: any, i: number) => (
-                  <Cell key={i} fill={d.profit >= 0 ? "#10b981" : "#f43f5e"} />
-                ))}
-              </Bar>
-            </BarChart>
+            <ProfitBarChart data={data.series.daily} />
           </Panel>
           <Panel title="Lucro Semanal">
-            <BarChart data={data.series.weekly} width={250} height={200} margin={{ top: 6, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(245,245,245,0.05)" strokeDasharray="3 6" vertical={false} />
-              <XAxis dataKey="date" tick={AXIS} minTickGap={20} />
-              <YAxis tick={AXIS} />
-              <Tooltip content={<CompactTip />} />
-              <Bar dataKey="profit" radius={[3, 3, 0, 0]}>
-                {data.series.weekly.map((d: any, i: number) => (
-                  <Cell key={i} fill={d.profit >= 0 ? "#10b981" : "#f43f5e"} />
-                ))}
-              </Bar>
-            </BarChart>
+            <ProfitBarChart data={data.series.weekly} />
           </Panel>
           <Panel title="Lucro Mensal">
-            <BarChart data={data.series.monthly} width={250} height={200} margin={{ top: 6, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(245,245,245,0.05)" strokeDasharray="3 6" vertical={false} />
-              <XAxis dataKey="date" tick={AXIS} minTickGap={20} tickFormatter={formatMonthTick} />
-              <YAxis tick={AXIS} />
-              <Tooltip content={<CompactTip />} />
-              <Bar dataKey="profit" radius={[3, 3, 0, 0]}>
-                {data.series.monthly.map((d: any, i: number) => (
-                  <Cell key={i} fill={d.profit >= 0 ? "#10b981" : "#f43f5e"} />
-                ))}
-              </Bar>
-            </BarChart>
+            <ProfitBarChart data={data.series.monthly} tickFormatter={formatMonthTick} />
           </Panel>
         </section>
 
