@@ -60,6 +60,18 @@ DEFAULT_PARAMS = {
                         "sl_atr": 2.0, "tp_atr": 3.0},
     "stochastic": {"stoch_k": 14, "stoch_smooth": 3, "stoch_os": 20,
                    "stoch_ob": 80, "atr_period": 14, "sl_atr": 2.0, "tp_atr": 3.0},
+    # Inputs REAIS do EA nv7_xauusd_h1_grid_fibo (magic 123456), lidos do dialog
+    # do MT5 em 2026-07-16. Mesmos valores baked no .ex5 do Zaion Sniper.
+    "nv7": {"ref_balance": 3000.0, "lot_buy": 0.02, "lot_sell": 0.01,
+            "grid_step_points": 1100, "tp_points": 2775,
+            "swing_bars": 150, "fib_tf_ratio": 0.5,
+            "fib_low_pct": 38.2, "fib_high_pct": 50.0,
+            "dd_guard_pct": 5.0, "dd_sells_on": True,
+            "prot_capital": False, "max_dd_pct": 5.0,
+            "comp_on": True, "comp_dd_pct": 3.0,
+            "cluster_min": 10, "cluster_sobra": 11.0, "max_positions": 8,
+            "meta_daily_on": True, "meta_daily_pct": 2.0,
+            "meta_monthly_on": True, "meta_monthly_pct": 20.0},
 }
 
 
@@ -113,7 +125,8 @@ def run_pipeline(
     print(f"[Pipeline] {len(trades)} trades ({source}) — {ea_name} {symbol} {timeframe}", file=sys.stderr)
     return evaluate(trades, ea_id, ea_name, symbol, timeframe, family, exit_mode,
                     n_windows=n_windows, source=source,
-                    equity_bar=bt.equity_bar if bt else None)
+                    equity_bar=bt.equity_bar if bt else None,
+                    start_capital=bt.start_capital if bt else START_CAPITAL)
 
 
 def evaluate(
@@ -127,6 +140,7 @@ def evaluate(
     n_windows: int = 6,
     source: str = "backtest",
     equity_bar: list[float] | None = None,
+    start_capital: float = START_CAPITAL,
 ) -> dict:
     """Aplica os gates DQ Labs a um backtest JÁ rodado.
     equity_bar (mark-to-market por barra) habilita os gates de curva:
@@ -150,11 +164,11 @@ def evaluate(
 
     # Métricas de curva (mark-to-market quando disponível; senão por trade)
     if equity_bar:
-        dd_abs, dd_pct = drawdown_of_curve(equity_bar, START_CAPITAL)
+        dd_abs, dd_pct = drawdown_of_curve(equity_bar, start_capital)
         r2 = equity_r_squared(equity_bar)
     else:
         dd_abs, dd_pct = m.max_drawdown_abs, m.max_drawdown_pct
-        eq, acc = [], START_CAPITAL
+        eq, acc = [], start_capital
         for p in profits:
             acc += p
             eq.append(acc)
@@ -174,7 +188,7 @@ def evaluate(
     # Suíte completa (vocabulário SQX): Sharpe, R-exp, symmetry, ret/dd, cagr, etc.
     dates = [t.date or "" for t in trades]
     sides = [getattr(t, "side", 0) for t in trades]
-    sq = sqx_metrics(profits, dates, sides, dd_abs, dd_pct, START_CAPITAL)
+    sq = sqx_metrics(profits, dates, sides, dd_abs, dd_pct, start_capital)
 
     # ── Gates DQ Labs + filtros SQX ───────────────────────────────────────────
     pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
@@ -347,7 +361,10 @@ def main_cli():
     ap.add_argument("--ea-name", default="EA")
     ap.add_argument("--symbol", default="EURUSD")
     ap.add_argument("--timeframe", default="H1")
-    ap.add_argument("--family", default="trend", choices=["trend", "mean_reversion", "breakout"])
+    ap.add_argument("--family", default="trend",
+                    choices=["trend", "mean_reversion", "breakout", "grid",
+                             "grid_hedge", "macd_cross", "bollinger_fade",
+                             "bollinger_break", "stochastic", "multi", "nv7"])
     ap.add_argument("--exit-mode", default="reversal", choices=["reversal", "fixed_sltp"])
     ap.add_argument("--years", type=float, default=4.0)
 

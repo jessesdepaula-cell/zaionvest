@@ -143,6 +143,7 @@ class BacktestResult:
     equity_bar: list      # equity mark-to-market POR BARRA (DD flutuante + r²)
     equity_dates: list    # data (str) de cada ponto da equity_bar
     lot: float            # lote normalizado usado
+    start_capital: float = START_CAPITAL   # base do DD%/retorno (nv7 usa a ref do EA)
 
 
 def normalized_lot(atr_mean: float, contract_size: float) -> float:
@@ -520,121 +521,213 @@ def _run_nv7(
     spread_points: float,
     commission_per_trade: float,
 ) -> BacktestResult:
-    """Réplica do NV7 ENGINE (grid Fibonacci hedgeado) — inputs reais da conta
-    do Jessé. Só opera na ZONA de Fibonacci (retração 38.2-50% de um swing de
-    N barras): abre grid de COMPRA e de VENDA (hedge), adiciona níveis a cada
-    step×ATR, fecha o cesto por TP de posição OU cluster-netting (≥N pos e lucro
-    líquido ≥ alvo). DD-guard fecha o lado perdedor; Max DD de conta protege.
-    A zona de reversão é a âncora que impede o grid de explodir em tendência."""
+    """Réplica 1:1 do Zaion Sniper / QuantMiner NV7 (grid Fibonacci hedgeado).
+
+    Espelha `templates/qm_nv7_template.mq5`, que por sua vez replica os inputs
+    REAIS lidos do EA `nv7_xauusd_h1_grid_fibo` (magic 123456) em 2026-07-16.
+    Tudo em PONTOS FIXOS e LOTES FIXOS — nada em ATR, nada normalizado: é assim
+    que o EA opera de verdade, e a versão anterior desta função simulava outro
+    robô (grid em ATR, lote único, cortando os dois lados).
+
+    Ordem do OnTick (idêntica ao .mq5):
+      1. meta por ciclo mensal (20% da ref) / diária (2%) -> fecha tudo e trava
+         novas entradas até o próximo ciclo;
+      2. proteção de capital (DD global) -> DESLIGADA no NV7 (prot_capital=False);
+      3. compensação: vendas com DD >= 3% da ref E compras no lucro -> colhe as
+         compras (fecha só o lado comprado);
+      4. DD-guard SÓ das vendas: DD >= 5% da ref -> fecha as vendas. O lado
+         comprado NUNCA é cortado no prejuízo — é o cerne da estratégia (e a
+         razão de o NV7 "não estopar");
+      5. cluster-netting: >= 10 posições e sobra líquida >= $11 -> fecha tudo;
+      6. TP por lado: média das entradas +/- 2775 pontos FIXOS;
+      7. grid: novo nível a cada 1100 pontos FIXOS contra a pior entrada do lado;
+      8. abre o hedge (compra 0.02 + venda 0.01) ao entrar na zona Fibo 38.2-50%.
+
+    A base de capital é o `ref_balance` (3000) — o mesmo saldo de referência que
+    o EA usa nos cálculos de %. Devolvido em BacktestResult.start_capital para
+    o DD% do pipeline sair na régua real, e não sobre os $10k genéricos.
+
+    Aproximações inevitáveis num backtest de barras (documentadas de propósito):
+      - a zona Fibo do EA é medida em M30/150 barras; aqui é aproximada no TF do
+        df via `fib_tf_ratio` (0.5 = 150 barras M30 lidas num df H1);
+      - execução no close da barra, sem tick nem toque intrabar;
+      - hedges `RBT_` não são simulados (efeito de mercado ~zero, só spread).
+    """
     close = df["close"].values
     high = df["high"].values
     low = df["low"].values
-    times = df["time"].values
-    atr = _atr(df, int(params.get("atr_period", 14))).values
 
-    swing = int(params.get("swing_bars", 75))         # 150 M30 ≈ 75 H1
+    ref_bal = float(params.get("ref_balance", 3000.0))
+    lot_buy = float(params.get("lot_buy", 0.02))
+    lot_sell = float(params.get("lot_sell", 0.01))
+    grid_step = float(params.get("grid_step_points", 1100)) * point
+    tp_dist = float(params.get("tp_points", 2775)) * point
+    max_lvl = int(params.get("max_positions", 8))
+
+    dd_guard = float(params.get("dd_guard_pct", 5.0))
+    dd_sells_on = bool(params.get("dd_sells_on", True))
+    prot_capital = bool(params.get("prot_capital", False))
+    max_dd_pct = float(params.get("max_dd_pct", 5.0))
+    comp_on = bool(params.get("comp_on", True))
+    comp_dd = float(params.get("comp_dd_pct", 3.0))
+    cluster_min = int(params.get("cluster_min", 10))
+    cluster_sobra = float(params.get("cluster_sobra", 11.0))
+    meta_d_on = bool(params.get("meta_daily_on", True))
+    meta_d = float(params.get("meta_daily_pct", 2.0))
+    meta_m_on = bool(params.get("meta_monthly_on", True))
+    meta_m = float(params.get("meta_monthly_pct", 20.0))
+
+    # O EA lê InpSwingBars barras no InpFibTimeframe (150 barras M30). Aqui o df
+    # está no TF do backtest, então converte: 0.5 => 150 M30 == 75 barras H1.
+    swing = max(2, int(float(params.get("swing_bars", 150)) *
+                       float(params.get("fib_tf_ratio", 0.5))))
     fib_lo = float(params.get("fib_low_pct", 38.2)) / 100.0
     fib_hi = float(params.get("fib_high_pct", 50.0)) / 100.0
-    step = float(params.get("grid_step", 1.2))         # ATRs
-    tp_atr = float(params.get("tp_atr", 2.5))          # TP por posição, ATRs
-    max_lvl = int(params.get("max_positions", 8))
-    dd_guard = float(params.get("dd_guard_pct", 5.0))  # fecha lado perdedor
-    max_dd_pct = float(params.get("max_dd_pct", 30.0))
-    cluster_min = int(params.get("cluster_min", 10))
-    cluster_net_atr = float(params.get("cluster_net_atr", 0.3))  # lucro líq mín (ATRs)
+
+    val_buy = contract_size * lot_buy
+    val_sell = contract_size * lot_sell
+    cost_buy = spread_points * point * contract_size * lot_buy + commission_per_trade
+    cost_sell = spread_points * point * contract_size * lot_sell + commission_per_trade
 
     roll_hi = pd.Series(high).rolling(swing).max().values
     roll_lo = pd.Series(low).rolling(swing).min().values
 
-    value = contract_size * lot
-    cost = spread_points * point * contract_size * lot + commission_per_trade
+    dt_idx = pd.DatetimeIndex(df["time"])
+    day_key = np.asarray(dt_idx.strftime("%Y%m%d"))
+    mon_key = np.asarray(dt_idx.strftime("%Y%m"))
+    date_strs = np.asarray(dt_idx.strftime("%Y-%m-%d"))
 
     trades: list[Trade] = []
     equity_bar: list[float] = []
     equity_dates: list[str] = []
-    realized = START_CAPITAL
-    peak = START_CAPITAL
-    cooldown = 0
+    realized = ref_bal
     longs: list[float] = []
     shorts: list[float] = []
+    cooldown = 0
 
-    def bfloat(basket, d, px):
-        return sum(d * (px - e) * value for e in basket)
+    # ciclos: chave já concluída + realizado no início do ciclo corrente
+    day_done = mon_done = ""
+    cur_day = str(day_key[swing]) if len(day_key) > swing else ""
+    cur_mon = str(mon_key[swing]) if len(mon_key) > swing else ""
+    day_start_realized = mon_start_realized = realized
 
-    def close_basket(basket, d, px, i):
-        nonlocal realized
-        p = round(float(bfloat(basket, d, px)) - cost * len(basket), 2)
+    def lfloat(px: float) -> float:
+        return sum((px - e) * val_buy for e in longs)
+
+    def sfloat(px: float) -> float:
+        return sum((e - px) * val_sell for e in shorts)
+
+    def close_longs(px: float, i: int) -> None:
+        nonlocal realized, longs
+        if not longs:
+            return
+        p = round(float(lfloat(px)) - cost_buy * len(longs), 2)
         realized += p
-        trades.append(Trade(profit=p, date=str(pd.Timestamp(times[i]).date()), side=d))
+        trades.append(Trade(profit=p, date=str(date_strs[i]), side=1))
+        longs = []
+
+    def close_shorts(px: float, i: int) -> None:
+        nonlocal realized, shorts
+        if not shorts:
+            return
+        p = round(float(sfloat(px)) - cost_sell * len(shorts), 2)
+        realized += p
+        trades.append(Trade(profit=p, date=str(date_strs[i]), side=-1))
+        shorts = []
+
+    def mark(i: int, px: float) -> None:
+        eq = realized + (lfloat(px) if longs else 0.0) + (sfloat(px) if shorts else 0.0)
+        equity_bar.append(float(round(eq, 2)))
+        equity_dates.append(str(date_strs[i]))
 
     for i in range(swing, len(df)):
         px = close[i]
-        a = atr[i] if not np.isnan(atr[i]) else 0.0
         rng = roll_hi[i] - roll_lo[i]
-        if a <= 0 or rng <= 0:
-            equity_bar.append(float(round(realized, 2)))
-            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+
+        # virada de ciclo: rebaseia o realizado do dia/mês
+        if str(day_key[i]) != cur_day:
+            cur_day = str(day_key[i])
+            day_start_realized = realized
+        if str(mon_key[i]) != cur_mon:
+            cur_mon = str(mon_key[i])
+            mon_start_realized = realized
+
+        lf = lfloat(px) if longs else 0.0
+        sf = sfloat(px) if shorts else 0.0
+
+        # 1. meta por ciclo (mensal e diária) — fecha tudo e trava o ciclo
+        if meta_m_on and mon_done != cur_mon and \
+           (realized - mon_start_realized) + lf + sf >= meta_m / 100.0 * ref_bal:
+            close_longs(px, i)
+            close_shorts(px, i)
+            mon_done = cur_mon
+            mark(i, px)
+            continue
+        if meta_d_on and day_done != cur_day and \
+           (realized - day_start_realized) + lf + sf >= meta_d / 100.0 * ref_bal:
+            close_longs(px, i)
+            close_shorts(px, i)
+            day_done = cur_day
+            mark(i, px)
             continue
 
-        # zona de Fibonacci (banda entre 50% e 38.2% da retração desde o topo)
-        z_hi = roll_hi[i] - fib_lo * rng   # nível 38.2%
-        z_lo = roll_hi[i] - fib_hi * rng   # nível 50%
-        in_zone = z_lo <= px <= z_hi
-
-        lf = bfloat(longs, 1, px) if longs else 0.0
-        sf = bfloat(shorts, -1, px) if shorts else 0.0
-        eq = realized + lf + sf
-        peak = max(peak, eq)
-
-        # Max DD de conta → fecha tudo + cooldown
-        if peak > 0 and (peak - eq) / peak * 100.0 >= max_dd_pct:
-            if longs: close_basket(longs, 1, px, i); longs = []
-            if shorts: close_basket(shorts, -1, px, i); shorts = []
+        # 2. proteção de capital (DD global) — DESLIGADA no NV7
+        if prot_capital and ref_bal > 0 and \
+           (-(lf + sf)) / ref_bal * 100.0 >= max_dd_pct:
+            close_longs(px, i)
+            close_shorts(px, i)
             cooldown = 30
-            equity_bar.append(float(round(realized, 2)))
-            equity_dates.append(str(pd.Timestamp(times[i]).date()))
+            mark(i, px)
             continue
 
-        # DD-guard: fecha o lado cujo prejuízo passa do limite (% sobre capital)
-        if longs and lf < -dd_guard / 100.0 * START_CAPITAL:
-            close_basket(longs, 1, px, i); longs = []
-        if shorts and sf < -dd_guard / 100.0 * START_CAPITAL:
-            close_basket(shorts, -1, px, i); shorts = []
+        # 3. compensação: vendas em DD >= comp_dd% da ref E compras no lucro
+        #    -> colhe as compras. Não exige net total >= 0 (evento real de 6.41%
+        #    fechou as compras com lf=+91.56 e net total em -67.32).
+        if comp_on and shorts and longs and \
+           sf <= -comp_dd / 100.0 * ref_bal and lf > 0:
+            close_longs(px, i)
 
-        # cluster-netting: muitas posições + lucro líquido → fecha o cesto
-        tot = len(longs) + len(shorts)
-        net = (bfloat(longs, 1, px) if longs else 0) + (bfloat(shorts, -1, px) if shorts else 0)
-        if tot >= cluster_min and net >= cluster_net_atr * a * value:
-            if longs: close_basket(longs, 1, px, i); longs = []
-            if shorts: close_basket(shorts, -1, px, i); shorts = []
+        # 4. DD-guard SÓ das vendas — independente da compensação (no evento real
+        #    os dois dispararam no mesmo tick). O lado comprado nunca é cortado.
+        if dd_sells_on and shorts and sf < -dd_guard / 100.0 * ref_bal:
+            close_shorts(px, i)
 
-        # TP por lado (netting do lado no alvo)
-        if longs and bfloat(longs, 1, px) >= tp_atr * a * value:
-            close_basket(longs, 1, px, i); longs = []
-        if shorts and bfloat(shorts, -1, px) >= tp_atr * a * value:
-            close_basket(shorts, -1, px, i); shorts = []
+        lf = lfloat(px) if longs else 0.0
+        sf = sfloat(px) if shorts else 0.0
 
-        # adiciona níveis de grid contra a última entrada
-        if longs and len(longs) < max_lvl and px <= longs[-1] - step * a:
+        # 5. cluster-netting: >= N posições e sobra líquida >= $X
+        if len(longs) + len(shorts) >= cluster_min and (lf + sf) >= cluster_sobra:
+            close_longs(px, i)
+            close_shorts(px, i)
+
+        # 6. TP por lado: média das entradas +/- pontos FIXOS
+        if longs and px >= sum(longs) / len(longs) + tp_dist:
+            close_longs(px, i)
+        if shorts and px <= sum(shorts) / len(shorts) - tp_dist:
+            close_shorts(px, i)
+
+        # 7. grid: novo nível a pontos FIXOS contra a pior entrada do lado
+        if longs and len(longs) < max_lvl and px <= min(longs) - grid_step:
             longs.append(px)
-        if shorts and len(shorts) < max_lvl and px >= shorts[-1] + step * a:
+        if shorts and len(shorts) < max_lvl and px >= max(shorts) + grid_step:
             shorts.append(px)
 
-        # abre hedge (compra E venda) ao entrar na zona, fora de cooldown
+        # 8. abre o hedge na zona Fibo (bloqueado se o ciclo já bateu a meta)
+        cycle_locked = (day_done == cur_day) or (mon_done == cur_mon)
         if cooldown > 0:
             cooldown -= 1
-        elif in_zone:
-            if not longs:
+        elif rng > 0 and not cycle_locked and not longs and not shorts:
+            z_hi = roll_hi[i] - fib_lo * rng
+            z_lo = roll_hi[i] - fib_hi * rng
+            if z_lo <= px <= z_hi:
                 longs = [px]
-            if not shorts:
                 shorts = [px]
 
-        equity_bar.append(float(round(eq, 2)))
-        equity_dates.append(str(pd.Timestamp(times[i]).date()))
+        mark(i, px)
 
     return BacktestResult(trades=trades, equity_bar=equity_bar,
-                          equity_dates=equity_dates, lot=lot)
-
+                          equity_dates=equity_dates, lot=lot_buy,
+                          start_capital=ref_bal)
 
 def count_params(family: str, params: dict | None = None) -> int:
     """Nº de parâmetros otimizáveis (pra mín. trades DQ Labs).
@@ -643,6 +736,8 @@ def count_params(family: str, params: dict | None = None) -> int:
         return max(2, 2 * len(params.get("blocks", [])))
     if family == "grid_hedge" and params:
         return max(3, 2 * len(params.get("blocks", [])) + 3)
+    # nv7: grid_step, tp, fib_lo, fib_hi, swing, dd_guard, comp_dd, cluster_min,
+    # cluster_sobra, max_positions -> 10 graus de liberdade (exige +trades no gate)
     return {"trend": 3, "mean_reversion": 3, "breakout": 2, "grid": 4,
             "macd_cross": 3, "bollinger_fade": 2, "bollinger_break": 2,
-            "stochastic": 3, "multi": 2, "grid_hedge": 4}.get(family, 3)
+            "stochastic": 3, "multi": 2, "grid_hedge": 4, "nv7": 10}.get(family, 3)
