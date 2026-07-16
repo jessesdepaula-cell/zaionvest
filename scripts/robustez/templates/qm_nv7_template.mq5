@@ -32,6 +32,8 @@ input double InpMaxDdPct    = __MAX_DD_PCT__;   // Max DD da conta (% de stop) (
 input int    InpClusterMin  = __CLUSTER_MIN__;  // Minimo de posicoes para acionar cluster (ex: 10)
 input double InpClusterSobra = __CLUSTER_SOBRA__; // Sobra liquida minima (USD) para cluster (ex: 11.0)
 input int    InpMaxLvl      = __MAX_POSITIONS__;// Maximo de posicoes por lado (ex: 8)
+input bool   InpProtCapital = __PROT_CAPITAL__; // Ativar protecao de capital (DD global). NV7 = false
+input bool   InpDdSellsOn   = __DD_SELLS_ON__;  // Fechamento por DD excessivo SO nas vendas. NV7 = true
 
 CTrade   trade;
 int      hAtr=INVALID_HANDLE;
@@ -474,27 +476,28 @@ void OnTick()
    // os guards prematuramente -> era o que fazia o Zaion "estopar").
    double refBal = (InpRefBalance > 0) ? InpRefBalance : AccountInfoDouble(ACCOUNT_BALANCE);
 
-   // 4. Checagem de Drawdown Maximo DESTE EA (flutuante proprio vs saldo de ref)
-   double myFloat = GetFloatingProfit(); // ja filtrado por magic+simbolo
-   if(refBal > 0 && (-myFloat) / refBal * 100.0 >= InpMaxDdPct)
+   // 4. Protecao de capital (DD global DESTE EA). NV7 mantem DESLIGADO por
+   //    padrao ("Ativar protecao de capital = false"); so roda se o usuario ligar.
+   if(InpProtCapital)
    {
-      CloseBasket(0);
-      g_cooldown = 30; // 30 ticks de pausa de seguranca
-      UpdateDashboard();
-      return;
+      double myFloat = GetFloatingProfit(); // ja filtrado por magic+simbolo
+      if(refBal > 0 && (-myFloat) / refBal * 100.0 >= InpMaxDdPct)
+      {
+         CloseBasket(0);
+         g_cooldown = 30; // 30 ticks de pausa de seguranca
+         UpdateDashboard();
+         return;
+      }
    }
 
-   // 5. DD-Guard por lado (% sobre saldo de referencia, nao sobre saldo vivo)
+   // 5. DD-Guard SO NAS VENDAS (igual NV7: "DD so das vendas"). O lado
+   //    COMPRADO nunca e estopado - segura e recupera pelo grid+TP. Estopar os
+   //    dois lados era o que fazia o Zaion estopar os longs que o NV7 mantem.
    double lf = BasketProfit(1, px);
    double sf = BasketProfit(-1, px);
    double cap = refBal;
 
-   if(g_totalLongs > 0 && lf < -InpDdGuard / 100.0 * cap)
-   {
-      CloseBasket(1);
-      g_totalLongs = 0;
-   }
-   if(g_totalShorts > 0 && sf < -InpDdGuard / 100.0 * cap)
+   if(InpDdSellsOn && g_totalShorts > 0 && sf < -InpDdGuard / 100.0 * cap)
    {
       CloseBasket(-1);
       g_totalShorts = 0;

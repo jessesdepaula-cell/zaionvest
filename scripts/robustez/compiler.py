@@ -286,6 +286,8 @@ def render_nv7(ea_id: str, params: dict, direction: str = "both", lot: float = 0
         "__CLUSTER_MIN__": int(params.get("cluster_min", 10)),
         "__CLUSTER_SOBRA__": _d(params.get("cluster_sobra", 11.0)),
         "__MAX_POSITIONS__": int(params.get("max_positions", 8)),
+        "__PROT_CAPITAL__": "true" if params.get("prot_capital", False) else "false",
+        "__DD_SELLS_ON__": "true" if params.get("dd_sells_on", True) else "false",
     }
     for token, val in subs.items():
         tpl = tpl.replace(token, str(val))

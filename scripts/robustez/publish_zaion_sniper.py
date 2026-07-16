@@ -72,11 +72,13 @@ def main():
         "fib_low_pct": 38.2,
         "fib_high_pct": 50.0,
         "ref_balance": 3000.0,
-        "dd_guard_pct": 5.0,
-        "max_dd_pct": 30.0,
-        "cluster_min": 8,
+        "dd_guard_pct": 5.0,       # "DD so das vendas (% sobre ref.)" do NV7
+        "dd_sells_on": True,       # NV7: fecha por DD excessivo SO nas vendas
+        "prot_capital": False,     # NV7: "Ativar protecao de capital" = false
+        "max_dd_pct": 5.0,         # "Limite de protecao de capital (%)" (inerte enquanto prot_capital=False)
+        "cluster_min": 10,         # NV7: "Minimo de posicoes para acionar cluster" = 10
         "cluster_sobra": 11.0,
-        "max_positions": 8
+        "max_positions": 8         # NV7: "Maximo de vendas abertas simultaneas" = 8
     }
     
     ea_id = "zaion-sniper"
