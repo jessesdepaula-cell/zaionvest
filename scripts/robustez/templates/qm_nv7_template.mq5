@@ -34,6 +34,12 @@ input double InpClusterSobra = __CLUSTER_SOBRA__; // Sobra liquida minima (USD) 
 input int    InpMaxLvl      = __MAX_POSITIONS__;// Maximo de posicoes por lado (ex: 8)
 input bool   InpProtCapital = __PROT_CAPITAL__; // Ativar protecao de capital (DD global). NV7 = false
 input bool   InpDdSellsOn   = __DD_SELLS_ON__;  // Fechamento por DD excessivo SO nas vendas. NV7 = true
+input bool   InpCompOn      = __COMP_ON__;       // Ativar compensacao (lucro compras x perda vendas). NV7 = true
+input double InpCompDdPct   = __COMP_DD_PCT__;   // DD das vendas (% ref) para acionar compensacao. NV7 = 3.0
+input bool   InpMetaDailyOn = __META_DAILY_ON__; // Ativar meta por ciclo diario. NV7 = true
+input double InpMetaDaily   = __META_DAILY_PCT__;// Meta diaria de lucro (% sobre ref). NV7 = 2.0
+input bool   InpMetaMonthlyOn = __META_MONTHLY_ON__; // Ativar meta por ciclo mensal. NV7 = true
+input double InpMetaMonthly = __META_MONTHLY_PCT__;  // Meta mensal de lucro (% sobre ref). NV7 = 20.0
 
 CTrade   trade;
 int      hAtr=INVALID_HANDLE;
@@ -42,6 +48,9 @@ datetime g_lastGoodLicense=0;
 bool     g_licenseOk=true;
 datetime g_lastBarTime=0;
 int      g_cooldown=0;
+long     g_dayDone=-1;   // chave do dia (yyyymmdd) com meta diaria ja batida
+long     g_monDone=-1;   // chave do mes (yyyymm) com meta mensal ja batida
+int      g_cycleNum=0;   // contador de ciclos diarios concluidos (log igual NV7)
 
 // Arrays de posicoes abertas
 double   g_longs[];
@@ -179,6 +188,12 @@ double GetFloatingProfit()
    return p;
 }
 
+// Helpers de ciclo (meta diaria/mensal)
+long DayKey(datetime t){ MqlDateTime d; TimeToStruct(t,d); return (long)d.year*10000+d.mon*100+d.day; }
+long MonKey(datetime t){ MqlDateTime d; TimeToStruct(t,d); return (long)d.year*100+d.mon; }
+datetime DayStart(datetime t){ return t-(t%86400); }
+datetime MonStart(datetime t){ MqlDateTime d; TimeToStruct(t,d); d.day=1; d.hour=0; d.min=0; d.sec=0; return StructToTime(d); }
+
 //+------------------------------------------------------------------+
 //| Licenca e WebRequest                                             |
 //+------------------------------------------------------------------+
@@ -279,6 +294,37 @@ void CloseBasket(int side)
          }
       }
    }
+}
+
+// Fecha o cesto em ordem FIFO (posicao mais ANTIGA primeiro), igual NV7:
+// "FECHANDO N VENDAS (FIFO)". Retorna quantas fechou.
+int CloseBasketFifo(int side)
+{
+   ulong tk[]; long tm[]; int n=0;
+   for(int i=PositionsTotal()-1; i>=0; i--)
+   {
+      string sym = PositionGetSymbol(i);
+      if(sym != _Symbol) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != InpMagic) continue;
+      long type = PositionGetInteger(POSITION_TYPE);
+      if(!((side == 1 && type == POSITION_TYPE_BUY) ||
+           (side == -1 && type == POSITION_TYPE_SELL) || side == 0)) continue;
+      ArrayResize(tk, n+1); ArrayResize(tm, n+1);
+      tk[n] = PositionGetInteger(POSITION_TICKET);
+      tm[n] = (long)PositionGetInteger(POSITION_TIME);
+      n++;
+   }
+   // ordena por horario de abertura ASC (FIFO); desempate pelo ticket
+   for(int a=0; a<n-1; a++)
+      for(int b=a+1; b<n; b++)
+         if(tm[b] < tm[a] || (tm[b] == tm[a] && tk[b] < tk[a]))
+         {
+            long tt=tm[a]; tm[a]=tm[b]; tm[b]=tt;
+            ulong tu=tk[a]; tk[a]=tk[b]; tk[b]=tu;
+         }
+   int closed=0;
+   for(int i=0; i<n; i++) if(trade.PositionClose(tk[i])) closed++;
+   return closed;
 }
 
 double BasketProfit(int side, double px)
@@ -476,6 +522,26 @@ void OnTick()
    // os guards prematuramente -> era o que fazia o Zaion "estopar").
    double refBal = (InpRefBalance > 0) ? InpRefBalance : AccountInfoDouble(ACCOUNT_BALANCE);
 
+   // 3.5 META por ciclo (diaria/mensal, % sobre saldo de ref). Ao bater a meta,
+   //     fecha tudo no lucro e trava novas entradas ate o proximo ciclo (NV7).
+   double curFloat = GetFloatingProfit();
+   long dayK = DayKey(TimeCurrent());
+   long monK = MonKey(TimeCurrent());
+   if(InpMetaMonthlyOn && g_monDone != monK
+      && GetProfit(MonStart(TimeCurrent())) + curFloat >= InpMetaMonthly / 100.0 * refBal)
+   {
+      CloseBasket(0); g_totalLongs = 0; g_totalShorts = 0; g_monDone = monK;
+      UpdateDashboard(); return;
+   }
+   if(InpMetaDailyOn && g_dayDone != dayK
+      && GetProfit(DayStart(TimeCurrent())) + curFloat >= InpMetaDaily / 100.0 * refBal)
+   {
+      CloseBasket(0); g_totalLongs = 0; g_totalShorts = 0; g_dayDone = dayK;
+      g_cycleNum++;
+      Alert(StringFormat("Meta diaria atingida! Ciclo #%d concluido.", g_cycleNum));
+      UpdateDashboard(); return;
+   }
+
    // 4. Protecao de capital (DD global DESTE EA). NV7 mantem DESLIGADO por
    //    padrao ("Ativar protecao de capital = false"); so roda se o usuario ligar.
    if(InpProtCapital)
@@ -490,16 +556,29 @@ void OnTick()
       }
    }
 
-   // 5. DD-Guard SO NAS VENDAS (igual NV7: "DD so das vendas"). O lado
-   //    COMPRADO nunca e estopado - segura e recupera pelo grid+TP. Estopar os
-   //    dois lados era o que fazia o Zaion estopar os longs que o NV7 mantem.
    double lf = BasketProfit(1, px);
    double sf = BasketProfit(-1, px);
    double cap = refBal;
 
-   if(InpDdSellsOn && g_totalShorts > 0 && sf < -InpDdGuard / 100.0 * cap)
+   // 5. Compensacao (lucro compras x perda vendas): quando as VENDAS atingem DD
+   //    de InpCompDdPct% da ref E o lucro das compras cobre (net >= 0), fecha
+   //    tudo no zero-a-zero. Roda ANTES do corte duro de 5%, evitando realizar
+   //    o prejuizo das vendas quando os longs ja compensam.
+   if(InpCompOn && g_totalShorts > 0 && g_totalLongs > 0
+      && sf <= -InpCompDdPct / 100.0 * cap && (lf + sf) >= 0)
    {
-      CloseBasket(-1);
+      CloseBasket(0);
+      g_totalLongs = 0;
+      g_totalShorts = 0;
+   }
+   // 5b. DD-Guard SO NAS VENDAS (corte duro, igual NV7: "DD so das vendas"). O
+   //     lado COMPRADO nunca e estopado - segura e recupera pelo grid+TP.
+   //     Fecha em FIFO e loga no mesmo formato do NV7.
+   else if(InpDdSellsOn && g_totalShorts > 0 && sf < -InpDdGuard / 100.0 * cap)
+   {
+      double ddPct = (cap > 0) ? (-sf / cap * 100.0) : 0.0;
+      int nClosed = CloseBasketFifo(-1);
+      Alert(StringFormat("=== DD DE VENDAS: %.2f%% - FECHANDO %d VENDAS (FIFO) ===", ddPct, nClosed));
       g_totalShorts = 0;
    }
 
@@ -627,8 +706,10 @@ void OnTick()
       }
    }
 
-   // 11. Abertura do Hedge Principal ao entrar na zona
-   if(inZone && g_totalLongs == 0 && g_totalShorts == 0)
+   // 11. Abertura do Hedge Principal ao entrar na zona (bloqueada se a meta do
+   //     ciclo diario/mensal ja foi batida - so reabre no proximo ciclo).
+   bool cycleLocked = (g_dayDone == dayK) || (g_monDone == monK);
+   if(inZone && g_totalLongs == 0 && g_totalShorts == 0 && !cycleLocked)
    {
       if(InpDirection == 0 || InpDirection == 1)
       {

@@ -78,7 +78,13 @@ def main():
         "max_dd_pct": 5.0,         # "Limite de protecao de capital (%)" (inerte enquanto prot_capital=False)
         "cluster_min": 10,         # NV7: "Minimo de posicoes para acionar cluster" = 10
         "cluster_sobra": 11.0,
-        "max_positions": 8         # NV7: "Maximo de vendas abertas simultaneas" = 8
+        "max_positions": 8,        # NV7: "Maximo de vendas abertas simultaneas" = 8
+        "comp_on": True,           # NV7: "Ativar compensacao (lucro compras x perda vendas)" = true
+        "comp_dd_pct": 3.0,        # NV7: "Drawdown (% sobre ref.) para acionar compensacao" = 3.0
+        "meta_daily_on": True,     # NV7: "Ativar meta por ciclo diario" = true
+        "meta_daily_pct": 2.0,     # NV7: "Meta diaria de lucro (% sobre referencia)" = 2.0
+        "meta_monthly_on": True,   # NV7: "Ativar meta por ciclo mensal" = true
+        "meta_monthly_pct": 20.0   # NV7: "Meta mensal de lucro (% sobre referencia)" = 20.0
     }
     
     ea_id = "zaion-sniper"

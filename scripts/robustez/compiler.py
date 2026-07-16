@@ -288,6 +288,12 @@ def render_nv7(ea_id: str, params: dict, direction: str = "both", lot: float = 0
         "__MAX_POSITIONS__": int(params.get("max_positions", 8)),
         "__PROT_CAPITAL__": "true" if params.get("prot_capital", False) else "false",
         "__DD_SELLS_ON__": "true" if params.get("dd_sells_on", True) else "false",
+        "__COMP_ON__": "true" if params.get("comp_on", True) else "false",
+        "__COMP_DD_PCT__": _d(params.get("comp_dd_pct", 3.0)),
+        "__META_DAILY_ON__": "true" if params.get("meta_daily_on", True) else "false",
+        "__META_DAILY_PCT__": _d(params.get("meta_daily_pct", 2.0)),
+        "__META_MONTHLY_ON__": "true" if params.get("meta_monthly_on", True) else "false",
+        "__META_MONTHLY_PCT__": _d(params.get("meta_monthly_pct", 20.0)),
     }
     for token, val in subs.items():
         tpl = tpl.replace(token, str(val))
