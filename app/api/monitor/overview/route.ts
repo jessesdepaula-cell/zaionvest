@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
   }
 
   const accountIdParam = url.searchParams.get("accountId");
-  const isConsolidated = !publicAccountId && (accountIdParam === "all" || accountIdParam === "consolidated");
+  const isConsolidated = !publicAccountId && (accountIdParam === "all" || accountIdParam === "consolidated") && accounts.length > 1;
 
   let targetAccount = accounts.find((a) => a.id === accountIdParam);
   if (!isConsolidated && !targetAccount) {

@@ -172,7 +172,7 @@ export default function DashboardMonitorPage() {
     (acc.broker ?? "").toLowerCase().includes("demo") ||
     (acc.login ?? "").toLowerCase().includes("demo");
 
-  const isConsolidated = selectedAccountId === "all";
+  const isConsolidated = selectedAccountId === "all" && data?.accounts && data.accounts.length > 1;
   const publicLink = typeof window !== "undefined" ? `${window.location.origin}/monitor/${acc.id}` : "";
 
   return (
