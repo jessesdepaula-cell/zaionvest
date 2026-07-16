@@ -561,20 +561,23 @@ void OnTick()
    double cap = refBal;
 
    // 5. Compensacao (lucro compras x perda vendas): quando as VENDAS atingem DD
-   //    de InpCompDdPct% da ref E o lucro das compras cobre (net >= 0), fecha
-   //    tudo no zero-a-zero. Roda ANTES do corte duro de 5%, evitando realizar
-   //    o prejuizo das vendas quando os longs ja compensam.
+   //    de InpCompDdPct% da ref E o cesto COMPRADO esta no lucro, colhe as
+   //    compras para abater a perda das vendas.
+   //    NAO exige net total >= 0: no evento real de 6.41% (2026.07.16 18:26) o
+   //    NV7 fechou as compras com lf=+91.56 mesmo com o net total em -67.32.
+   //    O lado comprado so fecha quando esta LUCRATIVO (aqui ou no TP); cesto
+   //    comprado perdedor nunca e cortado - e por isso que o NV7 "nao estopa".
    if(InpCompOn && g_totalShorts > 0 && g_totalLongs > 0
-      && sf <= -InpCompDdPct / 100.0 * cap && (lf + sf) >= 0)
+      && sf <= -InpCompDdPct / 100.0 * cap && lf > 0)
    {
-      CloseBasket(0);
+      CloseBasketFifo(1);
       g_totalLongs = 0;
-      g_totalShorts = 0;
    }
-   // 5b. DD-Guard SO NAS VENDAS (corte duro, igual NV7: "DD so das vendas"). O
-   //     lado COMPRADO nunca e estopado - segura e recupera pelo grid+TP.
+   // 5b. DD-Guard SO NAS VENDAS (corte duro, igual NV7: "DD so das vendas").
+   //     INDEPENDENTE da compensacao - os dois disparam no mesmo tick, como no
+   //     evento real de 6.41% (fechou compras E vendas juntas).
    //     Fecha em FIFO e loga no mesmo formato do NV7.
-   else if(InpDdSellsOn && g_totalShorts > 0 && sf < -InpDdGuard / 100.0 * cap)
+   if(InpDdSellsOn && g_totalShorts > 0 && sf < -InpDdGuard / 100.0 * cap)
    {
       double ddPct = (cap > 0) ? (-sf / cap * 100.0) : 0.0;
       int nClosed = CloseBasketFifo(-1);
