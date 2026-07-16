@@ -318,8 +318,18 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // Rebaixamento máximo sobre a CURVA COMPLETA (histórico de trades backfillado
+  // + ao vivo). Os snapshots só começam quando o EA conectou, então o pico→vale
+  // do histórico anterior ficava de fora. Usamos a curva reconstruída (a mesma do
+  // gráfico) e ficamos com o pior rebaixamento entre ela e os snapshots ao vivo.
+  const ddCurve = computeDrawdown(
+    rawCapital.map((c) => ({ ts: new Date(c.ts), balance: c.balance, equity: c.equity }))
+  );
+  const maxDrawdownAbs = Math.max(dd.maxAbs, ddCurve.maxAbs);
+  const maxDrawdownPct = Math.max(dd.maxPct, ddCurve.maxPct);
+
   const capitalSeries = downsample(rawCapital, 500);
-  
+
   const drawdownSeries = downsample(dd.series, 300).map((p) => ({
     ts: p.ts.toISOString(),
     ddPct: -p.ddPct,
@@ -376,6 +386,22 @@ export async function GET(req: NextRequest) {
     averageMonthlyReturnPct = returns.reduce((sum, r) => sum + r, 0) / returns.length;
   } else {
     averageMonthlyReturnPct = totalReturnPct;
+  }
+
+  // Retorno médio semanal (mesma lógica do mensal, agrupando por semana).
+  let averageWeeklyReturnPct = 0;
+  if (weeklySeries.length > 0) {
+    let runningWeek = initial;
+    const weekReturns: number[] = [];
+    for (const w of weeklySeries) {
+      if (runningWeek > 0) weekReturns.push((w.profit / runningWeek) * 100);
+      runningWeek += w.profit;
+    }
+    averageWeeklyReturnPct = weekReturns.length
+      ? weekReturns.reduce((a, b) => a + b, 0) / weekReturns.length
+      : 0;
+  } else {
+    averageWeeklyReturnPct = totalReturnPct;
   }
 
   const todayProfit = aggToday.netProfit;
@@ -443,8 +469,8 @@ export async function GET(req: NextRequest) {
         payoff: aggTotal.payoff,
         currentDrawdownAbs: dd.currentAbs,
         currentDrawdownPct: dd.currentPct,
-        maxDrawdownAbs: dd.maxAbs,
-        maxDrawdownPct: dd.maxPct,
+        maxDrawdownAbs,
+        maxDrawdownPct,
         daysOperating: days,
         activeRobots: robots.filter((r) => r.trades > 0).length,
         marginUsed: margin,
@@ -463,6 +489,7 @@ export async function GET(req: NextRequest) {
           : (targetAccount?.totalWithdrawals ?? null),
         interest: totalSwap,
         compoundedDailyReturnPct,
+        averageWeeklyReturnPct,
         averageMonthlyReturnPct,
       },
       period: {

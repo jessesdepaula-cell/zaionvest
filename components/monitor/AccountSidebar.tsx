@@ -25,6 +25,7 @@ interface AccountSidebarProps {
         date: string;
       };
       compoundedDailyReturnPct?: number;
+      averageWeeklyReturnPct?: number;
       averageMonthlyReturnPct?: number;
     };
   };
@@ -81,6 +82,7 @@ export function AccountSidebar({ data }: AccountSidebarProps) {
   // Calculating Daily and Monthly returns
   const days = kpis.daysOperating || 1;
   const dailyCompounded = kpis.compoundedDailyReturnPct ?? 0;
+  const weeklyCompounded = kpis.averageWeeklyReturnPct ?? 0;
   const monthlyCompounded = kpis.averageMonthlyReturnPct ?? 0;
 
   // Drawdown
@@ -174,6 +176,12 @@ export function AccountSidebar({ data }: AccountSidebarProps) {
           "Diário:",
           <span>{formatPct(dailyCompounded)}</span>,
           "Retorno médio diário composto.",
+          true
+        )}
+        {renderRow(
+          "Semanal:",
+          <span>{formatPct(weeklyCompounded)}</span>,
+          "Retorno médio semanal.",
           true
         )}
         {renderRow(
