@@ -7,7 +7,7 @@
 //|  NAO executa ordens. Somente leitura.                           |
 //+------------------------------------------------------------------+
 #property copyright "ZaionVest"
-#property version   "1.00"
+#property version   "1.10"
 #property strict
 
 input string ApiUrl     = "https://zaionvest.com.br/api/monitor/ingest";
@@ -84,6 +84,31 @@ string BuildPayload()
    return s;
   }
 
+//+------------------------------------------------------------------+
+//| Soma depositos e saques REAIS de todo o historico da conta.      |
+//| Depositos/saques manuais no MT5 sao deals do tipo DEAL_TYPE_      |
+//| BALANCE (positivo = deposito, negativo = saque). Varremos o      |
+//| historico COMPLETO (nao so os HistoryDays), pois o deposito      |
+//| inicial normalmente e antigo.                                    |
+//+------------------------------------------------------------------+
+void ComputeBalanceOps(double &deposits, double &withdrawals)
+  {
+   deposits    = 0.0;
+   withdrawals = 0.0;
+   if(!HistorySelect(0, TimeCurrent()))
+      return;
+   int total = HistoryDealsTotal();
+   for(int i = 0; i < total; i++)
+     {
+      ulong deal = HistoryDealGetTicket(i);
+      if(deal == 0) continue;
+      if(HistoryDealGetInteger(deal, DEAL_TYPE) != DEAL_TYPE_BALANCE) continue;
+      double amount = HistoryDealGetDouble(deal, DEAL_PROFIT);
+      if(amount >= 0) deposits    += amount;
+      else            withdrawals += -amount; // guardamos como valor positivo
+     }
+  }
+
 string AccountJson()
   {
    long   login    = AccountInfoInteger(ACCOUNT_LOGIN);
@@ -98,6 +123,9 @@ string AccountJson()
    double level    = AccountInfoDouble(ACCOUNT_MARGIN_LEVEL);
    double floating = equity - balance;
 
+   double deposits, withdrawals;
+   ComputeBalanceOps(deposits, withdrawals);
+
    string j = "{";
    j += "\"login\":\"" + IntegerToString(login) + "\",";
    j += "\"broker\":\"" + JsonEscape(broker) + "\",";
@@ -109,7 +137,9 @@ string AccountJson()
    j += "\"margin\":" + DoubleToString(margin, 2) + ",";
    j += "\"freeMargin\":" + DoubleToString(freeM, 2) + ",";
    j += "\"marginLevel\":" + DoubleToString(level, 2) + ",";
-   j += "\"floatingPnL\":" + DoubleToString(floating, 2);
+   j += "\"floatingPnL\":" + DoubleToString(floating, 2) + ",";
+   j += "\"deposits\":" + DoubleToString(deposits, 2) + ",";
+   j += "\"withdrawals\":" + DoubleToString(withdrawals, 2);
    j += "}";
    return j;
   }

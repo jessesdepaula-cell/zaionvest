@@ -17,6 +17,7 @@ import { fmtInt, fmtMoney, fmtPct, classForDelta } from "@/lib/monitorFormat";
 import { TradingPeriodsTable } from "@/components/monitor/TradingPeriodsTable";
 import { AdvancedStatistics } from "@/components/monitor/AdvancedStatistics";
 import { AccountSidebar } from "@/components/monitor/AccountSidebar";
+import { MonitorSetupCard } from "@/components/monitor/MonitorSetupCard";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -177,6 +178,9 @@ export default function DashboardMonitorPage() {
 
   return (
     <div className="space-y-6">
+      {/* Card recolhível: tutorial + chave de licença sempre acessíveis */}
+      {data?.userMonitorKey && <MonitorSetupCard monitorKey={data.userMonitorKey} />}
+
       {/* Header do Monitor com Seletor e Link de Compartilhamento */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f5f5f5]/5 pb-5">
         <div>

@@ -16,6 +16,8 @@ interface AccountSidebarProps {
       totalReturnPct: number;
       totalProfit: number;
       maxDrawdownPct: number;
+      deposits?: number | null;
+      withdrawals?: number | null;
       interest?: number;
       daysOperating: number;
       highestEquity?: {
@@ -54,12 +56,27 @@ export function AccountSidebar({ data }: AccountSidebarProps) {
     })}%`;
   };
 
-  // Calculating Gain and Abs. Gain
-  const gain = kpis.totalReturnPct ?? 0;
-  const profit = kpis.totalProfit ?? 0;
-  const deposits = live.balance - profit;
-  const initial = deposits > 0 ? deposits : (account.initialBalance ?? 1);
+  // Depósitos/saques REAIS enviados pelo EA (v1.10+). Quando disponíveis,
+  // usamos a identidade contábil real: Saldo = Depósitos − Retiradas + Lucro.
+  // Caso contrário, caímos no modo estimado antigo (saldo − lucro dos trades).
+  const hasRealFlows = kpis.deposits != null;
+  const realDeposits = kpis.deposits ?? 0;
+  const realWithdrawals = kpis.withdrawals ?? 0;
+  const netDeposits = realDeposits - realWithdrawals;
+
+  // Lucro acumulado real (todo o histórico) = saldo atual − aporte líquido.
+  const profit = hasRealFlows ? (live.balance - netDeposits) : (kpis.totalProfit ?? 0);
+  const deposits = hasRealFlows ? realDeposits : (live.balance - profit);
+  const withdrawals = hasRealFlows ? realWithdrawals : 0;
+
+  const initial = hasRealFlows
+    ? (netDeposits > 0 ? netDeposits : 1)
+    : (deposits > 0 ? deposits : (account.initialBalance ?? 1));
   const absGain = initial > 0 ? (profit / initial) * 100 : 0;
+
+  // Gain (topo): com dados reais, alinha ao retorno absoluto sobre o aporte;
+  // senão, mantém o retorno já calculado no backend.
+  const gain = hasRealFlows ? absGain : (kpis.totalReturnPct ?? 0);
 
   // Calculating Daily and Monthly returns
   const days = kpis.daysOperating || 1;
@@ -87,9 +104,6 @@ export function AccountSidebar({ data }: AccountSidebarProps) {
 
   // Interest (swap)
   const interest = kpis.interest ?? 0;
-
-  // Deposits & Withdrawals
-  const withdrawals = 0;
 
   // Updated time text
   const getUpdatedText = (ts: string | null) => {

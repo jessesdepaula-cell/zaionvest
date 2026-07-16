@@ -272,6 +272,8 @@ model Account {
   leverage        Int?
   initialBalance  Float?
   initialCapturedAt DateTime?
+  totalDeposits   Float?         // soma real de depositos (DEAL_TYPE_BALANCE > 0) enviada pelo EA
+  totalWithdrawals Float?        // soma real de saques (DEAL_TYPE_BALANCE < 0), valor positivo
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 

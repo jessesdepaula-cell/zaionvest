@@ -453,6 +453,14 @@ export async function GET(req: NextRequest) {
           val: highestEquity,
           date: highestEquityDate.toISOString(),
         },
+        // Depositos/saques REAIS enviados pelo EA (null se ainda usando EA antigo).
+        // Quando presentes, a UI usa esses valores em vez de estimar por saldo - lucro.
+        deposits: isConsolidated
+          ? accounts.reduce((sum, a) => sum + (a.totalDeposits ?? 0), 0)
+          : (targetAccount?.totalDeposits ?? null),
+        withdrawals: isConsolidated
+          ? accounts.reduce((sum, a) => sum + (a.totalWithdrawals ?? 0), 0)
+          : (targetAccount?.totalWithdrawals ?? null),
         interest: totalSwap,
         compoundedDailyReturnPct,
         averageMonthlyReturnPct,

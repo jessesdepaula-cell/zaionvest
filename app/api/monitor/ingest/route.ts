@@ -51,6 +51,8 @@ const payloadSchema = z.object({
     freeMargin: z.number(),
     marginLevel: z.number().nullable().optional(),
     floatingPnL: z.number(),
+    deposits: z.number().optional(),
+    withdrawals: z.number().optional(),
   }),
   positions: z.array(positionSchema).default([]),
   closedTrades: z.array(tradeSchema).default([]),
@@ -115,6 +117,8 @@ export async function POST(req: NextRequest) {
           server: account.server ?? existing.server,
           currency: account.currency ?? existing.currency,
           leverage: account.leverage ?? existing.leverage,
+          totalDeposits: account.deposits ?? existing.totalDeposits,
+          totalWithdrawals: account.withdrawals ?? existing.totalWithdrawals,
         },
       })
     : await prisma.account.create({
@@ -127,6 +131,8 @@ export async function POST(req: NextRequest) {
           leverage: account.leverage ?? null,
           initialBalance: account.balance,
           initialCapturedAt: now,
+          totalDeposits: account.deposits ?? null,
+          totalWithdrawals: account.withdrawals ?? null,
         },
       });
 
