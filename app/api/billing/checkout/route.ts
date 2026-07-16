@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     const checkoutUrl = await createAsaasSubscriptionCheckout({
       customerId: asaasCustomerId,
-      value: 47.90,
+      value: 67.00,
       cycle: "MONTHLY",
       nextDueDate,
       successUrl: `${new URL(req.url).origin}/dashboard?checkout=success`,

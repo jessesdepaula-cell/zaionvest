@@ -180,7 +180,7 @@ export default async function BillingPage({
           </div>
 
           <div className="mt-4 flex items-baseline gap-1.5">
-            <span className="num text-5xl font-extrabold text-offwhite tracking-tight">R$ 47,90</span>
+            <span className="num text-5xl font-extrabold text-offwhite tracking-tight">R$ 67,00</span>
             <span className="text-sm text-zinc-500">/mês</span>
           </div>
 
@@ -197,6 +197,7 @@ export default async function BillingPage({
               "Revalidação mensal com dados novos",
               "Kill-switch remoto automático",
               "Drawdown real e transparente por robô",
+              "Zaion Monitor incluído: telemetria ao vivo das suas contas MT5",
               "Cancelamento simplificado e imediato",
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-2.5 text-xs text-zinc-300">
@@ -204,6 +205,16 @@ export default async function BillingPage({
                 <span>{item}</span>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6 rounded-xl border border-blue-500/15 bg-blue-500/[0.04] px-4 py-3">
+            <p className="text-xs font-semibold text-blue-300">📈 O que é o Zaion Monitor?</p>
+            <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
+              Um painel ao vivo, incluído na assinatura, que acompanha saldo, capital líquido,
+              drawdown real e lucro de todas as suas contas MetaTrader 5 em tempo real — pelo
+              navegador ou celular. Você ainda gera um link público para mostrar seus resultados
+              a investidores, sem precisar dar acesso à sua conta.
+            </p>
           </div>
 
           <form action="/api/billing/checkout" method="POST" className="mt-8">
@@ -233,7 +244,7 @@ export default async function BillingPage({
           <div>
             <h4 className="text-sm font-semibold text-offwhite">Como funciona a cobrança?</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              A assinatura é mensal (R$ 47,90) via Asaas, no Pix ou cartão. O acesso à vitrine é
+              A assinatura é mensal (R$ 67,00) via Asaas, no Pix ou cartão. O acesso à vitrine é
               liberado assim que o pagamento é confirmado e renova automaticamente todo mês.
             </p>
           </div>

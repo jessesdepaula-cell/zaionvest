@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: "Como funciona a cobrança e o cancelamento?",
-    a: "A assinatura é mensal (R$ 47,90) via Asaas, no Pix ou cartão, e renova automaticamente. Você cancela quando quiser em Minha Conta, em um clique, sem multa.",
+    a: "A assinatura é mensal (R$ 67,00) via Asaas, no Pix ou cartão, e renova automaticamente. Você cancela quando quiser em Minha Conta, em um clique, sem multa.",
   },
   {
     q: "Vocês garantem lucro?",
