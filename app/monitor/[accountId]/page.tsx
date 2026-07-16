@@ -1,8 +1,8 @@
 "use client";
 import useSWR from "swr";
 import { useState } from "react";
-import { useParams } from "next/navigation";
-import { Activity, Cpu, ShieldAlert, Copy, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Activity, Cpu, ShieldAlert, Copy, Check, AlertCircle, RefreshCw, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { MetricCard } from "@/components/monitor/MetricCard";
@@ -38,6 +38,7 @@ const AXIS = { fontSize: 9, fill: "#71717a", fontFamily: "monospace" };
 
 export default function PublicMonitorPage() {
   const params = useParams();
+  const router = useRouter();
   const accountId = params.accountId as string;
 
   const [period, setPeriod] = useState("total");
@@ -161,7 +162,26 @@ export default function PublicMonitorPage() {
               Servidor: {acc.server ?? "—"} · Alavancagem: {acc.leverage ? `1:${acc.leverage}` : "—"}
             </p>
           </div>
-          <PeriodFilter value={period} onChange={setPeriod} />
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Seletor de Contas (mesma experiência da área de membros) */}
+            {data?.accounts && data.accounts.length > 1 && (
+              <div className="relative inline-flex items-center">
+                <select
+                  value={accountId}
+                  onChange={(e) => router.push(`/monitor/${e.target.value}`)}
+                  className="appearance-none rounded-lg border border-[#f5f5f5]/8 bg-[#0D0D0D] pl-3 pr-8 py-1.5 font-mono text-xs text-[#F5F5F5] outline-none cursor-pointer hover:bg-[#141414] focus:border-blue-500/50 transition uppercase tracking-wider"
+                >
+                  {data.accounts.map((a: any) => (
+                    <option key={a.id} value={a.id}>
+                      {a.broker ? `${a.broker} · ` : ""}{a.login}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={12} className="absolute right-2.5 text-zinc-500 pointer-events-none" />
+              </div>
+            )}
+            <PeriodFilter value={period} onChange={setPeriod} />
+          </div>
         </section>
 
         {/* KPIs e Gráficos */}

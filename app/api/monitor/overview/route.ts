@@ -32,14 +32,19 @@ export async function GET(req: NextRequest) {
   let userDb: any = null;
 
   if (publicAccountId) {
-    // Requisição pública sem login para uma conta específica
+    // Requisição pública sem login para uma conta específica.
+    // Carregamos também as contas irmãs (mesmo dono) para alimentar o seletor
+    // de contas na visão pública, exatamente como na área de membros.
     const targetAcc = await prisma.account.findUnique({
       where: { id: publicAccountId }
     });
     if (!targetAcc) {
       return NextResponse.json({ ok: false, error: "Conta não encontrada" }, { status: 404 });
     }
-    accounts = [targetAcc];
+    accounts = await prisma.account.findMany({
+      where: { userId: targetAcc.userId },
+      orderBy: { updatedAt: "desc" },
+    });
   } else {
     // Requisição autenticada do Clerk
     const { userId: clerkId } = await auth();
@@ -73,7 +78,10 @@ export async function GET(req: NextRequest) {
   const accountIdParam = url.searchParams.get("accountId");
   const isConsolidated = !publicAccountId && (accountIdParam === "all" || accountIdParam === "consolidated") && accounts.length > 1;
 
-  let targetAccount = accounts.find((a) => a.id === accountIdParam);
+  // Em modo público a conta exibida é sempre a do link (publicAccountId),
+  // mesmo que o dono tenha várias contas carregadas para o seletor.
+  const selectedId = publicAccountId ?? accountIdParam;
+  let targetAccount = accounts.find((a) => a.id === selectedId);
   if (!isConsolidated && !targetAccount) {
     targetAccount = accounts[0];
   }
