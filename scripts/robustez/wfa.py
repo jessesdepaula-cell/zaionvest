@@ -58,16 +58,29 @@ class WFAResult:
 
 # ─── Core WFA ─────────────────────────────────────────────────────────────────
 
-def calculate_wfe(is_profit: float, oos_profit: float) -> float:
+def calculate_wfe(is_profit: float, oos_profit: float,
+                  n_is: int = 0, n_oos: int = 0) -> float:
     """
-    Calcula o Walk Forward Efficiency (WFE).
-    
-    WFE = (OOS / IS) × 100
-    
+    Calcula o Walk Forward Efficiency (WFE) — razão entre a TAXA de lucro OOS e
+    a TAXA de lucro IS (Pardo / DQ Labs cap. 07).
+
+    WFE = (lucro OOS / nº trades OOS) / (lucro IS / nº trades IS) × 100
+
+    A normalização pelo nº de trades é essencial: o IS fica com 70% dos trades e
+    o OOS com 30%, então comparar os TOTAIS (oos/is) travava o WFE em 42.86% no
+    MELHOR caso possível — uma estratégia perfeitamente estável. Como o gate
+    exige WFE > 50%, nenhum robô jamais poderia ser aprovado.
+
+    Sem n_is/n_oos, cai no comparativo de totais (retrocompatível).
     Se IS <= 0: retorna 0 (janela inútil como referência).
     """
     if is_profit <= 0:
         return 0.0
+    if n_is > 0 and n_oos > 0:
+        is_rate = is_profit / n_is
+        if is_rate <= 0:
+            return 0.0
+        return ((oos_profit / n_oos) / is_rate) * 100.0
     return (oos_profit / is_profit) * 100.0
 
 
@@ -111,13 +124,16 @@ def walk_forward_analysis(
         end = start + window_size if i < n_windows - 1 else n
         window_trades = trades[start:end]
 
-        is_end = start + int(len(window_trades) * is_ratio)
+        # window_trades é uma fatia NOVA (indexada do 0). Somar o offset global
+        # `start` aqui estourava o corte em toda janela i>0 -> OOS sempre vazio
+        # -> lucro OOS 0.00 e WFE 0% em 5 das 6 janelas, em QUALQUER estratégia.
+        is_end = int(len(window_trades) * is_ratio)
         is_trades = window_trades[:is_end]
         oos_trades = window_trades[is_end:]
 
         is_profit = sum(t.profit for t in is_trades)
         oos_profit = sum(t.profit for t in oos_trades)
-        wfe = calculate_wfe(is_profit, oos_profit)
+        wfe = calculate_wfe(is_profit, oos_profit, len(is_trades), len(oos_trades))
 
         windows.append(WFAWindow(
             window=i + 1,
@@ -143,8 +159,13 @@ def _consolidate(windows: list[WFAWindow]) -> WFAResult:
     """
     total_is = sum(w.is_profit for w in windows)
     total_oos = sum(w.oos_profit for w in windows)
+    n_is = sum(w.is_trades for w in windows)
+    n_oos = sum(w.oos_trades for w in windows)
+    # Compara TAXAS (lucro por trade), não totais: o IS tem 70% dos trades e o
+    # OOS 30%, então o ratio de totais travava o WFE em 42.86% no melhor caso e
+    # tornava o gate ">50%" matematicamente inalcançável. Ver calculate_wfe.
     # IS consolidado ≤ 0: estratégia nem no aprendizado funcionou → WFE 0.
-    wfe_avg = (total_oos / total_is * 100.0) if total_is > 0 else 0.0
+    wfe_avg = calculate_wfe(total_is, total_oos, n_is, n_oos)
 
     oos_wins = sum(1 for w in windows if w.oos_profit >= 0)
     oos_total = len(windows)
