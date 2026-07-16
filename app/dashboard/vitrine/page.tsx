@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { EACard } from "@/components/vitrine/EACard";
 import { EAFilters } from "@/components/vitrine/EAFilters";
 import { Suspense } from "react";
-import { Bot, Package } from "lucide-react";
+import { Bot } from "lucide-react";
 import Link from "next/link";
 
 export const revalidate = 120;
@@ -134,15 +134,6 @@ export default async function DashboardVitrinePage({
                 : "nenhuma baixada ainda"}
             </p>
           </div>
-
-          {/* Link para download em pacote */}
-          <Link
-            href="/dashboard/vitrine/portfolio"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.03] px-4 py-2.5 text-xs font-medium text-zinc-300 hover:bg-[#f5f5f5]/[0.07] transition"
-          >
-            <Package className="h-4 w-4" />
-            Baixar Portfolio (.zip)
-          </Link>
         </div>
 
         {/* Banner de assinatura necessária */}
