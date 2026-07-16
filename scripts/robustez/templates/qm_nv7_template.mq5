@@ -26,6 +26,7 @@ input double InpFibLowPct   = __FIB_LOW_PCT__;  // Nivel Fibo inferior da zona (
 input double InpFibHighPct  = __FIB_HIGH_PCT__; // Nivel Fibo superior da zona (%) (ex: 50.0)
 
 //--- Protecoes e Cluster ---
+input double InpRefBalance  = __REF_BALANCE__;  // Saldo de referencia para calculos (USD, ex: 3000) - igual QuantMiner
 input double InpDdGuard     = __DD_GUARD_PCT__; // DD das vendas/compras para fechar (% sobre ref) (ex: 5.0)
 input double InpMaxDdPct    = __MAX_DD_PCT__;   // Max DD da conta (% de stop) (ex: 30.0)
 input int    InpClusterMin  = __CLUSTER_MIN__;  // Minimo de posicoes para acionar cluster (ex: 10)
@@ -468,10 +469,14 @@ void OnTick()
    double px = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
 
-   // 4. Checagem de Drawdown Maximo da Conta
-   double bal = AccountInfoDouble(ACCOUNT_BALANCE);
-   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-   if(bal > 0 && (bal - eq) / bal * 100.0 >= InpMaxDdPct)
+   // Saldo de referencia FIXO (igual QuantMiner NV7). Isola este EA do saldo
+   // vivo/compartilhado da conta (que oscila com os outros robos e apertava
+   // os guards prematuramente -> era o que fazia o Zaion "estopar").
+   double refBal = (InpRefBalance > 0) ? InpRefBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+
+   // 4. Checagem de Drawdown Maximo DESTE EA (flutuante proprio vs saldo de ref)
+   double myFloat = GetFloatingProfit(); // ja filtrado por magic+simbolo
+   if(refBal > 0 && (-myFloat) / refBal * 100.0 >= InpMaxDdPct)
    {
       CloseBasket(0);
       g_cooldown = 30; // 30 ticks de pausa de seguranca
@@ -479,11 +484,11 @@ void OnTick()
       return;
    }
 
-   // 5. DD-Guard por lado (% sobre saldo)
+   // 5. DD-Guard por lado (% sobre saldo de referencia, nao sobre saldo vivo)
    double lf = BasketProfit(1, px);
    double sf = BasketProfit(-1, px);
-   double cap = AccountInfoDouble(ACCOUNT_BALANCE);
-   
+   double cap = refBal;
+
    if(g_totalLongs > 0 && lf < -InpDdGuard / 100.0 * cap)
    {
       CloseBasket(1);

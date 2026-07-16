@@ -280,6 +280,7 @@ def render_nv7(ea_id: str, params: dict, direction: str = "both", lot: float = 0
         "__SWING_BARS__": int(params.get("swing_bars", 150)),
         "__FIB_LOW_PCT__": _d(params.get("fib_low_pct", 38.2)),
         "__FIB_HIGH_PCT__": _d(params.get("fib_high_pct", 50.0)),
+        "__REF_BALANCE__": _d(params.get("ref_balance", 3000.0)),
         "__DD_GUARD_PCT__": _d(params.get("dd_guard_pct", 5.0)),
         "__MAX_DD_PCT__": _d(params.get("max_dd_pct", 30.0)),
         "__CLUSTER_MIN__": int(params.get("cluster_min", 10)),

@@ -71,9 +71,10 @@ def main():
         "swing_bars": 150,
         "fib_low_pct": 38.2,
         "fib_high_pct": 50.0,
+        "ref_balance": 3000.0,
         "dd_guard_pct": 5.0,
         "max_dd_pct": 30.0,
-        "cluster_min": 10,
+        "cluster_min": 8,
         "cluster_sobra": 11.0,
         "max_positions": 8
     }
