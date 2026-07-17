@@ -7,3 +7,6 @@ _noite.log
 survivors_usdjpy_overnight*.json
 _teste_noite*
 _diag*.log
+survivors_m30*.json
+_bat*.out
+_probe.bat
