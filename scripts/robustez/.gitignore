@@ -10,3 +10,4 @@ _diag*.log
 survivors_m30*.json
 _bat*.out
 _probe.bat
+_MINING.lock

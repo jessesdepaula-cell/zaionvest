@@ -36,7 +36,30 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-STOP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_STOP_MINING")
+_AQUI = os.path.dirname(os.path.abspath(__file__))
+STOP_FILE = os.path.join(_AQUI, "_STOP_MINING")
+LOCK_FILE = os.path.join(_AQUI, "_MINING.lock")
+
+
+def _ja_rodando() -> int:
+    """PID de outra instância viva, ou 0. Sem isto, o atalho do Inicializar +
+    um duplo-clique no .bat = dois mineradores escrevendo no MESMO json, que se
+    corrompem mutuamente."""
+    if not os.path.exists(LOCK_FILE):
+        return 0
+    try:
+        pid = int(open(LOCK_FILE).read().strip())
+    except (ValueError, OSError):
+        return 0
+    if pid == os.getpid():
+        return 0
+    try:
+        import subprocess
+        out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                             capture_output=True, text=True, timeout=15).stdout
+        return pid if str(pid) in out else 0
+    except Exception:  # noqa: BLE001 — na dúvida, deixa rodar
+        return 0
 
 
 def _key(s: dict) -> str:
@@ -72,6 +95,15 @@ def main():
         stop_at = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
         if stop_at <= now:
             stop_at += timedelta(days=1)
+
+    outro = _ja_rodando()
+    if outro:
+        print(f"[noite] JA existe um minerador rodando (PID {outro}). Saindo pra nao "
+              f"corromper o {args.out}. Pare o outro antes, ou use --out diferente.",
+              flush=True)
+        raise SystemExit(0)
+    with open(LOCK_FILE, "w") as f:
+        f.write(str(os.getpid()))
 
     if os.path.exists(STOP_FILE):
         os.remove(STOP_FILE)
@@ -156,6 +188,12 @@ def main():
 
     except KeyboardInterrupt:
         print("\n[noite] Ctrl+C — encerrando.", flush=True)
+    finally:
+        try:
+            if os.path.exists(LOCK_FILE):
+                os.remove(LOCK_FILE)
+        except OSError:
+            pass
 
     print(f"\n[noite] FIM — {rodada} rodadas, {len(survivors)} sobreviventes em {args.out}", flush=True)
     print(f"[noite] tempo total: {(time.time()-t_ini)/3600:.1f}h", flush=True)
