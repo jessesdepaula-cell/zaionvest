@@ -154,7 +154,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--survivors", required=True)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--approve", action="store_true",
+                    help="publica direto como APPROVED (pula o staging). "
+                         "Sem esta flag, entra como STAGED — invisível na vitrine "
+                         "até o dono promover pelo admin.")
     args = ap.parse_args()
+
+    # Staging é o padrão seguro: o EA é validado, compilado e enviado, mas fica
+    # STAGED (a vitrine só mostra APPROVED). O dono promove pelo admin depois de
+    # bater o olho. --approve pula essa trava e publica direto.
+    publish_status = "APPROVED" if args.approve else "STAGED"
 
     if not SB_TOKEN:
         raise SystemExit("defina SUPABASE_MGMT_TOKEN no ambiente")
@@ -251,7 +260,7 @@ def main():
                 "maxDrawdown": res["curve"]["dd_pct_mtm"],
                 "totalTrades": m["total_trades"],
                 "oosWins": res["oosWins"], "oosTotalWindows": res["oosTotalWin"],
-                "status": "APPROVED", "fileUrl": obj_path,
+                "status": publish_status, "fileUrl": obj_path,
                 "strategyDef": {"family": fam, "exit_mode": mode,
                                 "direction": direction, "lot": bt.lot, **params},
                 "equityCurveOos": curve,
@@ -274,7 +283,8 @@ def main():
             accepted.append((rets, name))
             published += 1
             c = res["curve"]
-            print(f"  ✔ publicado: {name} (Ret/DD OOS {(res.get('oosRetDd') or 0):.2f}, "
+            tag = "publicado (APPROVED)" if publish_status == "APPROVED" else "em staging (STAGED)"
+            print(f"  ✔ {tag}: {name} (Ret/DD OOS {(res.get('oosRetDd') or 0):.2f}, "
                   f"PF {m['profit_factor']}, DD {c['dd_pct_mtm']:.1f}%, R² {c['r2']:.2f})")
     finally:
         mt5_data.shutdown()
@@ -283,8 +293,10 @@ def main():
     with open(to_publish_path, "w", encoding="utf-8") as f:
         json.dump(to_publish_rows, f, ensure_ascii=False, indent=2)
 
-    print(f"\n{published} EA(s) compilados e enviados para o storage.")
-    print(f"Salvo {len(to_publish_rows)} registros de banco em {to_publish_path} para inserção via Prisma.")
+    destino = "APPROVED (direto na vitrine)" if publish_status == "APPROVED" \
+              else "STAGED (aguardando promoção no admin)"
+    print(f"\n{published} EA(s) compilados e enviados para o storage como {destino}.")
+    print(f"Salvo {len(to_publish_rows)} registros de banco em {to_publish_path} para inserção via Prisma (publish_db.ts).")
 
 
 if __name__ == "__main__":

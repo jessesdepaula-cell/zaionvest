@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ValidateButton } from "@/components/vitrine/ValidateButton";
+import { ModerateButtons } from "@/components/vitrine/ModerateButtons";
 import { Bot, Plus, Download, Users } from "lucide-react";
 import Link from "next/link";
 
@@ -11,6 +12,7 @@ const STATUS_COLORS = {
   APPROVED: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   REJECTED: "text-rose-400 bg-rose-500/10 border-rose-500/20",
   PENDING: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  STAGED: "text-[#2563EB] bg-[#2563EB]/10 border-[#2563EB]/20",
 };
 
 export const metadata = { title: "Admin — EAs | ZaionVest" };
@@ -34,6 +36,7 @@ export default async function AdminEAsPage() {
   const stats = {
     total: eas.length,
     approved: eas.filter((e) => e.status === "APPROVED").length,
+    staged: eas.filter((e) => e.status === "STAGED").length,
     rejected: eas.filter((e) => e.status === "REJECTED").length,
     pending: eas.filter((e) => e.status === "PENDING").length,
     totalDownloads: eas.reduce((acc, e) => acc + e._count.downloads, 0),
@@ -65,13 +68,14 @@ export default async function AdminEAsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-8">
           {[
             { label: "Total", value: stats.total, color: "text-zinc-300" },
             { label: "Aprovados", value: stats.approved, color: "text-emerald-400" },
+            { label: "Em staging", value: stats.staged, color: "text-[#2563EB]" },
             { label: "Reprovados", value: stats.rejected, color: "text-rose-400" },
             { label: "Pendentes", value: stats.pending, color: "text-amber-400" },
-            { label: "Downloads", value: stats.totalDownloads, color: "text-[#2563EB]" },
+            { label: "Downloads", value: stats.totalDownloads, color: "text-zinc-300" },
           ].map((s) => (
             <div
               key={s.label}
@@ -193,7 +197,12 @@ export default async function AdminEAsPage() {
                             : "—"}
                         </td>
                         <td className="px-4 py-3">
-                          <ValidateButton eaId={ea.id} eaName={ea.name} />
+                          <div className="flex flex-col gap-2">
+                            {ea.status === "STAGED" && (
+                              <ModerateButtons eaId={ea.id} eaName={ea.name} />
+                            )}
+                            <ValidateButton eaId={ea.id} eaName={ea.name} />
+                          </div>
                         </td>
                       </tr>
                     );

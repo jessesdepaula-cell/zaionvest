@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
+
+const OWNER_EMAIL = process.env.OWNER_EMAIL ?? "jessesdepaula@gmail.com";
 import { EACard } from "@/components/vitrine/EACard";
 import { ChevronLeft, History, ShieldCheck, RefreshCw, Power } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +39,14 @@ export default async function EADetailPage({
   });
 
   if (!ea) notFound();
+
+  // Staging: EAs que não estão APPROVED (STAGED/REJECTED/PENDING) não são
+  // públicos. Só o dono os vê — pra revisar antes de promover no admin.
+  if (ea.status !== "APPROVED") {
+    const clerkUser = await currentUser();
+    const email = clerkUser?.emailAddresses[0]?.emailAddress;
+    if (email !== OWNER_EMAIL) notFound();
+  }
 
   const latestValidation = ea.validations[0] ?? null;
 
