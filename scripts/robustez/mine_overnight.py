@@ -86,6 +86,9 @@ def main():
     ap.add_argument("--seed0", type=int, default=1000)
     ap.add_argument("--out", default="survivors_usdjpy_overnight.json")
     ap.add_argument("--until", default="", help="hora de parar, ex: 07:00 (vazio = até você parar)")
+    ap.add_argument("--autopublish", action="store_true",
+                    help="ao fim de cada rodada, publica os sobreviventes novos "
+                         "em STAGED (invisível na vitrine até o dono promover)")
     args = ap.parse_args()
 
     stop_at = None
@@ -185,6 +188,21 @@ def main():
             json.dump(meta, open(args.out.replace(".json", "_meta.json"), "w",
                                  encoding="utf-8"), ensure_ascii=False, indent=1)
             print(f"[noite] rodada {rodada}: +{novos_rodada} novos | total {len(survivors)}", flush=True)
+
+            # Auto-publish em STAGED (invisível na vitrine). Roda AQUI, depois do
+            # mt5_data.shutdown() da rodada, então o MT5 está livre pro publish.
+            # Blindado: qualquer erro só loga, nunca derruba a mineração.
+            if args.autopublish:
+                try:
+                    import autopublish
+                    res = autopublish.run_once(python_exe=sys.executable, survivors_path=args.out)
+                    if res.get("error"):
+                        print(f"[noite] autopublish falhou (segue minerando): {res['error']}", flush=True)
+                    elif res.get("processados"):
+                        print(f"[noite] autopublish: {res['publicados_db']} EA(s) em STAGED "
+                              f"({res['processados']} processados nesta leva)", flush=True)
+                except Exception as e:  # noqa: BLE001
+                    print(f"[noite] autopublish exception (segue minerando): {e}", flush=True)
 
     except KeyboardInterrupt:
         print("\n[noite] Ctrl+C — encerrando.", flush=True)

@@ -51,6 +51,7 @@ async function main() {
           totalTrades: ea.totalTrades,
           oosWins: ea.oosWins,
           oosTotalWindows: ea.oosTotalWindows,
+          oosRetDd: ea.oosRetDd,
           status: ea.status,
           fileUrl: ea.fileUrl,
           strategyDef: ea.strategyDef,
@@ -59,6 +60,11 @@ async function main() {
           createdAt: new Date(ea.createdAt),
           updatedAt: new Date(ea.updatedAt),
         },
+        // IMPORTANTE: no update NÃO mexemos em `status`. O bulk publisher roda
+        // toda rodada da mineração; se ele reescrevesse status=STAGED, um EA que
+        // o dono já promoveu (APPROVED) ou rejeitou (REJECTED) voltaria pra
+        // STAGED. O status é da moderação (promover/rejeitar) e da revalidação,
+        // não do publish. Só o CREATE define o status inicial (STAGED).
         update: {
           name: ea.name,
           wfe: ea.wfe,
@@ -67,7 +73,7 @@ async function main() {
           totalTrades: ea.totalTrades,
           oosWins: ea.oosWins,
           oosTotalWindows: ea.oosTotalWindows,
-          status: ea.status,
+          oosRetDd: ea.oosRetDd,
           fileUrl: ea.fileUrl,
           strategyDef: ea.strategyDef,
           equityCurveOos: ea.equityCurveOos,

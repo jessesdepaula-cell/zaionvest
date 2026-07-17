@@ -45,6 +45,7 @@ REM reconhecido como um comando".
     --gen 20 ^
     --keep 6 ^
     --seed0 %RANDOM%%RANDOM% ^
+    --autopublish ^
     --out survivors_m30.json >> _noite.log 2>&1
 
 if exist _STOP_MINING goto fim
