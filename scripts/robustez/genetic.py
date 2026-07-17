@@ -41,7 +41,11 @@ class Individual:
                 "sl_atr": self.sl_atr, "tp_atr": self.tp_atr}
 
     def key(self) -> str:
-        b = "|".join(f"{x['name']}:{sorted(x['params'].items())}" for x in self.blocks)
+        # Os blocos sao combinados com E (AND), que e COMUTATIVO: [A,B] e [B,A]
+        # sao a MESMA estrategia. Juntar na ordem da lista fazia as duas passarem
+        # pelo dedupe e virarem 2 EAs identicos na vitrine (23 casos em 127).
+        # Por isso: ordena os blocos ja canonizados antes de juntar.
+        b = "|".join(sorted(f"{x['name']}:{sorted(x['params'].items())}" for x in self.blocks))
         return f"{self.direction}/{self.exit_mode}/{self.sl_atr}/{self.tp_atr}/{b}"
 
 

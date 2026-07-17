@@ -40,9 +40,16 @@ STOP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_STOP_MINI
 
 
 def _key(s: dict) -> str:
+    """Identidade da ESTRATEGIA. Os blocos sao combinados com E (AND), que e
+    comutativo — [A,B] e [B,A] sao a mesma coisa. Por isso os blocos sao
+    canonizados e ORDENADOS antes de entrar na chave (json.dumps(sort_keys=True)
+    ordena as chaves do dict, NAO a ordem da lista — foi o que gerou 23 EAs
+    duplicados na vitrine)."""
     sd = s.get("strategyDef", {})
-    blocos = json.dumps(sd.get("blocks", []), sort_keys=True, ensure_ascii=False)
-    return f"{s['symbol']}|{s['timeframe']}|{s.get('exit_mode')}|{s.get('direction')}|{blocos}"
+    blocos = sorted(json.dumps(b, sort_keys=True, ensure_ascii=False)
+                    for b in (sd.get("blocks") or []))
+    return (f"{s['symbol']}|{s['timeframe']}|{s.get('exit_mode')}|{s.get('direction')}"
+            f"|{sd.get('sl_atr')}|{sd.get('tp_atr')}|{'|'.join(blocos)}")
 
 
 def main():
