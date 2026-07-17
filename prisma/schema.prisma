@@ -164,7 +164,18 @@ model EA {
   exitMode        String   // "reversal" | "fixed_sltp"
 
   // Métricas WFA (pipeline DQ Labs)
+  //
+  // wfe: Walk Forward Efficiency REAL, em % (OOS/IS por trade). Só faz sentido
+  // em estratégias de params fixos (ex: nv7). Nas mineradas por genético é
+  // NULO de propósito: o WFA ali é circular — a evolução já viu os dados, então
+  // o "OOS" do WFA cai dentro do treino. Ver genetic.py:_oos_holdout.
   wfe             Float?
+  // oosRetDd: Retorno/Drawdown medido no HOLDOUT da mineração (dados que a
+  // evolução nunca viu). É a métrica honesta das estratégias `multi`.
+  // Ex: 3.04 = ganha 3 pra cada 1 de drawdown.
+  // (Antes ambos dividiam a coluna `wfe`, que guardava ret_dd*10 nos multi e
+  //  WFE% no nv7 — mesma coluna, duas unidades. Separado em 2026-07-17.)
+  oosRetDd        Float?
   profitFactor    Float?
   maxDrawdown     Float?
   totalTrades     Int?

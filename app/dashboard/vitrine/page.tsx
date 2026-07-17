@@ -59,7 +59,9 @@ export default async function DashboardVitrinePage({
     case "pf_desc": orderBy.push({ profitFactor: "desc" }); break;
     case "dd_asc": orderBy.push({ maxDrawdown: "asc" }); break;
     case "newest": orderBy.push({ createdAt: "desc" }); break;
-    default: orderBy.push({ wfe: "desc" });
+    // Ret/DD do holdout: o número honesto dos minerados (wfe é nulo neles —
+    // WFA é circular quando o genético já viu os dados).
+    default: orderBy.push({ oosRetDd: "desc" });
   }
 
   const eas = await prisma.eA.findMany({
@@ -67,18 +69,20 @@ export default async function DashboardVitrinePage({
     orderBy,
     select: {
       id: true, slug: true, name: true, symbol: true, timeframe: true,
-      style: true, exitMode: true, status: true, wfe: true,
+      style: true, exitMode: true, status: true, wfe: true, oosRetDd: true,
       profitFactor: true, maxDrawdown: true, totalTrades: true,
       oosWins: true, oosTotalWindows: true, equityCurveOos: true,
     },
   });
 
-  // 1. Filtragem por TOP 25% mais robustos (por WFE)
+  // 1. Filtragem por TOP 25% mais robustos (por Ret/DD do holdout OOS)
   let filteredEas = [...eas];
   if (params.top === "25") {
-    const sortedByWfe = [...filteredEas].sort((a, b) => (b.wfe ?? 0) - (a.wfe ?? 0));
-    const limit = Math.ceil(sortedByWfe.length * 0.25);
-    const top25Ids = new Set(sortedByWfe.slice(0, limit).map((ea) => ea.id));
+    const score = (e: { oosRetDd?: number | null; wfe?: number | null }) =>
+      e.oosRetDd ?? e.wfe ?? 0;
+    const sortedByScore = [...filteredEas].sort((a, b) => score(b) - score(a));
+    const limit = Math.ceil(sortedByScore.length * 0.25);
+    const top25Ids = new Set(sortedByScore.slice(0, limit).map((ea) => ea.id));
     filteredEas = filteredEas.filter((ea) => top25Ids.has(ea.id));
   }
 

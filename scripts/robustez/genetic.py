@@ -271,14 +271,21 @@ def mine_symbol(df, info, name, tf, rng, pop_size=120, generations=30,
         quality_ok = all(v for k, v in res["gates"].items() if k != "wfe_gt_50")
         if not quality_ok:
             continue
-        res["wfe"] = oos["oos_ret_dd"] * 10  # "eficiência" OOS pro card (proxy)
+        # O WFA aqui é CIRCULAR (a evolução já viu o treino), então não publica
+        # WFE — publica o Ret/DD do HOLDOUT, que é o número honesto.
+        # Antes isto era `res["wfe"] = oos["oos_ret_dd"] * 10`: guardava Ret/DD
+        # disfarçado de WFE na mesma coluna que o WFE real do nv7 usava. Duas
+        # unidades no mesmo campo — confundiu até a mim. Agora vai em campo próprio.
+        res["oosRetDd"] = oos["oos_ret_dd"]
+        res["wfe"] = None
         survivors.append({
             "symbol": name, "timeframe": tf, "family": "multi",
             "exit_mode": ind.exit_mode, "direction": ind.direction,
             "params": ind.params(), "lot": bt.lot,
             "strategyDef": {"family": "multi", "exit_mode": ind.exit_mode,
                             "direction": ind.direction, "lot": bt.lot, **ind.params()},
-            "wfe": res["wfe"], "metrics": res["metrics"], "sqx": res["sqx"],
+            "wfe": res["wfe"], "oosRetDd": res["oosRetDd"],
+            "metrics": res["metrics"], "sqx": res["sqx"],
             "curve": res["curve"], "montecarlo": res["montecarlo"],
             "oos": {k2: oos[k2] for k2 in ("oos_net", "oos_r2", "oos_ret_dd", "oos_trades")},
             "reportMd": res["reportMd"],

@@ -160,7 +160,8 @@ def main():
         raise SystemExit("defina SUPABASE_MGMT_TOKEN no ambiente")
 
     survivors = json.load(open(args.survivors, encoding="utf-8"))
-    survivors.sort(key=lambda s: -s["wfe"])
+    # ordena pelo Ret/DD do holdout — o wfe e None nos multi (WFA circular)
+    survivors.sort(key=lambda s: -(s.get("oosRetDd") or (s.get("wfe") or 0)))
     if args.limit:
         survivors = survivors[: args.limit]
 
@@ -190,7 +191,8 @@ def main():
             if fam == "multi":
                 approved = all(v for k, v in res["gates"].items() if k != "wfe_gt_50")
                 # WFE no card = proxy OOS calculado na mineração (não o WFA negativo)
-                res["wfe"] = s.get("wfe", res["wfe"])
+                res["wfe"] = None                       # WFA circular em multi
+                res["oosRetDd"] = s.get("oosRetDd")     # Ret/DD do holdout (honesto)
             else:
                 approved = res["approved"]
             if not approved:
@@ -243,7 +245,8 @@ def main():
                 "id": ea_id, "name": name, "slug": slug,
                 "symbol": resolved, "timeframe": tf,
                 "style": style_of(fam, params), "exitMode": mode,
-                "wfe": res["wfe"], "profitFactor": m["profit_factor"],
+                "wfe": res["wfe"], "oosRetDd": res.get("oosRetDd"),
+                "profitFactor": m["profit_factor"],
                 # DD flutuante mark-to-market — o honesto (gate ≤ 30%)
                 "maxDrawdown": res["curve"]["dd_pct_mtm"],
                 "totalTrades": m["total_trades"],
@@ -271,8 +274,8 @@ def main():
             accepted.append((rets, name))
             published += 1
             c = res["curve"]
-            print(f"  ✔ publicado: {name} (WFE {res['wfe']:.1f}%, PF {m['profit_factor']}, "
-                  f"DD {c['dd_pct_mtm']:.1f}%, R² {c['r2']:.2f})")
+            print(f"  ✔ publicado: {name} (Ret/DD OOS {(res.get('oosRetDd') or 0):.2f}, "
+                  f"PF {m['profit_factor']}, DD {c['dd_pct_mtm']:.1f}%, R² {c['r2']:.2f})")
     finally:
         mt5_data.shutdown()
 

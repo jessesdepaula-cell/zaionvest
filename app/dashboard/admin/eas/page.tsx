@@ -114,7 +114,7 @@ export default async function AdminEAsPage() {
                     <th className="px-4 py-2.5 text-left">EA</th>
                     <th className="px-4 py-2.5 text-left">Par / TF</th>
                     <th className="px-4 py-2.5 text-center">Status</th>
-                    <th className="px-4 py-2.5 text-right">WFE</th>
+                    <th className="px-4 py-2.5 text-right" title="Ret/DD medido no holdout OOS (minerados) ou WFE % (params fixos)">Ret/DD OOS</th>
                     <th className="px-4 py-2.5 text-right">Downloads</th>
                     <th className="px-4 py-2.5 text-right">Última Validação</th>
                     <th className="px-4 py-2.5 text-left">Ações</th>
@@ -153,14 +153,27 @@ export default async function AdminEAsPage() {
                             {ea.status}
                           </span>
                         </td>
+                        {/* Minerados (multi) mostram Ret/DD do holdout OOS; params
+                            fixos (nv7) mostram WFE %. São métricas diferentes —
+                            por isso a unidade vai junto do número. */}
                         <td className="px-4 py-3 text-right font-mono">
-                          {ea.wfe != null ? (
+                          {ea.oosRetDd != null ? (
+                            <span
+                              className={
+                                ea.oosRetDd >= 2 ? "text-emerald-400" : "text-amber-400"
+                              }
+                              title="Retorno/Drawdown no holdout OOS"
+                            >
+                              {ea.oosRetDd.toFixed(2)}
+                            </span>
+                          ) : ea.wfe != null ? (
                             <span
                               className={
                                 ea.wfe > 50 ? "text-emerald-400" : "text-rose-400"
                               }
+                              title="Walk Forward Efficiency"
                             >
-                              {ea.wfe.toFixed(1)}%
+                              {ea.wfe.toFixed(1)}% <span className="text-zinc-600">WFE</span>
                             </span>
                           ) : (
                             <span className="text-zinc-600">—</span>
