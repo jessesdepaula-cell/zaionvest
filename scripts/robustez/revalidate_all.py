@@ -83,7 +83,7 @@ def main():
             res = pipeline.evaluate(
                 bt.trades, ea["id"], f"{fam} {sym} {tf}", sym, tf, fam,
                 sd.get("exit_mode", "reversal"), equity_bar=bt.equity_bar,
-                start_capital=bt.start_capital,
+                start_capital=bt.start_capital, params=sd,
             )
             # mesma regra do publish.py (ver docstring)
             if fam == "multi":

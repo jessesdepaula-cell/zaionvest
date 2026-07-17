@@ -149,7 +149,7 @@ def main():
 
     res = pipeline.evaluate(bt.trades, ea_id, name, "XAUUSD", "H1", "nv7",
                             "reversal", equity_bar=bt.equity_bar,
-                            start_capital=bt.start_capital)
+                            start_capital=bt.start_capital, params=params)
 
     if not res["approved"]:
         falhou = [k for k, v in res["gates"].items() if not v]

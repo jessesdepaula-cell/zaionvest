@@ -144,13 +144,15 @@ def mine(
                 df, info, resolved = cache[(symbol, tf)]
 
                 for family in families:
-                    min_trades = min_trades_required(count_params(family))
                     # grid tem cesto próprio; só faz sentido no modo próprio
                     fam_modes = ["reversal"] if family == "grid" else modes
                     for mode in fam_modes:
                         for direction in directions:
                             for params in _grid(family, mode):
                                 tested += 1
+                                # mín. trades por graus de liberdade REAIS deste
+                                # candidato (multi/grid_hedge variam por nº blocos)
+                                min_trades = min_trades_required(count_params(family, params))
                                 bt = run_backtest(
                                     df, family, params, exit_mode=mode,
                                     direction=direction,
@@ -166,7 +168,7 @@ def mine(
                                     ea_name=f"{family} {symbol} {tf}",
                                     symbol=resolved, timeframe=tf,
                                     family=family, exit_mode=mode, source="mine",
-                                    equity_bar=bt.equity_bar,
+                                    equity_bar=bt.equity_bar, params=params,
                                 )
                                 if res["approved"]:
                                     # ── Robustez extra (SQX cross-checks) ──

@@ -183,7 +183,7 @@ def main():
                               point=info.point, contract_size=info.contract_size)
             res = pipeline.evaluate(bt.trades, ea_id="publish", ea_name=f"{fam} {symbol} {tf}",
                                     symbol=resolved, timeframe=tf, family=fam,
-                                    exit_mode=mode, equity_bar=bt.equity_bar)
+                                    exit_mode=mode, equity_bar=bt.equity_bar, params=params)
             # Genético (multi): a aprovação NÃO usa o gate WFE in-period — ele é
             # contaminado pela evolução (ver genetic.py). O teste honesto foi o
             # holdout OOS feito na mineração; aqui exigimos todos os gates de

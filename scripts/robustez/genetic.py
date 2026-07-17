@@ -264,7 +264,8 @@ def mine_symbol(df, info, name, tf, rng, pop_size=120, generations=30,
             continue   # reprovado no OUT-OF-SAMPLE real (holdout nunca visto)
         bt = oos["bt"]
         res = pipeline.evaluate(bt.trades, "gx", f"{name} {tf}", name, tf, "multi",
-                                ind.exit_mode, equity_bar=bt.equity_bar)
+                                ind.exit_mode, equity_bar=bt.equity_bar,
+                                params=ind.params())
         # O gate WFE (in-period) é contaminado pela evolução — o teste de
         # generalização aqui é o HOLDOUT (_oos_holdout, acima). Aprovação =
         # todos os gates de QUALIDADE (menos wfe) + holdout OK.

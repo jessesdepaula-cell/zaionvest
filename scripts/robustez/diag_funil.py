@@ -74,7 +74,7 @@ def main():
         bt = oos["bt"]
         res = pipeline.evaluate(bt.trades, "diag", "diag", name, args.timeframe,
                                 "multi", ind.exit_mode, equity_bar=bt.equity_bar,
-                                start_capital=bt.start_capital)
+                                start_capital=bt.start_capital, params=ind.params())
         falhou = [k for k, v in res["gates"].items() if not v and k != "wfe_gt_50"]
         if falhou:
             for f in falhou:

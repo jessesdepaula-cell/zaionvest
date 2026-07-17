@@ -126,7 +126,8 @@ def run_pipeline(
     return evaluate(trades, ea_id, ea_name, symbol, timeframe, family, exit_mode,
                     n_windows=n_windows, source=source,
                     equity_bar=bt.equity_bar if bt else None,
-                    start_capital=bt.start_capital if bt else START_CAPITAL)
+                    start_capital=bt.start_capital if bt else START_CAPITAL,
+                    params=params)
 
 
 def evaluate(
@@ -141,13 +142,17 @@ def evaluate(
     source: str = "backtest",
     equity_bar: list[float] | None = None,
     start_capital: float = START_CAPITAL,
+    params: dict | None = None,
 ) -> dict:
     """Aplica os gates DQ Labs a um backtest JÁ rodado.
     equity_bar (mark-to-market por barra) habilita os gates de curva:
-    DD flutuante ≤ MAX_DD_PCT, R² ≥ MIN_R2, Recovery Factor ≥ MIN_RECOVERY."""
+    DD flutuante ≤ MAX_DD_PCT, R² ≥ MIN_R2, Recovery Factor ≥ MIN_RECOVERY.
+    params habilita a contagem real de graus de liberdade em famílias compostas
+    (multi/grid_hedge): sem ele, count_params cai no fallback burro (2) e o gate
+    de mín. trades fica frouxo — 150 em vez dos 350 de uma estratégia de 3 blocos."""
     profits = [t.profit for t in trades]
     m = compute_metrics(profits)
-    n_params = count_params(family)
+    n_params = count_params(family, params)
     min_trades = min_trades_required(n_params)
 
     try:
