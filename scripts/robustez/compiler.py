@@ -217,6 +217,26 @@ def _gen_multi(blocks_list: list[dict]) -> tuple[str, str, str]:
             body.append(f"   {{ double t=GetT3({int(p['period'])},{_d(p.get('vfactor',0.7))},1); "
                         f"long_ok=long_ok&&(c>t); short_ok=short_ok&&(c<t); }}")
 
+        elif name == "t3_velocity":
+            # espelha _blk_t3_velocity: zero = sinal da velocidade; slope = inclinacao
+            orig = "true" if p.get("original", False) else "false"
+            per, hot = int(p["period"]), _d(p.get("hot", 1.0))
+            if p.get("mode", "zero") == "slope":
+                body.append(f"   {{ double v1=GetT3Velocity({per},{hot},{orig},1); "
+                            f"double v2=GetT3Velocity({per},{hot},{orig},2); "
+                            f"long_ok=long_ok&&(v1>v2); short_ok=short_ok&&(v1<v2); }}")
+            else:
+                body.append(f"   {{ double v=GetT3Velocity({per},{hot},{orig},1); "
+                            f"long_ok=long_ok&&(v>0.0); short_ok=short_ok&&(v<0.0); }}")
+
+        elif name == "wpr_floating":
+            # espelha _blk_wpr_floating: 0=break, 1=fade, 2=zero
+            mcode = {"break": 0, "fade": 1, "zero": 2}[p.get("mode", "break")]
+            body.append(f"   {{ int st=GetWPRFloatingState({int(p['period'])},"
+                        f"{int(p.get('smooth',0))},{_d(p.get('fl_up',90.0))},"
+                        f"{_d(p.get('fl_dn',10.0))},{mcode},1); "
+                        f"long_ok=long_ok&&(st==1); short_ok=short_ok&&(st==-1); }}")
+
         elif name == "supertrend_state":
             body.append(f"   {{ double st=GetSupertrend({int(p['period'])},{_d(p['multiplier'])},1); "
                         f"long_ok=long_ok&&(st==1.0); short_ok=short_ok&&(st==-1.0); }}")

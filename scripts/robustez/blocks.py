@@ -123,6 +123,55 @@ def _supertrend(df, period=10, multiplier=3.0):
         
     return pd.Series(trend, index=df.index)
 
+def _t3_mq(s, period, hot, original=False):
+    """T3 do indicador forex-tsd (função iT3): 6 EMAs em cascata + coeficientes
+    derivados do 'hot'. Difere de _t3() acima no alpha, que aqui segue o
+    original: original=True -> 2/(1+p); original=False -> 2/(2+(p-1)/2)."""
+    alpha = 2.0 / (1.0 + period) if original else 2.0 / (2.0 + (period - 1.0) / 2.0)
+    a = float(hot)
+    c1 = -a**3
+    c2 = 3*a*a + 3*a**3
+    c3 = -6*a*a - 3*a - 3*a**3
+    c4 = 1 + 3*a + a**3 + 3*a*a
+    e = s
+    casc = []
+    for _ in range(6):
+        e = e.ewm(alpha=alpha, adjust=False).mean()
+        casc.append(e)
+    return c1*casc[5] + c2*casc[4] + c3*casc[3] + c4*casc[2]
+
+
+def _t3_velocity(s, period, hot=1.0, original=False):
+    """T3 velocity (forex-tsd): iT3(hot) - iT3(hot/2). Mede a VELOCIDADE do T3,
+    não o T3 — por isso é um bloco distinto de t3_trend."""
+    return _t3_mq(s, period, hot, original) - _t3_mq(s, period, hot/2.0, original)
+
+
+def _wpr_floating(df, period, smooth=0, fl_up=90.0, fl_dn=10.0):
+    """WPR suavizado com níveis flutuantes (mladen, 2019).
+    EMA em high/low/close -> WPR sobre os suavizados -> níveis derivados do
+    min/max do PRÓPRIO WPR na janela.
+    Devolve (val, levu, levd, levm). val ∈ [-100, 0].
+
+    NOTA: o indicador original declara inpFlPeriod ("Floating levels period")
+    mas NÃO o usa — a janela dos níveis é o inpPeriod. Replicado fiel ao código,
+    não à intenção; por isso não existe param fl_period aqui."""
+    n = int(smooth) if int(smooth) > 0 else int(period)
+    alpha = 2.0 / (1.0 + n)
+    smth = df["high"].ewm(alpha=alpha, adjust=False).mean()
+    smtl = df["low"].ewm(alpha=alpha, adjust=False).mean()
+    smtc = df["close"].ewm(alpha=alpha, adjust=False).mean()
+
+    mx = smth.rolling(period, min_periods=1).max()
+    mn = smtl.rolling(period, min_periods=1).min()
+    val = (-(mx - smtc) * 100.0 / (mx - mn).replace(0, np.nan)).fillna(0.0)
+
+    vmax = val.rolling(period, min_periods=1).max()
+    vmin = val.rolling(period, min_periods=1).min()
+    vr = (vmax - vmin) / 100.0
+    return val, vmin + fl_up*vr, vmin + fl_dn*vr, vmin + 50.0*vr
+
+
 def _b(x) -> np.ndarray:
     """Series booleana → array bool com NaN=False."""
     return x.fillna(False).to_numpy(dtype=bool)
@@ -241,12 +290,49 @@ def _blk_cci_zero_cross(df, p):
     return _b(up), _b(dn)
 
 
+def _blk_t3_velocity(df, p):
+    """T3 velocity (forex-tsd). Dois modos, espelhando as 2 cores do indicador:
+      zero  -> cor do HISTOGRAMA: vel>0 verde (long) / vel<0 vermelho (short)
+      slope -> cor da LINHA: vel subindo (long) / vel descendo (short)"""
+    v = _t3_velocity(df["close"], p["period"], p.get("hot", 1.0),
+                     p.get("original", False))
+    if p.get("mode", "zero") == "slope":
+        return _b(v > v.shift(1)), _b(v < v.shift(1))
+    return _b(v > 0), _b(v < 0)
+
+
+def _blk_wpr_floating(df, p):
+    """WPR suavizado + níveis flutuantes (mladen). Três modos:
+      break -> rompe o nível de cima = long (momentum; é como o indicador colore)
+      fade  -> rompe o nível de cima = short (reversão à média)
+      zero  -> acima do nível médio = long"""
+    val, levu, levd, levm = _wpr_floating(df, p["period"], p.get("smooth", 0),
+                                          p.get("fl_up", 90.0), p.get("fl_dn", 10.0))
+    m = p.get("mode", "break")
+    if m == "fade":
+        return _b(val < levd), _b(val > levu)
+    if m == "zero":
+        return _b(val > levm), _b(val < levm)
+    return _b(val > levu), _b(val < levd)
+
+
 # nome → (func, directional?, gerador de params)
 _R = random
 BLOCKS = {
     "rsi_extreme":  (_blk_rsi_extreme,  True,  lambda r: {"period": r.choice([7,9,14,21]), "level": r.choice([20,25,30])}),
     "rsi_trend":    (_blk_rsi_trend,    True,  lambda r: {"period": r.choice([9,14,21])}),
     "t3_trend":     (_blk_t3_trend,     True,  lambda r: {"period": r.choice([7,9,14,21]), "vfactor": 0.7}),
+    # T3 velocity (forex-tsd): iT3(hot) - iT3(hot/2). Velocidade do T3, != t3_trend.
+    "t3_velocity":  (_blk_t3_velocity,  True,  lambda r: {"period": r.choice([7,9,14,21,30]),
+                                                          "hot": r.choice([0.5,0.7,1.0]),
+                                                          "original": r.choice([False,True]),
+                                                          "mode": r.choice(["zero","slope"])}),
+    # WPR suavizado com níveis flutuantes (mladen 2019)
+    "wpr_floating": (_blk_wpr_floating, True,  lambda r: {"period": r.choice([9,14,21,25,34]),
+                                                          "smooth": r.choice([0,3,5]),
+                                                          "fl_up": r.choice([80.0,90.0]),
+                                                          "fl_dn": r.choice([10.0,20.0]),
+                                                          "mode": r.choice(["break","fade","zero"])}),
     "supertrend_state": (_blk_supertrend_state, True, lambda r: {"period": r.choice([7,10,14]), "multiplier": r.choice([1.5,2.0,3.0])}),
     "hma_cross":    (_blk_hma_cross,    True,  lambda r: {"fast": r.choice([9,14,21]), "slow": r.choice([35,50,80])}),
 

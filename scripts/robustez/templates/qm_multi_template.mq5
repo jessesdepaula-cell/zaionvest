@@ -424,6 +424,100 @@ double GetSupertrend(int period, double multiplier, int shift)
    return trend;
 }
 
+//+------------------------------------------------------------------+
+//| T3 velocity (forex-tsd): iT3(hot) - iT3(hot/2)                    |
+//| Cascata manual de 6 EMAs com o alpha EXATO do indicador. Nao uso  |
+//| iMA(MODE_EMA) porque ele fixa alpha=2/(p+1), e o indicador usa    |
+//| 2/(2+(p-1)/2) quando original=false — daria divergencia do Python.|
+//| As duas chamadas iT3 do indicador compartilham alpha e preco, ou  |
+//| seja, a cascata e a MESMA: so os coeficientes do 'hot' mudam.     |
+//+------------------------------------------------------------------+
+double GetT3Velocity(int period, double hot, bool original, int shift)
+{
+   double alpha = original ? 2.0/(1.0+period) : 2.0/(2.0+(period-1.0)/2.0);
+   int bars  = Bars(_Symbol,_Period);
+   int start = (int)MathMin(bars-1, 6*period + 300 + shift);
+   if(start <= shift) return(0.0);
+
+   double e[6];
+   bool init=false;
+   for(int i=start; i>=shift; i--)
+   {
+      double p = iClose(_Symbol,_Period,i);
+      if(p<=0.0) continue;
+      if(!init) { for(int k=0;k<6;k++) e[k]=p; init=true; continue; }
+      e[0] += alpha*(p-e[0]);
+      for(int k=1;k<6;k++) e[k] += alpha*(e[k-1]-e[k]);
+   }
+   if(!init) return(0.0);
+
+   double vel=0.0;
+   for(int s=0; s<2; s++)
+   {
+      double a  = (s==0) ? hot : hot/2.0;
+      double c1 = -a*a*a;
+      double c2 = 3*a*a + 3*a*a*a;
+      double c3 = -6*a*a - 3*a - 3*a*a*a;
+      double c4 = 1 + 3*a + a*a*a + 3*a*a;
+      double t3 = c1*e[5] + c2*e[4] + c3*e[3] + c4*e[2];
+      vel += (s==0) ? t3 : -t3;
+   }
+   return(vel);
+}
+
+//+------------------------------------------------------------------+
+//| WPR suavizado com niveis flutuantes (mladen 2019)                |
+//| Devolve o ESTADO: +1 long, -1 short, 0 neutro.                    |
+//| mode: 0=break (rompe nivel de cima = long), 1=fade (inverso),     |
+//|       2=zero (acima do nivel medio = long)                        |
+//| NOTA: o indicador original declara inpFlPeriod mas nao usa — a    |
+//| janela dos niveis e o proprio inpPeriod. Replicado fiel.          |
+//+------------------------------------------------------------------+
+int GetWPRFloatingState(int period, int smooth, double flUp, double flDn, int mode, int shift)
+{
+   int    n     = (smooth>0) ? smooth : period;
+   double alpha = 2.0/(1.0+n);
+   int    bars  = Bars(_Symbol,_Period);
+   int    warm  = 3*n + 3*period + 300;
+   int    start = (int)MathMin(bars-1, warm+shift);
+   if(start <= shift+period) return(0);
+
+   int    len = start-shift+1;
+   double vals[], bh[], bl[];
+   ArrayResize(vals,len); ArrayResize(bh,len); ArrayResize(bl,len);
+
+   double sh=0,sl=0,sc=0; bool init=false; int idx=0;
+   for(int i=start; i>=shift; i--)
+   {
+      double h=iHigh(_Symbol,_Period,i), l=iLow(_Symbol,_Period,i), c=iClose(_Symbol,_Period,i);
+      if(!init) { sh=h; sl=l; sc=c; init=true; }
+      else { sh+=alpha*(h-sh); sl+=alpha*(l-sl); sc+=alpha*(c-sc); }
+      bh[idx]=sh; bl[idx]=sl;
+
+      int from = (int)MathMax(0, idx-period+1);
+      double mx=bh[from], mn=bl[from];
+      for(int k=from; k<=idx; k++) { if(bh[k]>mx) mx=bh[k]; if(bl[k]<mn) mn=bl[k]; }
+      vals[idx] = (mx!=mn) ? -(mx-sc)*100.0/(mx-mn) : 0.0;
+      idx++;
+   }
+
+   int last = idx-1;
+   if(last < 0) return(0);
+   int from2 = (int)MathMax(0, last-period+1);
+   double vmx=vals[from2], vmn=vals[from2];
+   for(int k=from2; k<=last; k++) { if(vals[k]>vmx) vmx=vals[k]; if(vals[k]<vmn) vmn=vals[k]; }
+
+   double range = (vmx-vmn)/100.0;
+   double levu  = vmn + flUp*range;
+   double levd  = vmn + flDn*range;
+   double levm  = vmn + 50.0*range;
+   double v     = vals[last];
+
+   if(mode==1) return (v<levd) ?  1 : (v>levu) ? -1 : 0;   // fade
+   if(mode==2) return (v>levm) ?  1 : (v<levm) ? -1 : 0;   // zero
+   return              (v>levu) ?  1 : (v<levd) ? -1 : 0;   // break
+}
+
 double GetT3(int period, double vfactor, int shift)
 {
    int hE1 = iMA(_Symbol,_Period,period,0,MODE_EMA,PRICE_CLOSE);
