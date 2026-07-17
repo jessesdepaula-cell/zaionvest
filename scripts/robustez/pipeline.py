@@ -290,35 +290,24 @@ def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades
 - **Análise de Risco:** O Índice Sharpe mede o prêmio de retorno pela volatilidade total do robô. O Índice Sortino refina essa métrica focando apenas na volatilidade prejudicial (quedas), o que é ideal para validar a consistência e segurança de grades (grids) hedgeadas.
 """
 
-    # Simula dados de estabilidade de parâmetros para Análise de Sensibilidade (Parameter Space Analysis)
-    # usando dispersão estatística de Monte Carlo
-    sens_original_pf = m.profit_factor if m.profit_factor != float("inf") else 999.0
-    sens_table = f"""
-## 6. Análise de Sensibilidade (Distribuição de Parâmetros)
+    # Monte Carlo REAL (montecarlo.py): reamostra a ORDEM dos trades n_sims vezes
+    # e mede o drawdown de cada cenário. O embaralhamento preserva a soma dos
+    # trades, então o lucro líquido é o mesmo em toda simulação — por isso
+    # reportamos a dispersão de DRAWDOWN (o que muda), não "taxa de sobrevivência".
+    cap_cons = cap.get("conservador", 0.0)
+    cap_mod = cap.get("moderado", 0.0)
+    cap_agr = cap.get("agressivo", 0.0)
+    mc_table = f"""
+## 6. Distribuição de Drawdown (Monte Carlo — {mc.simulations} reamostragens)
 
-| Variação do Parâmetro | Profit Factor | Drawdown Máx | Status da Robustez |
-| :--- | :---: | :---: | :---: |
-| Parâmetros Originais | {sens_original_pf:.2f} | {m.max_drawdown_pct:.1f}% | ✅ APROVADO |
-| Variação 1 (Stop Loss -10%) | {sens_original_pf * 0.96:.2f} | {m.max_drawdown_pct * 1.03:.1f}% | ✅ APROVADO |
-| Variação 2 (Stop Loss +10%) | {sens_original_pf * 1.02:.2f} | {m.max_drawdown_pct * 0.98:.1f}% | ✅ APROVADO |
-| Variação 3 (Take Profit -10%) | {sens_original_pf * 0.94:.2f} | {m.max_drawdown_pct * 1.02:.1f}% | ✅ APROVADO |
-| Variação 4 (Take Profit +10%) | {sens_original_pf * 1.04:.2f} | {m.max_drawdown_pct * 0.96:.1f}% | ✅ APROVADO |
-| Variação 5 (Indicador Período -10%) | {sens_original_pf * 0.98:.2f} | {m.max_drawdown_pct * 1.01:.1f}% | ✅ APROVADO |
-| Variação 6 (Indicador Período +10%) | {sens_original_pf * 0.99:.2f} | {m.max_drawdown_pct * 0.99:.1f}% | ✅ APROVADO |
+| Cenário | Drawdown máximo (pico → vale) |
+| :--- | :---: |
+| Mediana (p50) | ${mc.dd_p50_abs:,.2f} |
+| Pior caso realista (p95) | ${mc.dd_p95_abs:,.2f} |
+| Pior observado | ${mc.dd_max_abs:,.2f} |
 
-- **Índice de Estabilidade de Parâmetros:** 100% das variações permaneceram lucrativas e consistentes.
-- **Veredito de Sensibilidade:** A estratégia demonstra alta estabilidade em torno da zona otimizada, provando ser imune a overfitting de parâmetros exatos.
-
-## 6. Distribuição de Resultados de Monte Carlo
-
-| Confiança (Percentil) | Cenário Simulado | Drawdown Máx Esperado | Profit Factor Esperado |
-| :--- | :--- | :---: | :---: |
-| 95% (Risco de Cauda) | Pior Caso Estatístico | ${mc.dd_p95_abs:.2f} | {sens_original_pf * 0.88:.2f} |
-| 50% (Mediana) | Comportamento Médio | ${mc.dd_p95_abs * 0.65:.2f} | {sens_original_pf * 1.01:.2f} |
-| 5% (Otimista) | Melhor Caso Estatístico | ${mc.dd_p95_abs * 0.35:.2f} | {sens_original_pf * 1.15:.2f} |
-
-- **Taxa de Sobrevivência (Monte Carlo):** 100% das 200 simulações de reamostragem terminaram com lucro positivo (net profit > 0).
-- **Risco Controlado:** O drawdown esperado no pior caso estatístico está mapeado no capital recomendado de cada perfil.
+- **Método:** {mc.simulations} reamostragens da ordem dos trades; em cada uma mede-se o drawdown máximo da curva de capital. O p95 é o "pior caso realista" usado para dimensionar o capital.
+- **Capital recomendado** (para o DD do p95 não estourar o teto de cada perfil): Conservador (DD ≤ {RISK_PROFILES['conservador']:.0f}%) **${cap_cons:,.2f}** · Moderado (DD ≤ {RISK_PROFILES['moderado']:.0f}%) **${cap_mod:,.2f}** · Agressivo (DD ≤ {RISK_PROFILES['agressivo']:.0f}%) **${cap_agr:,.2f}**.
 """
 
     extra = f"""
@@ -339,7 +328,7 @@ def _report(ea_name, symbol, timeframe, exit_mode, wfa, m, mc, gates, min_trades
 
 ### Veredito final: {'✅ ROBUSTA — publicável' if approved else '⚠️ REPROVADA'}
 """
-    return base + qs_section + sens_table + extra
+    return base + qs_section + mc_table + extra
 
 
 
