@@ -129,25 +129,40 @@ def main():
         
     print("  [OK] Upload do arquivo concluido!")
     
-    # 3. Gera a curva de capital OOS simulada (para ficar bonito no painel e na vitrine)
-    print("3. Gerando curva de capital simulada e estatisticas...")
-    # Curva crescente suave com drawdown max de 12.5% e lucro total de 184%
-    import math
-    curve = []
-    points = 60
-    dates = []
+    # 3. Backtest REAL na esteira. Nada de curva inventada: a versao anterior
+    #    gerava uma senoide (math.sin) rotulada como OOS e cravava wfe=89.4 /
+    #    PF=1.45 / DD=12.5 na mao. Isso e track record fabricado indo pra vitrine
+    #    de assinante pagante. Agora o numero vem do backtest e, se reprovar, o
+    #    script NAO publica.
+    print("3. Rodando o backtest real na esteira (padrao 4 anos)...")
     import datetime
-    start_date = datetime.date(2022, 1, 3)
-    
-    for i in range(points):
-        d = start_date + datetime.timedelta(days=i * 24)
-        # Curva com crescimento constante + flutuacao
-        factor = (i / (points - 1))
-        # Senoide amortecida para simular drawdowns e recuperacoes realistas
-        noise = math.sin(i * 0.5) * 5.0 - math.cos(i * 0.2) * 3.0
-        val = 10000.0 * (1.0 + factor * 1.84) + noise * 100.0
-        curve.append({"date": d.isoformat(), "value": round(val, 2)})
-        
+    import mt5_data
+    from backtest import run_backtest
+    import pipeline
+
+    mt5_data.connect()
+    df, resolved = mt5_data.get_candles("XAUUSD", "H1", years=4.0)
+    sinfo = mt5_data.symbol_info(resolved)
+    bt = run_backtest(df, "nv7", params, point=sinfo.point,
+                      contract_size=sinfo.contract_size)
+    mt5_data.shutdown()
+
+    res = pipeline.evaluate(bt.trades, ea_id, name, "XAUUSD", "H1", "nv7",
+                            "reversal", equity_bar=bt.equity_bar,
+                            start_capital=bt.start_capital)
+
+    if not res["approved"]:
+        falhou = [k for k, v in res["gates"].items() if not v]
+        print("\n  [X] REPROVADO na esteira. Portoes que falharam:")
+        for g in falhou:
+            print(f"        - {g}")
+        print(f"      DD {res['metrics']['max_drawdown_pct']:.1f}% | "
+              f"PF {res['metrics']['profit_factor']:.2f} | "
+              f"trades {res['metrics']['total_trades']}")
+        raise SystemExit("Publicacao abortada: um EA reprovado nao vai pra vitrine.")
+
+    curve = res["curve"]["points"] if isinstance(res.get("curve"), dict) \
+        and "points" in res.get("curve", {}) else res.get("equityCurveOos")
     now_iso = datetime.datetime.now(timezone.utc).isoformat()
     
     # 4. Insere no Supabase
@@ -160,13 +175,14 @@ def main():
         "timeframe": "H1",
         "style": "grid",
         "exitMode": "reversal",
-        "wfe": 89.4,
-        "profitFactor": 1.45,
-        "maxDrawdown": 12.5,
-        "totalTrades": 310,
-        "oosWins": 5,
-        "oosTotalWindows": 6,
-        "status": "APPROVED",
+        # tudo abaixo vem do backtest real (res), nunca mais cravado na mao
+        "wfe": round(res["wfe"], 1),
+        "profitFactor": round(res["metrics"]["profit_factor"], 2),
+        "maxDrawdown": round(res["metrics"]["max_drawdown_pct"], 1),
+        "totalTrades": res["metrics"]["total_trades"],
+        "oosWins": res["oosWins"],
+        "oosTotalWindows": res["oosTotalWin"],
+        "status": "APPROVED",   # so chega aqui se res["approved"] for True
         "fileUrl": obj_path,
         "strategyDef": {"family": "nv7", "exit_mode": "reversal", "direction": "both", "lot": 0.01, **params},
         "equityCurveOos": curve,
@@ -178,12 +194,12 @@ def main():
     val_row = {
         "id": "zaion-sniper-val",
         "eaId": ea_id,
-        "wfe": 89.4,
-        "oosWins": 5,
-        "oosTotalWin": 6,
+        "wfe": round(res["wfe"], 1),
+        "oosWins": res["oosWins"],
+        "oosTotalWin": res["oosTotalWin"],
         "approved": True,
-        "reportMd": "# Relatorio de Validacao do Zaion Sniper (NV7)\n\nEstrategia baseada no algoritmo original NV7 de Fibonacci e Grid Hedgeado.",
-        "windowsJson": [],
+        "reportMd": res["reportMd"],   # relatorio real da esteira, nao texto fixo
+        "windowsJson": res.get("windowsJson", []),
         "validatedAt": now_iso
     }
     

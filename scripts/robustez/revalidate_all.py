@@ -99,6 +99,8 @@ def main():
                 "status_old": ea.get("status"),
                 "status_new": "APPROVED" if approved else "REJECTED",
                 "gates_falhou": falhou,
+                "oos_wins": res["oosWins"], "oos_total": res["oosTotalWin"],
+                "oos_wins_old": ea.get("oosWins"),
                 "dd": round(res["metrics"]["max_drawdown_pct"], 1),
                 "pf": round(res["metrics"]["profit_factor"], 2),
                 "trades": res["metrics"]["total_trades"],
