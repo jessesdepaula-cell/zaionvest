@@ -40,7 +40,7 @@ export function WFATable({
             Walk Forward Analysis
           </h4>
           <p className="text-[10px] text-zinc-600 mt-0.5">
-            Metodologia DQ Labs · {windows.length} janelas
+            Validação em {windows.length} janelas Out-of-Sample
           </p>
         </div>
         {validatedAt && (
@@ -144,7 +144,7 @@ export function WFATable({
             {approved ? "✅ APROVADO" : "❌ REPROVADO"}
           </span>
           <span className="text-[9px] text-zinc-600 mt-0.5">
-            {approved ? "Critérios DQ Labs atendidos" : "Não passou na esteira"}
+            {approved ? "Critérios de robustez atendidos" : "Não passou na esteira"}
           </span>
         </div>
       </div>

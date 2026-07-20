@@ -1,5 +1,5 @@
 /**
- * Correlação entre estratégias a partir da curva de capital OOS (DQ Labs cap. 8).
+ * Correlação entre estratégias a partir da curva de capital OOS.
  * Usada pra: (a) slider de "correlação máxima" na vitrine — esconde EAs muito
  * parecidos; (b) montar portfólios descorrelacionados.
  *

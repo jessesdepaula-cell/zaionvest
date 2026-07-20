@@ -3,6 +3,8 @@ import { Download, RefreshCw, Bot, CheckCircle2, XCircle, Clock } from "lucide-r
 import { getOrCreateUser } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { RobotCorrelationSection, DownloadedEAItem } from "@/components/downloads/RobotCorrelationSection";
+import { EquityPoint } from "@/lib/correlation";
 
 export const dynamic = "force-dynamic";
 
@@ -40,22 +42,43 @@ export default async function DownloadsPage() {
     include: {
       ea: {
         select: {
-          id: true, name: true, slug: true, symbol: true, timeframe: true,
-          status: true, lastValidatedAt: true, maxDrawdown: true,
+          id: true,
+          name: true,
+          slug: true,
+          symbol: true,
+          timeframe: true,
+          status: true,
+          lastValidatedAt: true,
+          maxDrawdown: true,
+          equityCurveOos: true,
         },
       },
     },
   });
+
+  const correlationEAs: DownloadedEAItem[] = downloads.map((d) => ({
+    id: d.ea.id,
+    name: d.ea.name,
+    slug: d.ea.slug,
+    symbol: d.ea.symbol,
+    timeframe: d.ea.timeframe,
+    status: d.ea.status,
+    maxDrawdown: d.ea.maxDrawdown,
+    equityCurveOos: (d.ea.equityCurveOos as EquityPoint[] | null) ?? null,
+  }));
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Meus Downloads</h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Os robôs que você baixou e o status de cada um na revalidação mensal.
+          Os robôs que você baixou, a correlação entre os robôs ativos e o status de cada um na revalidação mensal.
           Um robô reprovado é desligado automaticamente pelo kill-switch no seu MetaTrader.
         </p>
       </div>
+
+      {/* Seção de Análise de Correlação dos Robôs Ativos */}
+      <RobotCorrelationSection eas={correlationEAs} />
 
       {/* Tutorial de Instalação e Ativação */}
       <div className="mb-8 rounded-xl border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.01] p-6">

@@ -49,15 +49,15 @@ export default async function EADetailPage({
 
   const latestValidation = ea.validations[0] ?? null;
 
-  // Capital recomendado. O robô é calibrado para uma conta-base de US$ 10.000
-  // (o lote padrão já vem embutido no .ex5, dimensionado para esse capital).
-  // Recomendamos o capital que mantém o drawdown observado em ~20% da conta e
-  // NUNCA abaixo da base (rodar com menos over-alavanca o lote). Com mais
-  // capital, o drawdown relativo cai proporcionalmente.
-  const BASE_CAPITAL = 10000;
+  // Capital recomendado (Perfil Bem Conservador).
+  // Calibrado de forma bem conservadora para manter o drawdown máximo estimado
+  // em cerca de 5% a 8% do saldo total da conta.
   const ddPct = ea.maxDrawdown ?? 0;
+  const TARGET_CONSERVATIVE_DD = 5; // 5% de drawdown máx no perfil conservador
   const capitalRec =
-    ddPct > 0 ? Math.max(BASE_CAPITAL, Math.ceil((ddPct * 500) / 500) * 500) : null;
+    ddPct > 0
+      ? Math.max(500, Math.ceil(((ddPct / TARGET_CONSERVATIVE_DD) * 1000) / 250) * 250)
+      : 1000;
   const brl = (v: number) => v.toLocaleString("pt-BR");
 
   return (
@@ -86,16 +86,15 @@ export default async function EADetailPage({
               </div>
               <h1 className="text-2xl font-bold text-[#F5F5F5]">{ea.name}</h1>
               <p className="text-sm text-zinc-500 mt-1">
-                Métricas calculadas sobre backtest de{" "}
-                <strong className="text-zinc-300">6 anos</strong>, com base de conta de{" "}
-                <strong className="text-zinc-300">US$ 10.000</strong>.
+                Métricas calculadas sobre histórico de testes Out-of-Sample de{" "}
+                <strong className="text-zinc-300">6 anos</strong> de mercado.
               </p>
             </div>
 
             {/* Validação (resumo — sem expor a metodologia) */}
             <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
               <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-4">
-                Validação de Robustez (DQ Labs)
+                Validação de Robustez
               </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -262,21 +261,16 @@ export default async function EADetailPage({
             {capitalRec && (
               <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-4">
                 <h4 className="text-xs font-semibold text-[#F5F5F5] mb-1">
-                  Capital recomendado
+                  Capital Recomendado (Perfil Conservador)
                 </h4>
                 <div className="flex items-baseline gap-1.5 mt-2 mb-2">
                   <span className="num text-2xl font-extrabold text-[#F5F5F5]">
                     US$ {brl(capitalRec)}
                   </span>
-                  <span className="text-[10px] text-zinc-500">mínimo</span>
+                  <span className="text-[10px] text-zinc-500">mínimo recomendado</span>
                 </div>
                 <p className="text-[10px] text-zinc-500 leading-relaxed">
-                  O robô já vem com o lote calibrado para uma conta de
-                  <strong className="text-zinc-300"> US$ {brl(BASE_CAPITAL)}</strong>.
-                  Neste capital, o drawdown máximo observado foi de{" "}
-                  <strong className="text-zinc-300">{ddPct.toFixed(1)}%</strong>.
-                  Com mais capital, o drawdown relativo na sua conta diminui.
-                  Se usar um capital diferente, ajuste o lote proporcionalmente.
+                  Calculado para um perfil <strong className="text-zinc-300">bem conservador</strong> de gestão de risco, visando limitar o drawdown máximo estimado a aproximadamente <strong className="text-zinc-300">5% da conta</strong> (drawdown máximo histórico do robô: <strong className="text-zinc-300">{ddPct.toFixed(1)}%</strong>).
                 </p>
               </div>
             )}
