@@ -39,14 +39,14 @@ REM ponto (.venv-numba\...) o cmd nao engole — quebra com "'numba' nao e
 REM reconhecido como um comando".
 "%~dp0.venv-numba\Scripts\python.exe" mine_overnight.py ^
     --symbols GBPUSD,XAGUSD,EURNZD,AUDUSD,BTCUSD ^
-    --timeframes H1,H4,M30 ^
+    --timeframes H1,H2,H4 ^
     --years 4 ^
     --pop 70 ^
     --gen 20 ^
     --keep 6 ^
     --seed0 %RANDOM%%RANDOM% ^
     --autopublish ^
-    --out survivors_m30.json >> _noite.log 2>&1
+    --out survivors_overnight.json >> _noite.log 2>&1
 
 if exist _STOP_MINING goto fim
 

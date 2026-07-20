@@ -32,7 +32,7 @@ do {
     }
 
     # Timeframes estaveis recomendados
-    $Timeframes = @("H1", "H4", "M30")
+    $Timeframes = @("H1", "H2", "H4")
 
     foreach ($Ativo in $Ativos) {
         foreach ($Tf in $Timeframes) {
