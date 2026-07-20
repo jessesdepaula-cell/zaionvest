@@ -36,36 +36,58 @@ export default async function DownloadsPage() {
   const user = await getOrCreateUser();
   if (!user) return null;
 
-  const downloads = await prisma.eADownload.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      ea: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          symbol: true,
-          timeframe: true,
-          status: true,
-          lastValidatedAt: true,
-          maxDrawdown: true,
-          equityCurveOos: true,
+  const [downloads, accounts] = await Promise.all([
+    prisma.eADownload.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        ea: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            symbol: true,
+            timeframe: true,
+            status: true,
+            lastValidatedAt: true,
+            maxDrawdown: true,
+            equityCurveOos: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.account.findMany({
+      where: { userId: user.id },
+      include: {
+        robots: true,
+      },
+    }),
+  ]);
 
-  const correlationEAs: DownloadedEAItem[] = downloads.map((d) => ({
-    id: d.ea.id,
-    name: d.ea.name,
-    slug: d.ea.slug,
-    symbol: d.ea.symbol,
-    timeframe: d.ea.timeframe,
-    status: d.ea.status,
-    maxDrawdown: d.ea.maxDrawdown,
-    equityCurveOos: (d.ea.equityCurveOos as EquityPoint[] | null) ?? null,
-  }));
+  // Lista de robôs registrados na telemetria MT5 com trades executados
+  const activeRobotLabels = accounts
+    .flatMap((a) => a.robots)
+    .filter((r) => r.trades > 0)
+    .map((r) => (r.label ?? "").toLowerCase());
+
+  const correlationEAs: DownloadedEAItem[] = downloads.map((d) => {
+    const eaNameNorm = d.ea.name.toLowerCase();
+    const isOperatingInMT5 = activeRobotLabels.some(
+      (lbl) => lbl.includes(eaNameNorm) || eaNameNorm.includes(lbl)
+    );
+
+    return {
+      id: d.ea.id,
+      name: d.ea.name,
+      slug: d.ea.slug,
+      symbol: d.ea.symbol,
+      timeframe: d.ea.timeframe,
+      status: d.ea.status,
+      maxDrawdown: d.ea.maxDrawdown,
+      equityCurveOos: (d.ea.equityCurveOos as EquityPoint[] | null) ?? null,
+      isOperatingInMT5,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">

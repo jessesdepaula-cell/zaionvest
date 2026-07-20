@@ -13,23 +13,31 @@ export interface DownloadedEAItem {
   status: string; // APPROVED | REJECTED | PENDING
   maxDrawdown: number | null;
   equityCurveOos: EquityPoint[] | null;
+  isOperatingInMT5?: boolean;
 }
 
 interface Props {
   eas: DownloadedEAItem[];
 }
 
+export type FilterMode = "APPROVED" | "MT5_LIVE" | "ALL";
+
 export function RobotCorrelationSection({ eas }: Props) {
-  const [onlyActive, setOnlyActive] = useState(true);
+  const [filterMode, setFilterMode] = useState<FilterMode>("APPROVED");
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
+
+  const mt5LiveCount = useMemo(() => eas.filter((e) => e.isOperatingInMT5).length, [eas]);
 
   // Filtragem dos EAs elegíveis
   const filteredEAs = useMemo(() => {
-    if (onlyActive) {
+    if (filterMode === "APPROVED") {
       return eas.filter((item) => item.status === "APPROVED");
     }
+    if (filterMode === "MT5_LIVE") {
+      return eas.filter((item) => item.isOperatingInMT5);
+    }
     return eas;
-  }, [eas, onlyActive]);
+  }, [eas, filterMode]);
 
   // Cálculo da matriz de correlação NxN
   const matrixData = useMemo(() => {
@@ -148,21 +156,36 @@ export function RobotCorrelationSection({ eas }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg border border-[#f5f5f5]/10 bg-[#141414] p-1">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-[#f5f5f5]/10 bg-[#141414] p-1">
           <button
-            onClick={() => setOnlyActive(true)}
+            onClick={() => setFilterMode("APPROVED")}
             className={`rounded-md px-3 py-1 text-[11px] font-semibold transition ${
-              onlyActive
+              filterMode === "APPROVED"
                 ? "bg-[#2563EB] text-white shadow-sm"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             Apenas Revalidação Aprovada ({eas.filter((e) => e.status === "APPROVED").length})
           </button>
+
+          {mt5LiveCount > 0 && (
+            <button
+              onClick={() => setFilterMode("MT5_LIVE")}
+              className={`rounded-md px-3 py-1 text-[11px] font-semibold transition flex items-center gap-1 ${
+                filterMode === "MT5_LIVE"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-emerald-400 hover:text-emerald-300"
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Operando na Conta MT5 ({mt5LiveCount})
+            </button>
+          )}
+
           <button
-            onClick={() => setOnlyActive(false)}
+            onClick={() => setFilterMode("ALL")}
             className={`rounded-md px-3 py-1 text-[11px] font-semibold transition ${
-              !onlyActive
+              filterMode === "ALL"
                 ? "bg-[#2563EB] text-white shadow-sm"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
@@ -174,8 +197,8 @@ export function RobotCorrelationSection({ eas }: Props) {
 
       {!matrixData || filteredEAs.length < 2 ? (
         <div className="py-8 text-center text-xs text-zinc-500">
-          {onlyActive
-            ? "Você não possui pelo menos 2 robôs aprovados na revalidação no momento. Mude o filtro para 'Todos Baixados' para comparar todas as estratégias."
+          {filterMode !== "ALL"
+            ? "Você não possui pelo menos 2 robôs nesta categoria no momento. Mude o filtro para 'Todos Baixados' para comparar todas as estratégias."
             : "Número insuficiente de robôs para gerar a matriz."}
         </div>
       ) : (
