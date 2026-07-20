@@ -23,10 +23,11 @@ interface Props {
 export type FilterMode = "APPROVED" | "MT5_LIVE" | "ALL";
 
 export function RobotCorrelationSection({ eas }: Props) {
-  const [filterMode, setFilterMode] = useState<FilterMode>("APPROVED");
-  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
-
   const mt5LiveCount = useMemo(() => eas.filter((e) => e.isOperatingInMT5).length, [eas]);
+  const [filterMode, setFilterMode] = useState<FilterMode>(() =>
+    mt5LiveCount > 0 ? "MT5_LIVE" : "APPROVED"
+  );
+  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
 
   // Filtragem dos EAs elegíveis
   const filteredEAs = useMemo(() => {

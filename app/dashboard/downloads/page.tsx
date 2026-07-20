@@ -60,21 +60,39 @@ export default async function DownloadsPage() {
       where: { userId: user.id },
       include: {
         robots: true,
+        positions: { select: { comment: true } },
+        monitorTrades: { select: { comment: true }, take: 100 },
       },
     }),
   ]);
 
-  // Lista de robôs registrados na telemetria MT5 com trades executados
+  // Lista de rótulos de robôs VÁLIDOS (não vazios) registrados na telemetria MT5
   const activeRobotLabels = accounts
     .flatMap((a) => a.robots)
-    .filter((r) => r.trades > 0)
-    .map((r) => (r.label ?? "").toLowerCase());
+    .filter((r) => r.trades > 0 && r.label && r.label.trim().length > 0)
+    .map((r) => r.label!.trim().toLowerCase());
+
+  const activeComments = accounts
+    .flatMap((a) => [
+      ...a.positions.map((p) => p.comment),
+      ...a.monitorTrades.map((t) => t.comment),
+    ])
+    .filter((c): c is string => Boolean(c && c.trim().length > 0))
+    .map((c) => c.trim().toLowerCase());
 
   const correlationEAs: DownloadedEAItem[] = downloads.map((d) => {
     const eaNameNorm = d.ea.name.toLowerCase();
-    const isOperatingInMT5 = activeRobotLabels.some(
-      (lbl) => lbl.includes(eaNameNorm) || eaNameNorm.includes(lbl)
-    );
+    const eaSlugNorm = d.ea.slug.toLowerCase();
+
+    const isOperatingInMT5 =
+      (activeRobotLabels.length > 0 &&
+        activeRobotLabels.some(
+          (lbl) => lbl.includes(eaNameNorm) || eaNameNorm.includes(lbl)
+        )) ||
+      (activeComments.length > 0 &&
+        activeComments.some(
+          (cmt) => cmt.includes(eaNameNorm) || cmt.includes(eaSlugNorm)
+        ));
 
     return {
       id: d.ea.id,
