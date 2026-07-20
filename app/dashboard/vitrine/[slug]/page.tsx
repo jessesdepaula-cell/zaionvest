@@ -131,58 +131,6 @@ export default async function EADetailPage({
               </div>
             </div>
 
-            {/* Janelas da WFA (Walk-Forward Analysis) — apenas para o Gestor */}
-            {isOwner && latestValidation && latestValidation.windowsJson && (
-              <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
-                <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-2">
-                  Janelas do Walk-Forward (WFA) <span className="ml-2 rounded bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400">Visão do Gestor</span>
-                </h3>
-                <p className="text-[11px] text-zinc-500 mb-4 leading-relaxed">
-                  Simulação progressiva onde o robô é otimizado no treino (In-Sample) e testado às cegas (Out-of-Sample) no período seguinte. Garante estabilidade estatística ao longo do tempo.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#f5f5f5]/10 text-zinc-500 text-[10px] uppercase tracking-wider">
-                        <th className="py-2.5 font-medium">Janela</th>
-                        <th className="py-2.5 font-medium text-center">Lucro OOS ($)</th>
-                        <th className="py-2.5 font-medium text-center">Eficiência WFE</th>
-                        <th className="py-2.5 font-medium text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#f5f5f5]/5">
-                      {(latestValidation.windowsJson as any[]).map((win, idx) => (
-                        <tr key={idx} className="hover:bg-[#f5f5f5]/[0.01] transition-colors">
-                          <td className="py-3 font-mono text-zinc-400">Janela #{win.window}</td>
-                          <td className={`py-3 text-center font-mono font-semibold ${win.oosProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                            {win.oosProfit >= 0 ? "+" : ""}{win.oosProfit.toFixed(2)}
-                          </td>
-                          <td className="py-3 text-center font-mono text-zinc-300">{win.wfe.toFixed(1)}%</td>
-                          <td className="py-3 text-right">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${win.approved ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
-                              {win.approved ? "APROVADO" : "REPROVADO"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Relatório Técnico de Robustez (Markdown Parser) — apenas para o Gestor */}
-            {isOwner && latestValidation && latestValidation.reportMd && (
-              <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
-                <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-4 border-b border-[#f5f5f5]/10 pb-2">
-                  Relatório Detalhado de Robustez & Sensibilidade <span className="ml-2 rounded bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400">Visão do Gestor</span>
-                </h3>
-                <div className="space-y-3 select-text selection:bg-[#2563EB]/30 selection:text-white">
-                  {parseMarkdown(latestValidation.reportMd)}
-                </div>
-              </div>
-            )}
-
             {/* Histórico de revalidações */}
             {ea.validations.length > 0 && (
               <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] overflow-hidden">
