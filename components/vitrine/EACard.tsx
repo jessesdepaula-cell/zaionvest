@@ -89,13 +89,15 @@ function getIndicators(style: string, name: string): string[] {
 
 // Mini sparkline SVG da curva de capital OOS
 function SparkLine({
+  id,
   data,
   approved,
 }: {
+  id: string;
   data: Array<{ value: number }>;
   approved: boolean;
 }) {
-  if (!data || data.length < 2) {
+  if (!data || !Array.isArray(data) || data.length < 2) {
     return (
       <div className="h-12 flex items-center justify-center text-[10px] text-zinc-600">
         Sem dados
@@ -103,7 +105,15 @@ function SparkLine({
     );
   }
 
-  const values = data.map((d) => d.value);
+  const values = data.map((d) => d?.value).filter((v): v is number => typeof v === "number" && !isNaN(v));
+  if (values.length < 2) {
+    return (
+      <div className="h-12 flex items-center justify-center text-[10px] text-zinc-600">
+        Sem dados
+      </div>
+    );
+  }
+
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
@@ -119,6 +129,7 @@ function SparkLine({
     .join(" ");
 
   const color = approved ? "#10b981" : "#f43f5e";
+  const gradId = `grad-${approved ? "app" : "rej"}-${id}`;
 
   return (
     <svg
@@ -127,14 +138,14 @@ function SparkLine({
       preserveAspectRatio="none"
     >
       <defs>
-        <linearGradient id={`grad-${approved}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.3" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon
         points={`0,${H} ${points} ${W},${H}`}
-        fill={`url(#grad-${approved})`}
+        fill={`url(#${gradId})`}
       />
       <polyline
         points={points}
@@ -167,13 +178,13 @@ export function EACard({
   canDownload = false,
   detailHref,
 }: EACardProps) {
-  const cfg = STATUS_CONFIG[status];
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
   const approved = status === "APPROVED";
 
   // Lucro do período = variação da curva de capital do backtest.
   const lucroPct = (() => {
     const c = equityCurveOos;
-    if (!c || c.length < 2 || !c[0]?.value) return null;
+    if (!c || !Array.isArray(c) || c.length < 2 || !c[0]?.value || !c[c.length - 1]?.value) return null;
     return ((c[c.length - 1].value - c[0].value) / c[0].value) * 100;
   })();
   
@@ -242,7 +253,7 @@ export function EACard({
 
         {/* Sparkline da curva OOS */}
         <div className="rounded-lg overflow-hidden bg-[#050505] border border-[#f5f5f5]/[0.04]">
-          <SparkLine data={equityCurveOos ?? []} approved={approved} />
+          <SparkLine id={id} data={equityCurveOos ?? []} approved={approved} />
         </div>
 
         {/* Métricas */}

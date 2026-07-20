@@ -20,7 +20,7 @@ export default async function EADetailPage({
 
   const user = await prisma.user.findUnique({
     where: { clerkId },
-    select: { id: true, subscriptionStatus: true },
+    select: { id: true, subscriptionStatus: true, email: true },
   });
   if (!user) redirect("/sign-in");
 
@@ -43,9 +43,8 @@ export default async function EADetailPage({
   // Staging: EAs que não estão APPROVED (STAGED/REJECTED/PENDING) não são
   // públicos. Só o dono os vê — pra revisar antes de promover no admin.
   if (ea.status !== "APPROVED") {
-    const clerkUser = await currentUser();
-    const email = clerkUser?.emailAddresses[0]?.emailAddress;
-    if (email !== OWNER_EMAIL) notFound();
+    const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    if (!isOwner) notFound();
   }
 
   const latestValidation = ea.validations[0] ?? null;

@@ -13,7 +13,7 @@ REM  NAO consome credito nenhum do Claude - e Python puro na sua maquina.
 REM ===================================================================
 
 cd /d "%~dp0"
-title ZaionVest - Minerando XAGUSD+USDJPY M30 (nao feche)
+title ZaionVest - Minerando Novos Pares (nao feche)
 
 if exist _STOP_MINING del _STOP_MINING
 
@@ -38,8 +38,8 @@ REM caminho ABSOLUTO (%~dp0 = pasta deste .bat). Caminho relativo comecando com
 REM ponto (.venv-numba\...) o cmd nao engole — quebra com "'numba' nao e
 REM reconhecido como um comando".
 "%~dp0.venv-numba\Scripts\python.exe" mine_overnight.py ^
-    --symbols XAGUSD,USDJPY ^
-    --timeframes M30 ^
+    --symbols GBPUSD,XAGUSD,EURNZD,AUDUSD,BTCUSD ^
+    --timeframes H1,H4,M30 ^
     --years 4 ^
     --pop 70 ^
     --gen 20 ^
