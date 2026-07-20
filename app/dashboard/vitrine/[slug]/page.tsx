@@ -40,10 +40,11 @@ export default async function EADetailPage({
 
   if (!ea) notFound();
 
+  const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+
   // Staging: EAs que não estão APPROVED (STAGED/REJECTED/PENDING) não são
   // públicos. Só o dono os vê — pra revisar antes de promover no admin.
   if (ea.status !== "APPROVED") {
-    const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
     if (!isOwner) notFound();
   }
 
@@ -130,11 +131,11 @@ export default async function EADetailPage({
               </div>
             </div>
 
-            {/* Janelas da WFA (Walk-Forward Analysis) */}
-            {latestValidation && latestValidation.windowsJson && (
+            {/* Janelas da WFA (Walk-Forward Analysis) — apenas para o Gestor */}
+            {isOwner && latestValidation && latestValidation.windowsJson && (
               <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
                 <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-2">
-                  Janelas do Walk-Forward (WFA)
+                  Janelas do Walk-Forward (WFA) <span className="ml-2 rounded bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400">Visão do Gestor</span>
                 </h3>
                 <p className="text-[11px] text-zinc-500 mb-4 leading-relaxed">
                   Simulação progressiva onde o robô é otimizado no treino (In-Sample) e testado às cegas (Out-of-Sample) no período seguinte. Garante estabilidade estatística ao longo do tempo.
@@ -170,11 +171,11 @@ export default async function EADetailPage({
               </div>
             )}
 
-            {/* Relatório Técnico de Robustez (Markdown Parser) */}
-            {latestValidation && latestValidation.reportMd && (
+            {/* Relatório Técnico de Robustez (Markdown Parser) — apenas para o Gestor */}
+            {isOwner && latestValidation && latestValidation.reportMd && (
               <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] p-6">
                 <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider mb-4 border-b border-[#f5f5f5]/10 pb-2">
-                  Relatório Detalhado de Robustez & Sensibilidade
+                  Relatório Detalhado de Robustez & Sensibilidade <span className="ml-2 rounded bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400">Visão do Gestor</span>
                 </h3>
                 <div className="space-y-3 select-text selection:bg-[#2563EB]/30 selection:text-white">
                   {parseMarkdown(latestValidation.reportMd)}
