@@ -36,7 +36,6 @@ export default function LandingPage() {
             height={145}
             priority
             className="h-9 w-auto"
-            style={{ mixBlendMode: "lighten" }}
           />
         </Link>
         <nav className="flex items-center gap-4 text-xs">
@@ -53,12 +52,7 @@ export default function LandingPage() {
       </header>
 
       {/* ─── HERO ─── */}
-      <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center">
-        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/40 bg-[#2563EB]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
-          <Sparkles className="h-3.5 w-3.5 text-[#2563EB] animate-pulse" />
-          ⚡ TECNOLOGIA DE AUTOMAÇÃO DE ALTA PERFORMANCE PARA METATRADER 5
-        </div>
-
+      <section className="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-16 text-center">
         <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-6xl lg:text-7xl">
           Conquiste consistência no mercado{" "}
           <span className="bg-gradient-to-r from-[#F5F5F5] via-[#F5F5F5] to-[#2563EB] bg-clip-text text-transparent">
@@ -73,7 +67,20 @@ export default function LandingPage() {
           blinda o seu patrimônio.
         </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        {/* Vídeo VSL Principal (Com a Voz de Charo) */}
+        <div className="my-10 mx-auto max-w-3xl w-full rounded-2xl border border-[#2563EB]/40 bg-[#0A0D14] p-2 sm:p-3 shadow-[0_20px_60px_-15px_rgba(37,99,235,0.35)] relative overflow-hidden">
+          <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black">
+            <video
+              src="/vsl.mp4"
+              controls
+              preload="metadata"
+              playsInline
+              className="h-full w-full object-cover rounded-xl"
+            />
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/sign-up"
             id="cta-hero-primary"
