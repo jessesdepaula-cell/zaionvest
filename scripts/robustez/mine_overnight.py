@@ -75,6 +75,27 @@ def _key(s: dict) -> str:
             f"|{sd.get('sl_atr')}|{sd.get('tp_atr')}|{'|'.join(blocos)}")
 
 
+import threading
+
+_LAST_ACTIVITY = time.time()
+
+def _watchdog_loop(max_idle_seconds=900):
+    """Monitora se a mineração ou o autopublish travaram em chamadas nativas do MT5.
+    Se ficar mais de 15 min sem progresso, força o encerramento com código 1
+    para que o .bat reinicie o minerador imediatamente com MT5 limpo."""
+    global _LAST_ACTIVITY
+    while True:
+        time.sleep(30)
+        idle = time.time() - _LAST_ACTIVITY
+        if idle > max_idle_seconds:
+            print(f"\n[noite] ⚠️ WATCHDOG DETECTOU CONGELAMENTO NO MT5 ({idle/60:.1f}m sem atividade)! Forçando religamento...", flush=True)
+            os._exit(1)
+
+def _touch_activity():
+    global _LAST_ACTIVITY
+    _LAST_ACTIVITY = time.time()
+
+
 def main():
     ap = argparse.ArgumentParser(description="Mineração genética contínua (a noite toda)")
     ap.add_argument("--symbols", default="USDJPY")
@@ -111,6 +132,10 @@ def main():
     if os.path.exists(STOP_FILE):
         os.remove(STOP_FILE)
 
+    # Inicia o Watchdog thread em background (daemon)
+    wd = threading.Thread(target=_watchdog_loop, daemon=True)
+    wd.start()
+
     import mt5_data
     import genetic
 
@@ -131,6 +156,7 @@ def main():
     t_ini = time.time()
     try:
         while True:
+            _touch_activity()
             if os.path.exists(STOP_FILE):
                 print("[noite] _STOP_MINING encontrado — encerrando.", flush=True)
                 break
@@ -149,6 +175,7 @@ def main():
                 mt5_data.connect()
                 for sym in args.symbols.split(","):
                     for tf in args.timeframes.split(","):
+                        _touch_activity()
                         if os.path.exists(STOP_FILE):
                             break
                         try:
@@ -160,6 +187,7 @@ def main():
                         surv = genetic.mine_symbol(df, info, name, tf, rng,
                                                    pop_size=args.pop, generations=args.gen,
                                                    keep=args.keep, verbose=True)
+                        _touch_activity()
                         for s in surv:
                             k = _key(s)
                             if k in seen:
@@ -194,8 +222,10 @@ def main():
             # Blindado: qualquer erro só loga, nunca derruba a mineração.
             if args.autopublish:
                 try:
+                    _touch_activity()
                     import autopublish
                     res = autopublish.run_once(python_exe=sys.executable, survivors_path=args.out)
+                    _touch_activity()
                     if res.get("error"):
                         print(f"[noite] autopublish falhou (segue minerando): {res['error']}", flush=True)
                     elif res.get("processados"):
