@@ -82,7 +82,7 @@ export default function LandingPage() {
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            href="/sign-up"
+            href="/sign-up?redirect_url=/billing"
             id="cta-hero-primary"
             className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-4 text-sm font-bold tracking-wide text-white shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] ring-1 ring-white/10 transition hover:bg-[#1D4ED8] hover:shadow-[0_14px_50px_-8px_rgba(37,99,235,0.8)] focus:outline-none"
           >
@@ -90,10 +90,10 @@ export default function LandingPage() {
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           <a
-            href="#como-funciona"
+            href="#zaion-monitor"
             className="text-xs text-zinc-400 hover:text-zinc-200 transition py-4 px-6 rounded-xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] hover:bg-[#f5f5f5]/[0.05] w-full sm:w-auto text-center"
           >
-            Ver como funciona
+            Conhecer o Zaion Monitor
           </a>
         </div>
 
@@ -233,6 +233,71 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── SEÇÃO DEDICADA: ZAION MONITOR ─── */}
+      <section id="zaion-monitor" className="relative z-10 mx-auto max-w-5xl px-6 py-20 border-t border-[#f5f5f5]/5">
+        <div className="rounded-3xl border border-blue-500/20 bg-gradient-to-b from-[#0A101D] to-[#050811] p-8 sm:p-12 relative overflow-hidden shadow-2xl">
+          <div className="absolute -top-20 -right-20 h-64 w-64 bg-blue-600/10 blur-3xl pointer-events-none" />
+          
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 px-3.5 py-1 text-xs font-semibold text-blue-400 uppercase tracking-wider">
+              📈 Incluído Gratuitamente na Assinatura
+            </span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-4xl">
+              Zaion Monitor: Telemetria e Controle Total em Tempo Real
+            </h2>
+            <p className="mt-3 text-sm text-zinc-400 leading-relaxed sm:text-base">
+              Acompanhe a saúde financeira, o capital líquido, o drawdown real e as operações abertas de todas as suas contas MetaTrader 5 em uma única tela — pelo computador ou celular.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mb-4">
+                <Gauge className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-[#F5F5F5]">Acompanhamento ao Vivo</h3>
+              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                Visualize saldo atualizado, margem, drawdown instantâneo e lucro acumulado em tempo real sem precisar abrir o terminal MT5.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-4">
+                <Shield className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-[#F5F5F5]">Link Público para Investidores</h3>
+              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                Gere um link profissional e seguro de demonstração para comprovar seus resultados a investidores, sem fornecer senha de investidor.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-4">
+                <Layers className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-[#F5F5F5]">Multi-Contas Centralizado</h3>
+              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                Conecte múltiplas contas de corretoras diferentes no mesmo painel e tenha visão consolidada do seu patrimônio total.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-left">
+              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Zero Custo Adicional</span>
+              <p className="text-xs text-zinc-400 mt-0.5">O Zaion Monitor já está liberado automaticamente na sua assinatura de R$ 67/mês.</p>
+            </div>
+            <Link
+              href="/sign-up?redirect_url=/billing"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-500 shadow-lg shadow-blue-600/20 shrink-0"
+            >
+              Assinar & Acessar o Monitor
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ─── PREÇO ─── */}
       <section id="pricing" className="relative z-10 mx-auto max-w-3xl px-6 py-20 border-t border-[#f5f5f5]/5 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-[#F5F5F5]">Acesso completo à vitrine</h2>
@@ -297,7 +362,7 @@ export default function LandingPage() {
           </div>
 
           <Link
-            href="/sign-up"
+            href="/sign-up?redirect_url=/billing"
             id="cta-pricing"
             className="mt-8 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-[#000000] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 hover:shadow-emerald-500/35 focus:outline-none"
           >
@@ -355,7 +420,7 @@ export default function LandingPage() {
           Assine, baixe os robôs e coloque-os para operar hoje mesmo. Cancele quando quiser.
         </p>
         <Link
-          href="/sign-up"
+          href="/sign-up?redirect_url=/billing"
           id="cta-final"
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-10 py-4 text-sm font-bold text-[#000000] shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
         >
