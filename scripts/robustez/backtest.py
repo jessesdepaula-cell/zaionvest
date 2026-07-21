@@ -224,6 +224,12 @@ def run_backtest(
                         lot=lot, spread_points=spread_points,
                         commission_per_trade=commission_per_trade)
 
+    if exit_mode == "grid":
+        return _run_multi_grid(df, params, direction=direction, point=point,
+                               contract_size=contract_size, lot=lot,
+                               spread_points=spread_points,
+                               commission_per_trade=commission_per_trade)
+
     sig = _signals(df, family, params)
     # filtro de direção: long-only zera sinais de venda e vice-versa
     if direction == "long":
@@ -506,6 +512,116 @@ def _run_grid_hedge(
 
         equity_bar.append(float(round(eq, 2)))
         equity_dates.append(str(pd.Timestamp(times[i]).date()))
+
+    return BacktestResult(trades=trades, equity_bar=equity_bar,
+                          equity_dates=equity_dates, lot=lot)
+
+
+def _run_multi_grid(
+    df: pd.DataFrame,
+    params: dict,
+    *,
+    direction: str,
+    point: float,
+    contract_size: float,
+    lot: float,
+    spread_points: float,
+    commission_per_trade: float,
+) -> BacktestResult:
+    """Modo GRID para estratégias multi-condição:
+    Sinal multi-condição abre a 1ª posição da grade. Se o preço andar
+    `grid_step_atr` * ATR contra a última posição, adiciona novo nível (até `grid_max_levels`).
+    Fecha o cesto inteiro no lucro líquido alvo (`grid_tp_atr` * ATR * lote * contrato).
+    COM PROTEÇÃO DD GUARD: se o prejuízo flutuante do cesto atingir `dd_guard_pct` da conta,
+    encerra todas as posições imediatamente no Hard Stop.
+    """
+    close = df["close"].values
+    times = df["time"].values
+    atr = _atr(df, int(params.get("atr_period", 14))).values
+    sig = _signals(df, "multi", params) if "blocks" in params else _signals(df, "mean_reversion", params)
+
+    step_atr = float(params.get("grid_step_atr", 1.5))
+    max_levels = int(params.get("grid_max_levels", 4))
+    tp_atr = float(params.get("grid_tp_atr", 2.0))
+    dd_guard_pct = float(params.get("dd_guard_pct", 0.05))
+
+    value = contract_size * lot
+    cost = spread_points * point * contract_size * lot + commission_per_trade
+
+    dt_idx = pd.DatetimeIndex(df["time"])
+    date_strs = np.asarray(dt_idx.strftime("%Y-%m-%d"))
+    friday_close = (dt_idx.weekday == 4) & (dt_idx.hour >= 20)
+
+    trades: list[Trade] = []
+    equity_bar: list[float] = []
+    equity_dates: list[str] = []
+    realized = START_CAPITAL
+
+    basket: list[float] = []
+    bdir = 0
+    basket_atr = 0.0
+    cooldown = 0
+
+    def basket_float(px):
+        return sum(bdir * (px - e) * value for e in basket)
+
+    def close_basket(px, i):
+        nonlocal realized, basket, bdir
+        gross = basket_float(px)
+        p = round(float(gross) - cost * len(basket), 2)
+        realized += p
+        trades.append(Trade(profit=p, date=str(date_strs[i]), side=bdir))
+        basket = []
+        bdir = 0
+
+    for i in range(1, len(df)):
+        px = close[i]
+        a = atr[i] if not np.isnan(atr[i]) else 0.0
+
+        # Sexta-feira à noite: fecha o cesto por segurança de gap de fim de semana
+        if friday_close[i] and basket:
+            close_basket(px, i)
+            equity_bar.append(float(round(realized, 2)))
+            equity_dates.append(str(date_strs[i]))
+            continue
+
+        if basket and a > 0:
+            fl = basket_float(px)
+            # 1. DD Guard (Hard Stop): se o prejuízo flutuante exceder o limite de conta
+            if START_CAPITAL > 0 and (-fl) / START_CAPITAL >= dd_guard_pct:
+                close_basket(px, i)
+                cooldown = 20
+                equity_bar.append(float(round(realized, 2)))
+                equity_dates.append(str(date_strs[i]))
+                continue
+
+            # 2. Cluster TP: fecha se o lucro líquido atingir a meta
+            if fl >= tp_atr * basket_atr * value:
+                close_basket(px, i)
+            else:
+                # 3. Adiciona novo nível de grade se andou step_atr * ATR contra a pior entrada
+                worst = min(basket) if bdir == 1 else max(basket)
+                if len(basket) < max_levels:
+                    if (bdir == 1 and px <= worst - step_atr * a) or (bdir == -1 and px >= worst + step_atr * a):
+                        basket.append(px)
+
+        # 4. Abertura inicial se fora de cooldown e sem cesto ativo
+        if cooldown > 0:
+            cooldown -= 1
+        elif not basket and a > 0:
+            s = sig[i]
+            if s == 1 and direction in ("both", "long"):
+                basket = [px]
+                bdir = 1
+                basket_atr = a
+            elif s == -1 and direction in ("both", "short"):
+                basket = [px]
+                bdir = -1
+                basket_atr = a
+
+        fl = basket_float(px) if basket else 0.0
+        equity_bar.append(float(round(realized + fl, 2)))
+        equity_dates.append(str(date_strs[i]))
 
     return BacktestResult(trades=trades, equity_bar=equity_bar,
                           equity_dates=equity_dates, lot=lot)

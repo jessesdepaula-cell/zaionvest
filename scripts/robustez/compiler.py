@@ -329,6 +329,34 @@ def _read_log(path: str) -> str:
     return ""
 
 
+GRID_TEMPLATE = os.path.join(_HERE, "templates", "qm_grid_template.mq5")
+
+def render_grid(ea_id: str, params: dict, direction: str = "both", lot: float = 0.1) -> str:
+    blocks_list = params.get("blocks") or []
+    if not blocks_list:
+        raise ValueError("strategyDef multi/grid sem 'blocks'")
+    decls, inits, body = _gen_multi(blocks_list)
+    tpl = open(GRID_TEMPLATE, encoding="utf-8").read()
+    subs = {
+        "__EA_ID__": ea_id,
+        "__STATUS_URL__": f"{STATUS_URL_BASE}/{ea_id}/status",
+        "__DIRECTION__": DIRECTION_CODE.get(direction, 0),
+        "__LOT__": FIXED_LOT,
+        "__MAGIC__": _magic_of(ea_id),
+        "__ATR_PERIOD__": int(params.get("atr_period", 14)),
+        "__GRID_STEP_ATR__": _d(params.get("grid_step_atr", 1.5)),
+        "__GRID_MAX_LEVELS__": int(params.get("grid_max_levels", 4)),
+        "__GRID_TP_ATR__": _d(params.get("grid_tp_atr", 2.0)),
+        "__DD_GUARD_PCT__": _d(params.get("dd_guard_pct", 0.05)),
+        "__HANDLE_DECLS__": decls,
+        "__HANDLE_INITS__": inits,
+        "__SIGNAL_BODY__": body,
+    }
+    for token, val in subs.items():
+        tpl = tpl.replace(token, str(val))
+    return tpl
+
+
 def compile_ea(
     ea_id: str, family: str, exit_mode: str, params: dict,
     name: str | None = None, direction: str = "both", lot: float = 0.1,
@@ -339,7 +367,9 @@ def compile_ea(
     ex5 = os.path.join(EXPERTS_DIR, f"{name}.ex5")
     log = os.path.join(EXPERTS_DIR, f"{name}.log")
 
-    if family == "multi":
+    if exit_mode == "grid":
+        src = render_grid(ea_id, params, direction, lot)
+    elif family == "multi":
         src = render_multi(ea_id, params, direction, lot)
     elif family == "nv7":
         src = render_nv7(ea_id, params, direction, lot)

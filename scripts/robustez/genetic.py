@@ -22,7 +22,7 @@ from metrics import compute_metrics, drawdown_of_curve, equity_r_squared
 
 # SQX "SL & PT required": TODA estratégia tem stop obrigatório. reversal (sem
 # stop por trade) dava DD/Ret-DD ruins no OOS — fora.
-EXIT_MODES = ["fixed_sltp", "reversal"]
+EXIT_MODES = ["fixed_sltp", "reversal", "grid"]
 DIRECTIONS = ["both", "long", "short"]
 
 
@@ -33,19 +33,27 @@ class Individual:
     exit_mode: str
     sl_atr: float
     tp_atr: float
+    grid_step_atr: float = 1.5
+    grid_max_levels: int = 4
+    grid_tp_atr: float = 2.0
+    dd_guard_pct: float = 0.05
     fitness: float = -1e9
     stats: dict = field(default_factory=dict)
 
     def params(self) -> dict:
-        return {"blocks": self.blocks, "atr_period": 14,
-                "sl_atr": self.sl_atr, "tp_atr": self.tp_atr}
+        return {
+            "blocks": self.blocks, "atr_period": 14,
+            "sl_atr": self.sl_atr, "tp_atr": self.tp_atr,
+            "grid_step_atr": self.grid_step_atr,
+            "grid_max_levels": self.grid_max_levels,
+            "grid_tp_atr": self.grid_tp_atr,
+            "dd_guard_pct": self.dd_guard_pct,
+        }
 
     def key(self) -> str:
-        # Os blocos sao combinados com E (AND), que e COMUTATIVO: [A,B] e [B,A]
-        # sao a MESMA estrategia. Juntar na ordem da lista fazia as duas passarem
-        # pelo dedupe e virarem 2 EAs identicos na vitrine (23 casos em 127).
-        # Por isso: ordena os blocos ja canonizados antes de juntar.
         b = "|".join(sorted(f"{x['name']}:{sorted(x['params'].items())}" for x in self.blocks))
+        if self.exit_mode == "grid":
+            return f"{self.direction}/{self.exit_mode}/{self.grid_step_atr}/{self.grid_max_levels}/{self.grid_tp_atr}/{self.dd_guard_pct}/{b}"
         return f"{self.direction}/{self.exit_mode}/{self.sl_atr}/{self.tp_atr}/{b}"
 
 
@@ -56,12 +64,17 @@ def random_individual(rng: random.Random) -> Individual:
         exit_mode=rng.choice(EXIT_MODES),
         sl_atr=rng.choice([1.0, 1.5, 2.0, 2.5, 3.0]),
         tp_atr=rng.choice([1.5, 2.0, 3.0, 4.0]),
+        grid_step_atr=rng.choice([1.0, 1.5, 2.0, 2.5]),
+        grid_max_levels=rng.choice([3, 4, 5, 6]),
+        grid_tp_atr=rng.choice([1.0, 1.5, 2.0, 2.5]),
+        dd_guard_pct=rng.choice([0.05, 0.08, 0.10]),
     )
 
 
 def mutate(ind: Individual, rng: random.Random) -> Individual:
     b = [dict(name=x["name"], params=dict(x["params"])) for x in ind.blocks]
     direction, exit_mode, sl, tp = ind.direction, ind.exit_mode, ind.sl_atr, ind.tp_atr
+    step_atr, max_lvl, grid_tp, dd_guard = ind.grid_step_atr, ind.grid_max_levels, ind.grid_tp_atr, ind.dd_guard_pct
     r = rng.random()
     if r < 0.35 and b:                      # troca params de um bloco
         i = rng.randrange(len(b))
@@ -77,13 +90,17 @@ def mutate(ind: Individual, rng: random.Random) -> Individual:
         b.pop(rng.randrange(len(b)))
     elif r < 0.90:                          # muda direção/saída
         direction = rng.choice(DIRECTIONS); exit_mode = rng.choice(EXIT_MODES)
-    else:                                   # muda SL/TP
+    else:                                   # muda SL/TP ou params de grid
         sl = rng.choice([1.0, 1.5, 2.0, 2.5, 3.0]); tp = rng.choice([1.5, 2.0, 3.0, 4.0])
+        step_atr = rng.choice([1.0, 1.5, 2.0, 2.5])
+        max_lvl = rng.choice([3, 4, 5, 6])
+        grid_tp = rng.choice([1.0, 1.5, 2.0, 2.5])
+        dd_guard = rng.choice([0.05, 0.08, 0.10])
     # garante >=1 bloco direcional
     if not any(blocks.BLOCKS[x["name"]][1] for x in b):
         d = rng.choice(blocks._DIRECTIONAL)
         b.append({"name": d, "params": blocks.BLOCKS[d][2](rng)})
-    return Individual(b[:3], direction, exit_mode, sl, tp)
+    return Individual(b[:3], direction, exit_mode, sl, tp, step_atr, max_lvl, grid_tp, dd_guard)
 
 
 def crossover(a: Individual, b: Individual, rng: random.Random) -> Individual:
@@ -98,15 +115,20 @@ def crossover(a: Individual, b: Individual, rng: random.Random) -> Individual:
         chosen.append({"name": blk["name"], "params": dict(blk["params"])})
         if len(chosen) >= k:
             break
+    # garante >=1 direcional
     if not any(blocks.BLOCKS[x["name"]][1] for x in chosen):
         d = rng.choice(blocks._DIRECTIONAL)
         chosen.append({"name": d, "params": blocks.BLOCKS[d][2](rng)})
     return Individual(
-        chosen[:3],
-        rng.choice([a.direction, b.direction]),
-        rng.choice([a.exit_mode, b.exit_mode]),
-        rng.choice([a.sl_atr, b.sl_atr]),
-        rng.choice([a.tp_atr, b.tp_atr]),
+        blocks=chosen[:3],
+        direction=rng.choice([a.direction, b.direction]),
+        exit_mode=rng.choice([a.exit_mode, b.exit_mode]),
+        sl_atr=rng.choice([a.sl_atr, b.sl_atr]),
+        tp_atr=rng.choice([a.tp_atr, b.tp_atr]),
+        grid_step_atr=rng.choice([a.grid_step_atr, b.grid_step_atr]),
+        grid_max_levels=rng.choice([a.grid_max_levels, b.grid_max_levels]),
+        grid_tp_atr=rng.choice([a.grid_tp_atr, b.grid_tp_atr]),
+        dd_guard_pct=rng.choice([a.dd_guard_pct, b.dd_guard_pct]),
     )
 
 

@@ -71,8 +71,10 @@ BLOCK_STYLE = {
 }
 
 
-def style_of(fam: str, params: dict) -> str:
-    """Estilo p/ o card. Multi: 1º bloco com estilo conhecido (direcional)."""
+def style_of(fam: str, exit_mode: str, params: dict) -> str:
+    """Estilo p/ o card. Multi: se exit_mode == 'grid', retorna 'grid'; senão 1º bloco direcional."""
+    if exit_mode == "grid":
+        return "grid"
     if fam != "multi":
         return STYLE.get(fam, "trend")
     for blk in params.get("blocks", []):
@@ -222,7 +224,7 @@ def main():
             h = hashlib.sha256(dna_raw.encode("utf-8")).hexdigest()[:6]
             dir_tag = {"both": "", "long": " Long", "short": " Short"}[direction]
             # nome do card: multi usa o estilo (nome de família "multi" é interno)
-            style_val = style_of(fam, params)
+            style_val = style_of(fam, mode, params)
             fam_label = {"trend": "Tendência", "reversal": "Reversão",
                          "breakout": "Rompimento", "range": "Range",
                          "grid": "Grid"}.get(style_val, style_val.title()) if fam == "multi" \
