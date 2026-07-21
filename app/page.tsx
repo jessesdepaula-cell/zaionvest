@@ -15,9 +15,9 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "ZaionVest — Robôs de Trading Automático para MetaTrader 5",
+  title: "ZaionVest — Automação Inteligente & Robôs para MetaTrader 5",
   description:
-    "Vitrine de robôs (Expert Advisors) validados para MetaTrader 5. Revalidação mensal, kill-switch remoto e drawdown real e transparente. Assinatura mensal, acesso imediato.",
+    "Acesse uma vitrine de robôs validados para MetaTrader 5. Opere com disciplina matemática, proteção ativa contra risco e controle total da sua conta.",
 };
 
 export default function LandingPage() {
@@ -56,23 +56,21 @@ export default function LandingPage() {
       <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center">
         <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/40 bg-[#2563EB]/[0.08] px-3.5 py-1.5 text-xs text-[#F5F5F5] font-medium tracking-wide">
           <Sparkles className="h-3.5 w-3.5 text-[#2563EB] animate-pulse" />
-          Robôs para MetaTrader 5 · Validados e revalidados · Kill-switch remoto
+          ⚡ TECNOLOGIA DE AUTOMAÇÃO DE ALTA PERFORMANCE PARA METATRADER 5
         </div>
 
-        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-7xl">
-          Robôs de trading que{" "}
+        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-6xl lg:text-7xl">
+          Conquiste consistência no mercado{" "}
           <span className="bg-gradient-to-r from-[#F5F5F5] via-[#F5F5F5] to-[#2563EB] bg-clip-text text-transparent">
-            não escondem o risco.
+            sem ficar refém da tela.
           </span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
-          A maioria dos robôs vendidos por aí brilha no backtest e quebra na conta real. Na
-          ZaionVest, cada robô passa por uma <span className="text-[#F5F5F5] font-semibold">validação
-          de robustez</span> antes de entrar na vitrine, é reavaliado todo mês e tem um{" "}
-          <span className="text-[#2563EB] font-semibold">kill-switch</span> que o desliga sozinho se
-          parar de funcionar. E mostramos o <span className="text-[#F5F5F5] font-semibold">drawdown
-          real</span> — não o número bonito de marketing.
+          Acesse uma vitrine exclusiva de robôs prontos e validados para MetaTrader 5. Deixe a
+          tecnologia operar com <span className="text-[#F5F5F5] font-semibold">disciplina matemática</span>,
+          estratégias testadas e um exclusivo <span className="text-[#2563EB] font-semibold">sistema inteligente de proteção automática</span> que
+          blinda o seu patrimônio.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -81,7 +79,7 @@ export default function LandingPage() {
             id="cta-hero-primary"
             className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-4 text-sm font-bold tracking-wide text-white shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] ring-1 ring-white/10 transition hover:bg-[#1D4ED8] hover:shadow-[0_14px_50px_-8px_rgba(37,99,235,0.8)] focus:outline-none"
           >
-            Quero acessar a vitrine
+            Quero acessar os robôs agora
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           <a
@@ -94,9 +92,9 @@ export default function LandingPage() {
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-[10px] text-zinc-500">
           <span className="flex items-center gap-1">🔒 Pagamento seguro via Asaas</span>
-          <span className="flex items-center gap-1">⚡ Acesso imediato após assinar</span>
-          <span className="flex items-center gap-1">🤖 Robôs prontos para MetaTrader 5</span>
-          <span className="flex items-center gap-1">📅 Cancele a qualquer momento</span>
+          <span className="flex items-center gap-1">⚡ Acesso e liberação imediata</span>
+          <span className="flex items-center gap-1">🛡️ Sistema de Proteção Ativa</span>
+          <span className="flex items-center gap-1">📅 Sem fidelidade — cancele quando quiser</span>
         </div>
       </section>
 
@@ -105,35 +103,34 @@ export default function LandingPage() {
         <div className="grid gap-8 md:grid-cols-2">
           <div className="rounded-2xl border border-[#f5f5f5]/5 bg-[#0A0A0A] p-6 sm:p-8">
             <h3 className="text-lg font-semibold text-rose-400 flex items-center gap-2">
-              ⚠️ O “robô perfeito” que só funciona no passado
+              ⚠️ O ciclo frustrante do trading manual
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              É fácil encontrar um robô com uma curva de backtest impecável. O problema é que muitos
-              foram ajustados demais ao histórico — e desandam assim que encontram um mercado que
-              nunca viram. Pior: continuam operando mesmo depois de parar de funcionar, drenando a
-              conta em silêncio.
+              Passar horas analisando gráficos gera desgaste mental, ansiedade e decisões tomadas no impulso.
+              E no mercado de robôs, a maioria vende ilusões de ganhos fáceis sem nenhuma gestão de risco real —
+              deixando sua conta exposta a grandes rebaixamentos.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-zinc-500">
-              <li className="flex items-center gap-2">❌ Curvas de backtest perfeitas que não se repetem ao vivo</li>
-              <li className="flex items-center gap-2">❌ Drawdown escondido ou maquiado no marketing</li>
-              <li className="flex items-center gap-2">❌ Robô que segue operando mesmo depois de “quebrar”</li>
+              <li className="flex items-center gap-2">❌ Perda de tempo e desgaste emocional na frente do computador</li>
+              <li className="flex items-center gap-2">❌ Falta de disciplina para seguir o gerenciamento de risco</li>
+              <li className="flex items-center gap-2">❌ Robôs amadores sem proteção contra viradas de mercado</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border border-emerald-500/10 bg-[#141414] p-6 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-500/[0.02] blur-xl" />
             <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-              🛡️ Robôs que precisam provar valor — e continuar provando
+              🛡️ Automação profissional com proteção ativa
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              Só entra na vitrine o robô que passa na nossa validação de robustez. E não para por aí:
-              reavaliamos <strong className="text-emerald-400">todo mês</strong> com dados novos de
-              mercado — o que degrada é retirado e desligado automaticamente na sua conta.
+              Na Zaionvest, você tem acesso a robôs validados para operar com rigor matemático. E o melhor:
+              nosso exclusivo <strong className="text-emerald-400">Kill-Switch remoto</strong> monitora o mercado e
+              desativa a estratégia caso haja perda de eficiência — protegendo seu capital em tempo real.
             </p>
             <ul className="mt-5 space-y-2.5 text-xs text-emerald-500/80">
-              <li className="flex items-center gap-2">✔ Validação de robustez antes de qualquer robô ir para a vitrine</li>
-              <li className="flex items-center gap-2">✔ Revalidação mensal com dados atualizados — o que degrada, sai</li>
-              <li className="flex items-center gap-2">✔ Kill-switch remoto: robô que perde robustez para de operar sozinho</li>
+              <li className="flex items-center gap-2">✔ Estratégias automatizadas validadas para MetaTrader 5</li>
+              <li className="flex items-center gap-2">✔ Revalidação periódica para manter apenas o que performa</li>
+              <li className="flex items-center gap-2">✔ Kill-Switch remoto: segurança automática contra rebaixamentos</li>
             </ul>
           </div>
         </div>
