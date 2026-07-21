@@ -45,7 +45,7 @@ export default function SuportePage() {
       {/* Canais de contato */}
       <div className="grid gap-3 sm:grid-cols-2">
         <a
-          href="https://wa.me/5511940016759"
+          href="https://wa.me/5521979506991"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5 transition hover:bg-emerald-500/[0.08]"
