@@ -203,6 +203,7 @@ export default async function EADetailPage({
                   | Array<{ date: string; value: number }>
                   | null
               }
+              strategyDef={ea.strategyDef}
               canDownload={canDownload}
             />
 

@@ -46,6 +46,7 @@ const EA_SELECT = {
   oosWins: true,
   oosTotalWindows: true,
   equityCurveOos: true,
+  strategyDef: true,
 } as const;
 
 /** Normaliza o campo Json equityCurveOos pro tipo usado na correlação. */

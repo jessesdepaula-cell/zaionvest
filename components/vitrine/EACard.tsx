@@ -5,6 +5,32 @@ import { Download, TrendingUp, TrendingDown, Activity } from "lucide-react";
 
 export type EAStatus = "APPROVED" | "REJECTED" | "PENDING";
 
+const BLOCK_NAMES: Record<string, string> = {
+  t3_trend: "T3 Trend",
+  t3_velocity: "T3 Velocity",
+  wpr_floating: "WPR Flutuante",
+  supertrend_state: "SuperTrend",
+  hma_cross: "Hull MA (HMA)",
+  rsi_extreme: "RSI Extremo",
+  rsi_trend: "RSI Trend",
+  ema_stack: "Leque de EMAs",
+  ema_cross: "Cruzamento EMA",
+  price_ema: "Preço vs EMA",
+  macd_state: "MACD Histograma",
+  macd_cross: "Cruzamento MACD",
+  bb_fade: "Bollinger Fade",
+  bb_break: "Rompimento BB",
+  donchian: "Canais Donchian",
+  stoch: "Estocástico",
+  stoch_cross: "Cruzamento Estocástico",
+  cci: "Oscilador CCI",
+  cci_zero: "CCI Zero Cross",
+  momentum: "Momentum",
+  adx_filter: "Filtro ADX",
+  di_cross: "Cruzamento DI (ADX)",
+  trend_filter: "Média EMA 200",
+};
+
 export interface EACardProps {
   id: string;
   slug: string;
@@ -21,6 +47,7 @@ export interface EACardProps {
   oosWins?: number | null;
   oosTotalWindows?: number | null;
   equityCurveOos?: Array<{ date: string; value: number }> | null;
+  strategyDef?: any | null;
   canDownload?: boolean; // true se usuário tem assinatura ativa
   detailHref?: string;
 }
@@ -59,11 +86,24 @@ const STYLE_LABELS: Record<string, string> = {
   range: "Range",
 };
 
-function getIndicators(style: string, name: string): string[] {
+function getIndicators(style: string, name: string, strategyDef?: any): string[] {
   const normalized = name.toLowerCase();
   
   if (normalized.includes("zaion sniper")) {
     return ["Fibo Swing", "Médias Móveis", "RSI", "MACD", "CCI"];
+  }
+
+  if (strategyDef?.blocks && Array.isArray(strategyDef.blocks) && strategyDef.blocks.length > 0) {
+    const realBlocks: string[] = [];
+    for (const blk of strategyDef.blocks) {
+      if (blk?.name && BLOCK_NAMES[blk.name]) {
+        realBlocks.push(BLOCK_NAMES[blk.name]);
+      }
+    }
+    if (realBlocks.length > 0) {
+      realBlocks.push("ATR (Sizing)");
+      return Array.from(new Set(realBlocks));
+    }
   }
 
   const list: string[] = [];
@@ -81,7 +121,6 @@ function getIndicators(style: string, name: string): string[] {
     list.push("Grade Matemática", "Oscilador RSI");
   }
 
-  // Quase todos usam ATR para dimensionamento
   list.push("ATR (Sizing)");
 
   return Array.from(new Set(list));
@@ -175,6 +214,7 @@ export function EACard({
   oosWins,
   oosTotalWindows,
   equityCurveOos,
+  strategyDef,
   canDownload = false,
   detailHref,
 }: EACardProps) {
@@ -227,7 +267,7 @@ export function EACard({
             
             {/* Indicadores da Estratégia */}
             <div className="flex flex-wrap gap-1 mt-2.5">
-              {getIndicators(style, name).map((ind, i) => (
+              {getIndicators(style, name, strategyDef).map((ind, i) => (
                 <span
                   key={i}
                   className="inline-flex items-center rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-400 border border-blue-500/10 shadow-[0_0_4px_rgba(59,130,246,0.05)]"

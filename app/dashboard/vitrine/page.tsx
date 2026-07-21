@@ -72,6 +72,7 @@ export default async function DashboardVitrinePage({
       style: true, exitMode: true, status: true, wfe: true, oosRetDd: true,
       profitFactor: true, maxDrawdown: true, totalTrades: true,
       oosWins: true, oosTotalWindows: true, equityCurveOos: true,
+      strategyDef: true,
     },
   });
 
