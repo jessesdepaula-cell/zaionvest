@@ -257,6 +257,8 @@ Legenda: **Pilar** = Dor · Mecanismo · Prova · Objeção · Oferta.
 - ✅ **15 Reels produzidos** (1080×1920, texto-animado, zoom+crossfade, ~10-13s, áudio silencioso) em `public/social/reels/pXX.mp4` — deploy Vercel OK.
 - ✅ **15 Reels AGENDADOS no Metricool** — IG REEL, showReelOnFeed, auto-publish, 18h, 22/07→05/08. Post IDs: P2 352481189 · P4 352481356 · P6 352481378 · P8 352481408 · P10 352481443 · P12 352481469 · P14 352481508 · P16 352481563 · P18 352481691 · P20 352481715 · P22 352481745 · P24 352481775 · P26 352481810 · P28 352481835 · P30 352481865.
 - ✅ **CAMPANHA COMPLETA: 30/30 agendados** (verificado no Metricool: 15 POST 10h + 15 REEL 18h, 2/dia).
+- ✅ **15 Reels REFEITOS COM LOCUÇÃO (voz Charon / Gemini 2.5 Flash TTS)** e trocados no Metricool via updateScheduledPost (URL cache-bust `?v=voiced`). Narração sincronizada + zoom/crossfade, ~9-17s. Scripts em scratchpad gen-tts.mjs; áudio gerado com chaves Gemini billing (CT2/CT3).
+- ✅ **AUTO-PUBLISH CONFIRMADO FUNCIONANDO:** 1º carrossel (22/07 10h) publicou — https://www.instagram.com/p/DbGJ6VtCqbj/ (status PUBLISHED). Conexão IG ok.
 
 ## Pipeline de produção
 1. **Design das capas/slides** (HTML→PNG, 1080×1350 feed / 1080×1920 Reel cover) usando a paleta + skins A–E.

@@ -90,9 +90,9 @@ export async function POST(
     });
   }
 
-  // Amarração RoboForex — dureza configurável (decisão em aberto da spec).
-  // REQUIRE_ROBOFOREX=true → bloqueia contas de outras corretoras.
-  if (process.env.REQUIRE_ROBOFOREX === "true") {
+  // Amarração EXCLUSIVA RoboForex: Bloqueia qualquer outra corretora por padrão.
+  const requireRoboforex = process.env.REQUIRE_ROBOFOREX !== "false";
+  if (requireRoboforex) {
     const company = (body.company ?? "").toLowerCase();
     if (!company.includes("roboforex")) {
       return NextResponse.json({

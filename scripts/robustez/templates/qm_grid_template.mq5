@@ -156,8 +156,17 @@ void CheckLicense()
    }
 
    string resp = CharArrayToString(result);
-   g_licenseOk = (StringFind(resp,"\"valid\":true")>=0 || StringFind(resp,"\"ok\":true")>=0);
-   if(g_licenseOk) g_lastGoodLicense = TimeCurrent();
+   if(StringFind(resp,"\"valid\":true")>=0 || StringFind(resp,"\"ok\":true")>=0)
+   {
+      g_licenseOk = true;
+      g_lastGoodLicense = TimeCurrent();
+   }
+   else
+   {
+      g_licenseOk = false;
+      if(StringFind(resp,"wrong_broker")>=0)
+         Alert("ZaionVest: Este robô é exclusivo para a corretora RoboForex.");
+   }
 }
 
 //+------------------------------------------------------------------+

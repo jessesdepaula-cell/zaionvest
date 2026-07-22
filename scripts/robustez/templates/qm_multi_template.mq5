@@ -91,6 +91,8 @@ void CheckLicense()
          Alert("ZaionVest: estratégia REPROVADA na revalidação. Troque por outra aprovada na vitrine.");
       else if(StringFind(resp,"no_subscription")>=0)
          Alert("ZaionVest: assinatura inativa/expirada. Renove para continuar operando.");
+      else if(StringFind(resp,"wrong_broker")>=0)
+         Alert("ZaionVest: Este robô é exclusivo para a corretora RoboForex.");
    }
 }
 
