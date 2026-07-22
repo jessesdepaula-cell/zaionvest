@@ -41,7 +41,7 @@ MIN_SHARPE = 0.2   # qualidade full-period OOS-honesto
 # gate frouxo; a qualidade real está em R²/RetDD/Sharpe + holdout OOS.
 MAX_DD_PCT = 25.0       # DD m2m no sizing base ($10k, 1%/ATR) sobre 10 anos
 MIN_R2 = 0.65           # linearidade full-period (SQX Stability aceitou até 0.67)
-MIN_RECOVERY = 1.5      # Ret/DD full-period OOS-honesto (degradação esperada)
+MIN_RECOVERY = 2.0      # Ret/DD OOS-honesto mínimo de 2.0 (filtro rígido solicitado pelo usuário)
 MIN_PF = 1.15           # Profit Factor
 MIN_TRADES_PER_MONTH = 10.0  # filtro literal do SQX calibrado (mínimo 10 trades por mês)
 
