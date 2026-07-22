@@ -220,6 +220,11 @@ def main():
                 print(f"  ~ {fam} {symbol} {tf} {mode}/{direction}: reprovou na re-validação, pulo")
                 continue
 
+            oos_ret_dd = s.get("oosRetDd") or (res.get("oosRetDd") or 0)
+            if oos_ret_dd < 2.0:
+                print(f"  ~ {fam} {symbol} {tf} {mode}/{direction}: Ret/DD OOS {oos_ret_dd:.2f}x < 2.0, pulo")
+                continue
+
             curve = equity_curve_from_bars(bt.equity_bar, bt.equity_dates)
             rets = returns_of(curve)
             clone_of = next((n for r, n in accepted if abs(pearson(rets, r)) > CORR_GATE), None)
