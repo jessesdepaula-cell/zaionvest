@@ -4,12 +4,11 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback } from "react";
 
 const SYMBOLS = [
-  "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCAD",
-  "NZDUSD", "USDCHF", "EURGBP", "EURJPY", "GBPJPY",
-  "BTCUSD", "ETHUSD",
+  "XAUUSD", "XAGUSD", "XAUEUR", "USDJPY",
+  "GBPUSD", "EURNZD", "AUDUSD", "BTCUSD",
 ];
 
-const TIMEFRAMES = ["M15", "M30", "H1", "H4", "D1"];
+const TIMEFRAMES = ["H1", "H2", "H4"];
 
 const STYLES = [
   { value: "", label: "Todos os estilos" },

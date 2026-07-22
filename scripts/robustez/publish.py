@@ -176,6 +176,9 @@ def main():
     if args.limit:
         survivors = survivors[: args.limit]
 
+    MAX_PER_SYMBOL = 30
+    symbol_counts = {}
+
     svc = service_key()
     accepted = []  # [(returns, name)]
     published = 0
@@ -188,7 +191,13 @@ def main():
             symbol, tf = s["symbol"], s["timeframe"]
             params = s["params"]
 
+            resolved_cand = symbol.upper()
+            if symbol_counts.get(resolved_cand, 0) >= MAX_PER_SYMBOL:
+                continue
+
             df, resolved = mt5_data.get_candles(symbol, tf, years=3.0)
+            if symbol_counts.get(resolved.upper(), 0) >= MAX_PER_SYMBOL:
+                continue
             info = mt5_data.symbol_info(resolved)
             bt = run_backtest(df, fam, params, exit_mode=mode, direction=direction,
                               point=info.point, contract_size=info.contract_size)
@@ -255,7 +264,7 @@ def main():
             insert_row("EA", {
                 "id": ea_id, "name": name, "slug": slug,
                 "symbol": resolved, "timeframe": tf,
-                "style": style_of(fam, params), "exitMode": mode,
+                "style": style_of(fam, mode, params), "exitMode": mode,
                 "wfe": res["wfe"], "oosRetDd": res.get("oosRetDd"),
                 "profitFactor": m["profit_factor"],
                 # DD flutuante mark-to-market — o honesto (gate ≤ 30%)
@@ -283,6 +292,7 @@ def main():
                     pass
 
             accepted.append((rets, name))
+            symbol_counts[resolved.upper()] = symbol_counts.get(resolved.upper(), 0) + 1
             published += 1
             c = res["curve"]
             tag = "publicado (APPROVED)" if publish_status == "APPROVED" else "em staging (STAGED)"
