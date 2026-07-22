@@ -198,6 +198,7 @@ export default async function EADetailPage({
               totalTrades={ea.totalTrades}
               oosWins={ea.oosWins}
               oosTotalWindows={ea.oosTotalWindows}
+              oosRetDd={ea.oosRetDd}
               equityCurveOos={
                 ea.equityCurveOos as
                   | Array<{ date: string; value: number }>
