@@ -75,7 +75,7 @@ export function SidebarNav({ owner = false }: { owner?: boolean }) {
               Painel do Gestor
             </span>
             <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[9px] font-extrabold text-blue-400 border border-blue-500/30">
-              JESSÉ
+              EXCLUSIVO
             </span>
           </div>
           <div className="flex flex-col gap-1 rounded-xl bg-blue-950/20 p-1.5 border border-blue-500/10">

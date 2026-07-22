@@ -159,7 +159,7 @@ export function TutorialVideoClient({
         <div className="space-y-6">
           <div className="rounded-2xl border border-blue-500/20 bg-blue-950/10 p-6 text-center">
             <ShieldCheck className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-            <h3 className="text-base font-bold text-white">Vídeos em Produção pelo Gestor Jessé</h3>
+            <h3 className="text-base font-bold text-white">Vídeos em Produção pelo Gestor</h3>
             <p className="text-xs text-zinc-400 max-w-md mx-auto mt-1">
               Os tutoriais em vídeo passo a passo (instalação no MT5, gerenciamento de risco e operação) estão sendo gravados pelo Gestor e ficarão disponíveis aqui em breve.
             </p>

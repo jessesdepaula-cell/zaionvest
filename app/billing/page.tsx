@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles, AlertCircle, Shield, RefreshCw, Power, Gauge, Bot, HelpCircle } from "lucide-react";
+import { ArrowRight, Check, Sparkles, AlertCircle, Shield, RefreshCw, Power, Gauge, Bot, HelpCircle, ShieldCheck, MessageCircle, ExternalLink } from "lucide-react";
+import { getOrCreateUser, isOwner } from "@/lib/subscription";
 
 export default async function BillingPage({
   searchParams,
@@ -7,6 +8,9 @@ export default async function BillingPage({
   searchParams: Promise<{ error?: string; checkout?: string }>;
 }) {
   const params = await searchParams;
+  const user = await getOrCreateUser();
+
+  const isSubscribed = user && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || isOwner(user));
 
   return (
     <main className="min-h-screen bg-[#000000] text-zinc-300 selection:bg-emerald-500/30 selection:text-emerald-300">
@@ -29,59 +33,127 @@ export default async function BillingPage({
         </Link>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-12 text-center">
-        <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/30 bg-[#2563EB]/[0.06] px-3.5 py-1 text-xs text-[#F5F5F5] font-medium tracking-wide">
-          <Sparkles className="h-3.5 w-3.5 text-[#2563EB]" />
-          Ative sua assinatura para acessar a vitrine
-        </div>
-        <h1 className="text-balance text-4xl font-bold tracking-tight text-offwhite sm:text-6xl">
-          Robôs de trading que <br />
-          <span className="bg-gradient-to-r from-[#F5F5F5] to-[#2563EB] bg-clip-text text-transparent">
-            não escondem o risco.
-          </span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
-          Cada robô da vitrine passa por uma validação de robustez, é revalidado todo mês e tem
-          kill-switch remoto. Assine para liberar o acesso a todos e baixá-los para o seu MetaTrader 5.
-        </p>
+      {/* Se o usuário já possui assinatura ativa: Painel de Gerenciamento do Assinante */}
+      {isSubscribed ? (
+        <section className="relative z-10 mx-auto max-w-3xl px-6 pt-12 pb-8">
+          <div className="rounded-3xl border border-emerald-500/30 bg-[#0D0D0D] p-8 shadow-2xl space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                  <h2 className="text-xl font-bold text-white">Sua Assinatura ZaionVest Pro está Ativa</h2>
+                </div>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Você tem acesso ilimitado a todos os robôs da vitrine e ao Zaion Monitor.
+                </p>
+              </div>
 
-        {/* Mensagem de Erro se houver */}
-        {params.error && (
-          <div className="mx-auto mt-8 max-w-md flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.04] p-4 text-left text-xs text-rose-300">
-            <AlertCircle className="h-4.5 w-4.5 shrink-0 text-rose-400 mt-0.5" />
-            <div>
-              <span className="font-semibold block mb-0.5">Falha no processamento</span>
-              {params.error}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                MEMBRO PRO
+              </span>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl bg-zinc-950 p-4 border border-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Plano Atual</span>
+                <p className="text-sm font-bold text-white">ZaionVest Pro — Mensal</p>
+              </div>
+
+              <div className="rounded-2xl bg-zinc-950 p-4 border border-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Próxima Renovação</span>
+                <p className="text-sm font-bold text-white">
+                  {user.currentPeriodEnd
+                    ? new Date(user.currentPeriodEnd).toLocaleDateString("pt-BR")
+                    : "Acesso Ilimitado de Gestor"}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-950/10 p-5 space-y-3">
+              <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                <HelpCircle className="h-4 w-4 text-blue-400" />
+                Deseja alterar a forma de pagamento ou solicitar alteração?
+              </h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Nossas cobranças são processadas de forma segura via Asaas (Pix ou Cartão). Para alterar o meio de pagamento, atualizar dados de cobrança ou cancelar sua renovação com 1 clique sem burocracia, entre em contato direto pelo nosso atendimento.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <a
+                  href="https://wa.me/5521979506991"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 transition shadow-md"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Gerenciar via WhatsApp
+                </a>
+                <Link
+                  href="/dashboard/vitrine"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/10 transition"
+                >
+                  Ir para a Vitrine de EAs
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
           </div>
-        )}
+        </section>
+      ) : (
+        /* Hero Section para Visitantes / Usuários Inativos */
+        <section className="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-12 text-center">
+          <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/30 bg-[#2563EB]/[0.06] px-3.5 py-1 text-xs text-[#F5F5F5] font-medium tracking-wide">
+            <Sparkles className="h-3.5 w-3.5 text-[#2563EB]" />
+            Ative sua assinatura para acessar a vitrine
+          </div>
+          <h1 className="text-balance text-4xl font-bold tracking-tight text-offwhite sm:text-6xl">
+            Robôs de trading que <br />
+            <span className="bg-gradient-to-r from-[#F5F5F5] to-[#2563EB] bg-clip-text text-transparent">
+              não escondem o risco.
+            </span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-zinc-400 sm:text-lg">
+            Cada robô da vitrine passa por uma validação de robustez, é revalidado todo mês e tem
+            kill-switch remoto. Assine para liberar o acesso a todos e baixá-los para o seu MetaTrader 5.
+          </p>
 
-        {/* Botões do Hero */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <form action="/api/billing/checkout" method="POST" className="w-full sm:w-auto">
-            <button
-              type="submit"
-              className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#2563EB]/20 transition hover:bg-[#1D4ED8] focus:outline-none"
+          {/* Mensagem de Erro se houver */}
+          {params.error && (
+            <div className="mx-auto mt-8 max-w-md flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.04] p-4 text-left text-xs text-rose-300">
+              <AlertCircle className="h-4.5 w-4.5 shrink-0 text-rose-400 mt-0.5" />
+              <div>
+                <span className="font-semibold block mb-0.5">Falha no processamento</span>
+                {params.error}
+              </div>
+            </div>
+          )}
+
+          {/* Botões do Hero */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <form action="/api/billing/checkout" method="POST" className="w-full sm:w-auto">
+              <button
+                type="submit"
+                className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#2563EB]/20 transition hover:bg-[#1D4ED8] focus:outline-none"
+              >
+                Assinar e acessar a vitrine
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+              </button>
+            </form>
+            <a
+              href="#pricing"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition py-3 px-6 rounded-xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] hover:bg-[#f5f5f5]/[0.05]"
             >
-              Assinar e acessar a vitrine
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </button>
-          </form>
-          <a
-            href="#pricing"
-            className="text-xs text-zinc-400 hover:text-zinc-200 transition py-3 px-6 rounded-xl border border-[#f5f5f5]/5 bg-[#f5f5f5]/[0.02] hover:bg-[#f5f5f5]/[0.05]"
-          >
-            Ver Detalhes do Plano
-          </a>
-        </div>
+              Ver Detalhes do Plano
+            </a>
+          </div>
 
-        <div className="mt-4 flex items-center justify-center gap-6 text-[10px] text-zinc-500">
-          <span className="flex items-center gap-1">🔒 Pagamento seguro via Asaas</span>
-          <span className="flex items-center gap-1">⚡ Acesso imediato após pagar</span>
-          <span className="flex items-center gap-1">📅 Cancele com 1 clique</span>
-        </div>
-      </section>
+          <div className="mt-4 flex items-center justify-center gap-6 text-[10px] text-zinc-500">
+            <span className="flex items-center gap-1">🔒 Pagamento seguro via Asaas</span>
+            <span className="flex items-center gap-1">⚡ Acesso imediato após pagar</span>
+            <span className="flex items-center gap-1">📅 Cancele com 1 clique</span>
+          </div>
+        </section>
+      )}
 
       {/* Problema vs Solução */}
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 border-t border-[#f5f5f5]/5">
