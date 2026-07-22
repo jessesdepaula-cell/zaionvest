@@ -46,6 +46,7 @@ export interface EACardProps {
   totalTrades?: number | null;
   oosWins?: number | null;
   oosTotalWindows?: number | null;
+  oosRetDd?: number | null;
   equityCurveOos?: Array<{ date: string; value: number }> | null;
   strategyDef?: any | null;
   canDownload?: boolean; // true se usuário tem assinatura ativa
@@ -213,6 +214,7 @@ export function EACard({
   totalTrades,
   oosWins,
   oosTotalWindows,
+  oosRetDd,
   equityCurveOos,
   strategyDef,
   canDownload = false,
@@ -228,8 +230,9 @@ export function EACard({
     return ((c[c.length - 1].value - c[0].value) / c[0].value) * 100;
   })();
   
-  // Fator de Recuperação = Lucro % / Drawdown Máximo %
+  // Fator de Recuperação = Ret/DD do OOS (oosRetDd) vindo do banco ou fallback para lucroPct / maxDrawdown
   const recoveryFactor = (() => {
+    if (oosRetDd != null) return oosRetDd;
     if (lucroPct == null || maxDrawdown == null || maxDrawdown <= 0) return null;
     return lucroPct / maxDrawdown;
   })();
