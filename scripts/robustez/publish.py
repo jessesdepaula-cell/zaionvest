@@ -148,6 +148,24 @@ def insert_row(table: str, row: dict):
     to_publish_rows.append({"table": table, "data": row})
 
 
+def get_db_approved_counts() -> dict[tuple[str, str], int]:
+    try:
+        url = f"https://{REF}.supabase.co/rest/v1/EA?select=symbol,timeframe&status=eq.APPROVED"
+        key = service_key()
+        r = _curl(["-H", f"apikey: {key}", "-H", f"Authorization: Bearer {key}", url])
+        data = json.loads(r)
+        counts: dict[tuple[str, str], int] = {}
+        if isinstance(data, list):
+            for item in data:
+                sym = item.get("symbol", "").upper()
+                tf = item.get("timeframe", "").upper()
+                if sym and tf:
+                    counts[(sym, tf)] = counts.get((sym, tf), 0) + 1
+        return counts
+    except Exception:
+        return {}
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -177,7 +195,13 @@ def main():
         survivors = survivors[: args.limit]
 
     MAX_PER_SYMBOL_TF = 10
-    symbol_tf_counts = {}
+    MAX_PER_SYMBOL = 30
+
+    db_counts = get_db_approved_counts()
+    symbol_tf_counts = {f"{s}:{t}": count for (s, t), count in db_counts.items()}
+    symbol_counts = {}
+    for (s, t), count in db_counts.items():
+        symbol_counts[s] = symbol_counts.get(s, 0) + count
 
     svc = service_key()
     accepted = []  # [(returns, name)]
@@ -192,7 +216,10 @@ def main():
             params = s["params"]
 
             key = f"{symbol.upper()}:{tf.upper()}"
-            if symbol_tf_counts.get(key, 0) >= MAX_PER_SYMBOL_TF:
+            sym_key = symbol.upper()
+
+            if symbol_tf_counts.get(key, 0) >= MAX_PER_SYMBOL_TF or symbol_counts.get(sym_key, 0) >= MAX_PER_SYMBOL:
+                print(f"  ~ {symbol} {tf}: cota de {symbol_tf_counts.get(key,0)}/10 no TF ({symbol_counts.get(sym_key,0)}/30 no símbolo) atingida no banco, pulo.")
                 continue
 
             df, resolved = mt5_data.get_candles(symbol, tf, years=3.0)

@@ -38,11 +38,11 @@ REM caminho ABSOLUTO (%~dp0 = pasta deste .bat). Caminho relativo comecando com
 REM ponto (.venv-numba\...) o cmd nao engole — quebra com "'numba' nao e
 REM reconhecido como um comando".
 "%~dp0.venv-numba\Scripts\python.exe" mine_overnight.py ^
-    --symbols USDJPY,GBPUSD,EURNZD,AUDUSD,XAGUSD,BTCUSD,XAUEUR,XAUUSD ^
+    --symbols USDJPY,GBPUSD,EURNZD,AUDUSD,XAGUSD,BTCUSD ^
     --timeframes H1,H2,H4 ^
     --years 4 ^
-    --pop 50 ^
-    --gen 8 ^
+    --pop 80 ^
+    --gen 20 ^
     --keep 6 ^
     --seed0 %RANDOM%%RANDOM% ^
     --autopublish ^
@@ -50,9 +50,9 @@ REM reconhecido como um comando".
 
 if exist _STOP_MINING goto fim
 
-echo [%date% %time%] O minerador parou (codigo %ERRORLEVEL%). Religando em 30s...
+echo [%date% %time%] O minerador parou (codigo %ERRORLEVEL%). Religando em 5s...
 echo [%date% %time%] MINERADOR CAIU - religando (tentativa %TENTATIVA%) >> _noite.log
-timeout /t 30 /nobreak >nul
+timeout /t 5 /nobreak >nul
 goto loop
 
 :fim
