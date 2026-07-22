@@ -41,8 +41,8 @@ REM reconhecido como um comando".
     --symbols XAUUSD,XAGUSD,XAUEUR,USDJPY,GBPUSD,EURNZD,AUDUSD,BTCUSD ^
     --timeframes H1,H2,H4 ^
     --years 4 ^
-    --pop 70 ^
-    --gen 20 ^
+    --pop 60 ^
+    --gen 10 ^
     --keep 6 ^
     --seed0 %RANDOM%%RANDOM% ^
     --autopublish ^

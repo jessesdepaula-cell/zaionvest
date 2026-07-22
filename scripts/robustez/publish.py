@@ -176,8 +176,8 @@ def main():
     if args.limit:
         survivors = survivors[: args.limit]
 
-    MAX_PER_SYMBOL = 30
-    symbol_counts = {}
+    MAX_PER_SYMBOL_TF = 10
+    symbol_tf_counts = {}
 
     svc = service_key()
     accepted = []  # [(returns, name)]
@@ -191,12 +191,13 @@ def main():
             symbol, tf = s["symbol"], s["timeframe"]
             params = s["params"]
 
-            resolved_cand = symbol.upper()
-            if symbol_counts.get(resolved_cand, 0) >= MAX_PER_SYMBOL:
+            key = f"{symbol.upper()}:{tf.upper()}"
+            if symbol_tf_counts.get(key, 0) >= MAX_PER_SYMBOL_TF:
                 continue
 
             df, resolved = mt5_data.get_candles(symbol, tf, years=3.0)
-            if symbol_counts.get(resolved.upper(), 0) >= MAX_PER_SYMBOL:
+            real_key = f"{resolved.upper()}:{tf.upper()}"
+            if symbol_tf_counts.get(real_key, 0) >= MAX_PER_SYMBOL_TF:
                 continue
             info = mt5_data.symbol_info(resolved)
             bt = run_backtest(df, fam, params, exit_mode=mode, direction=direction,
@@ -292,7 +293,8 @@ def main():
                     pass
 
             accepted.append((rets, name))
-            symbol_counts[resolved.upper()] = symbol_counts.get(resolved.upper(), 0) + 1
+            rk = f"{resolved.upper()}:{tf.upper()}"
+            symbol_tf_counts[rk] = symbol_tf_counts.get(rk, 0) + 1
             published += 1
             c = res["curve"]
             tag = "publicado (APPROVED)" if publish_status == "APPROVED" else "em staging (STAGED)"

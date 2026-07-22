@@ -56,11 +56,10 @@ export default async function DashboardVitrinePage({
 
   const orderBy: Record<string, string>[] = [];
   switch (params.sort ?? "wfe_desc") {
+    case "recovery_desc": orderBy.push({ oosRetDd: "desc" }); break;
     case "pf_desc": orderBy.push({ profitFactor: "desc" }); break;
     case "dd_asc": orderBy.push({ maxDrawdown: "asc" }); break;
     case "newest": orderBy.push({ createdAt: "desc" }); break;
-    // Ret/DD do holdout: o número honesto dos minerados (wfe é nulo neles —
-    // WFA é circular quando o genético já viu os dados).
     default: orderBy.push({ oosRetDd: "desc" });
   }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Activity, HelpCircle } from "lucide-react";
 
 export type EAStatus = "APPROVED" | "REJECTED" | "PENDING";
 
@@ -300,18 +300,20 @@ export function EACard({
         </div>
 
         {/* Métricas */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <Metric
             label="Profit Factor"
             value={profitFactor != null ? profitFactor.toFixed(2) : "—"}
             good={profitFactor != null && profitFactor > 1.35}
             icon={<TrendingUp className="h-3 w-3" />}
+            tooltip="Relação entre o lucro bruto total e o prejuízo bruto total. Quanto maior que 1.0, mais lucrativo é o robô."
           />
           <Metric
             label="Fator Recuperação"
             value={recoveryFactor != null ? `${recoveryFactor.toFixed(1)}x` : "—"}
-            good={recoveryFactor != null && recoveryFactor >= 3.0}
+            good={recoveryFactor != null && recoveryFactor >= 2.0}
             icon={<TrendingUp className="h-3 w-3" />}
+            tooltip="Relação entre o lucro líquido e o drawdown máximo no teste OOS. Indica a rapidez da curva em superar quedas."
           />
           <Metric
             label="Drawdown Máx."
@@ -319,12 +321,14 @@ export function EACard({
             good={maxDrawdown != null && maxDrawdown < 30}
             invert
             icon={<TrendingDown className="h-3 w-3" />}
+            tooltip="A maior queda percentual do patrimônio da conta a partir do pico mais alto registrado no backtest."
           />
           <Metric
             label="Trades"
             value={totalTrades != null ? String(totalTrades) : "—"}
             good={totalTrades != null && totalTrades >= 100}
             icon={<Activity className="h-3 w-3" />}
+            tooltip="Quantidade total de operações executadas pela estratégia durante o período de validação OOS."
           />
         </div>
 
@@ -349,7 +353,7 @@ export function EACard({
               }`}
             >
               <Download className="h-3.5 w-3.5" />
-              {canDownload ? "Baixar .ex5" : "Assinar"}
+              Baixar .ex5
             </a>
           )}
         </div>
@@ -364,12 +368,14 @@ function Metric({
   good,
   invert = false,
   icon,
+  tooltip,
 }: {
   label: string;
   value: string;
   good: boolean;
   invert?: boolean;
   icon: React.ReactNode;
+  tooltip: string;
 }) {
   const color =
     value === "—"
@@ -379,12 +385,22 @@ function Metric({
       : "text-rose-400";
 
   return (
-    <div className="rounded-lg bg-[#050505] border border-[#f5f5f5]/[0.04] px-3 py-2">
-      <div className="flex items-center gap-1 text-zinc-600 mb-1">
-        {icon}
-        <span className="text-[9px] uppercase tracking-widest">{label}</span>
+    <div className="group/metric relative rounded-xl bg-[#0D0D0D] border border-white/[0.08] p-3 shadow-inner hover:border-blue-500/30 transition-all">
+      <div className="flex items-center justify-between gap-1 text-zinc-400 mb-1.5">
+        <div className="flex items-center gap-1">
+          {icon}
+          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">{label}</span>
+        </div>
+        
+        {/* Ícone de Ajuda (?) com Tooltip */}
+        <div className="relative flex items-center">
+          <HelpCircle className="h-3 w-3 text-zinc-500 hover:text-blue-400 cursor-help transition" />
+          <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden w-48 rounded-lg border border-white/10 bg-[#141414] p-2.5 text-[10px] leading-snug text-zinc-300 shadow-xl group-hover/metric:block z-30">
+            {tooltip}
+          </div>
+        </div>
       </div>
-      <span className={`text-sm font-mono font-semibold ${color}`}>{value}</span>
+      <span className={`text-base font-mono font-extrabold ${color}`}>{value}</span>
     </div>
   );
 }

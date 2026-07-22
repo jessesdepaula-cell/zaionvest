@@ -62,6 +62,9 @@ async function getEAs(params: SearchParams) {
 
   const orderBy: Record<string, string>[] = [];
   switch (params.sort ?? "wfe_desc") {
+    case "recovery_desc":
+      orderBy.push({ oosRetDd: "desc" });
+      break;
     case "pf_desc":
       orderBy.push({ profitFactor: "desc" });
       break;
@@ -72,7 +75,7 @@ async function getEAs(params: SearchParams) {
       orderBy.push({ createdAt: "desc" });
       break;
     default:
-      orderBy.push({ wfe: "desc" });
+      orderBy.push({ oosRetDd: "desc" });
   }
 
   let eas = (await prisma.eA.findMany({ where, orderBy, select: EA_SELECT })).map(withCurve);
