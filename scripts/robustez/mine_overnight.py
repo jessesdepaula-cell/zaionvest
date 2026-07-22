@@ -57,9 +57,26 @@ def _ja_rodando() -> int:
         import subprocess
         out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"],
                              capture_output=True, text=True, timeout=15).stdout
-        return pid if str(pid) in out else 0
     except Exception:  # noqa: BLE001 — na dúvida, deixa rodar
         return 0
+
+
+def get_db_approved_counts() -> dict[tuple[str, str], int]:
+    """Consulta em tempo real no Supabase dos robôs APPROVED por (symbol, timeframe)."""
+    import urllib.request
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwaWpzbnlnenFncGp4eGlrcGlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzYzOTc0NywiZXhwIjoyMDk5MjE1NzQ3fQ.WZj6LCODl3UXJIEgEmnDaOGELNjSt3cbeWh6vmMueQs")
+    url = "https://kpijsnygzqgpjxxikpig.supabase.co/rest/v1/EA?select=symbol,timeframe&status=eq.APPROVED"
+    req = urllib.request.Request(url, headers={"apikey": key, "Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            counts = {}
+            for item in data:
+                k = (item["symbol"].upper(), item["timeframe"].upper())
+                counts[k] = counts.get(k, 0) + 1
+            return counts
+    except Exception:
+        return {}
 
 
 def _key(s: dict) -> str:
@@ -172,17 +189,24 @@ def main():
                   f"{(time.time()-t_ini)/3600:.1f}h rodando, {len(survivors)} acumulados =====", flush=True)
 
             try:
+                db_approved = get_db_approved_counts()
                 mt5_data.connect()
                 for sym in args.symbols.split(","):
                     for tf in args.timeframes.split(","):
                         _touch_activity()
                         if os.path.exists(STOP_FILE):
                             break
-                        # Trava de Cota: Máximo 10 por par+timeframe (30 por ativo total)
-                        c_tf = sum(1 for s in survivors if s.get("symbol") == sym and s.get("timeframe") == tf)
-                        c_sym = sum(1 for s in survivors if s.get("symbol") == sym)
+                        # Trava de Cota Real: Máximo 10 por par+timeframe (30 por ativo total)
+                        c_tf_file = sum(1 for s in survivors if s.get("symbol") == sym and s.get("timeframe") == tf)
+                        c_tf_db = db_approved.get((sym.upper(), tf.upper()), 0)
+                        c_tf = max(c_tf_file, c_tf_db)
+
+                        c_sym_file = sum(1 for s in survivors if s.get("symbol") == sym)
+                        c_sym_db = sum(v for (s, t), v in db_approved.items() if s == sym.upper())
+                        c_sym = max(c_sym_file, c_sym_db)
+
                         if c_tf >= 10 or c_sym >= 30:
-                            print(f"[noite] {sym} {tf}: cota de {c_tf}/10 no TF ({c_sym}/30 no símbolo) atingida. Pulo para o próximo!", flush=True)
+                            print(f"[noite] {sym} {tf}: cota de {c_tf}/10 no TF ({c_sym}/30 no símbolo) atingida no banco. Pulo para o próximo!", flush=True)
                             continue
                         try:
                             df, name = mt5_data.get_candles(sym, tf, years=args.years)
