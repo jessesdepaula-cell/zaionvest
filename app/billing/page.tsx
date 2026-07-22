@@ -83,9 +83,9 @@ export default async function BillingPage({
                   href="https://wa.me/5521979506991"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 transition shadow-md"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-[#059669] px-5 py-2.5 text-xs font-extrabold text-[#FFFFFF] hover:bg-[#10B981] transition shadow-md"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4 text-white" />
                   Gerenciar via WhatsApp
                 </a>
                 <Link
