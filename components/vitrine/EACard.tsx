@@ -194,6 +194,200 @@ function SparkLine({
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
+import Link from "next/link";
+import { Download, TrendingUp, TrendingDown, Activity, HelpCircle } from "lucide-react";
+
+export type EAStatus = "APPROVED" | "REJECTED" | "PENDING";
+
+const BLOCK_NAMES: Record<string, string> = {
+  t3_trend: "T3 Trend",
+  t3_velocity: "T3 Velocity",
+  wpr_floating: "WPR Flutuante",
+  supertrend_state: "SuperTrend",
+  hma_cross: "Hull MA (HMA)",
+  rsi_extreme: "RSI Extremo",
+  rsi_trend: "RSI Trend",
+  ema_stack: "Leque de EMAs",
+  ema_cross: "Cruzamento EMA",
+  price_ema: "Preço vs EMA",
+  macd_state: "MACD Histograma",
+  macd_cross: "Cruzamento MACD",
+  bb_fade: "Bollinger Fade",
+  bb_break: "Rompimento BB",
+  donchian: "Canais Donchian",
+  stoch: "Estocástico",
+  stoch_cross: "Cruzamento Estocástico",
+  cci: "Oscilador CCI",
+  cci_zero: "CCI Zero Cross",
+  momentum: "Momentum",
+  adx_filter: "Filtro ADX",
+  di_cross: "Cruzamento DI (ADX)",
+  trend_filter: "Média EMA 200",
+};
+
+export interface EACardProps {
+  id: string;
+  slug: string;
+  name: string;
+  symbol: string;
+  timeframe: string;
+  style: string;
+  exitMode: string;
+  status: EAStatus;
+  wfe?: number | null;
+  profitFactor?: number | null;
+  maxDrawdown?: number | null;
+  totalTrades?: number | null;
+  oosWins?: number | null;
+  oosTotalWindows?: number | null;
+  oosRetDd?: number | null;
+  equityCurveOos?: Array<{ date: string; value: number }> | null;
+  strategyDef?: any | null;
+  canDownload?: boolean; // true se usuário tem assinatura ativa
+  detailHref?: string;
+}
+
+const STATUS_CONFIG: Record<
+  EAStatus,
+  { label: string; color: string; bg: string; border: string; dot: string }
+> = {
+  APPROVED: {
+    label: "Aprovado na Robustez",
+    color: "text-blue-400 font-bold tracking-wide",
+    bg: "bg-blue-600/20",
+    border: "border-blue-500/40 shadow-[0_0_8px_rgba(37,99,235,0.3)]",
+    dot: "bg-blue-500 shadow-[0_0_6px_#3b82f6]",
+  },
+  REJECTED: {
+    label: "Reprovado",
+    color: "text-zinc-500",
+    bg: "bg-zinc-800/20",
+    border: "border-zinc-700/20",
+    dot: "bg-zinc-600",
+  },
+  PENDING: {
+    label: "Pendente",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    dot: "bg-amber-400",
+  },
+};
+
+const STYLE_LABELS: Record<string, string> = {
+  trend: "Tendência",
+  reversal: "Reversão",
+  breakout: "Rompimento",
+  range: "Range",
+};
+
+function getIndicators(style: string, name: string, strategyDef?: any): string[] {
+  const normalized = name.toLowerCase();
+  
+  if (normalized.includes("zaion sniper")) {
+    return ["Fibo Swing", "Médias Móveis", "RSI", "MACD", "CCI"];
+  }
+
+  if (strategyDef?.blocks && Array.isArray(strategyDef.blocks) && strategyDef.blocks.length > 0) {
+    const realBlocks: string[] = [];
+    for (const blk of strategyDef.blocks) {
+      if (blk?.name && BLOCK_NAMES[blk.name]) {
+        realBlocks.push(BLOCK_NAMES[blk.name]);
+      }
+    }
+    if (realBlocks.length > 0) {
+      realBlocks.push("ATR (Sizing)");
+      return Array.from(new Set(realBlocks));
+    }
+  }
+
+  const list: string[] = [];
+
+  if (normalized.includes("tendência") || style === "trend") {
+    list.push("Média Móvel (EMA)", "Filtro de Tendência");
+  }
+  if (normalized.includes("reversão") || style === "reversal" || style === "range") {
+    list.push("Oscilador RSI", "Bandas de Bollinger");
+  }
+  if (normalized.includes("rompimento") || style === "breakout") {
+    list.push("Canais de Donchian", "Filtro ATR");
+  }
+  if (normalized.includes("grid") || style === "grid") {
+    list.push("Grade Matemática", "Oscilador RSI");
+  }
+
+  list.push("ATR (Sizing)");
+
+  return Array.from(new Set(list));
+}
+
+// Mini sparkline SVG da curva de capital OOS
+function SparkLine({
+  id,
+  data,
+  approved,
+}: {
+  id: string;
+  data: Array<{ value: number }>;
+  approved: boolean;
+}) {
+  if (!data || !Array.isArray(data) || data.length < 2) {
+    return (
+      <div className="h-12 flex items-center justify-center text-[10px] text-zinc-600">
+        Sem dados
+      </div>
+    );
+  }
+
+  const values = data.map((d) => d?.value).filter((v): v is number => typeof v === "number" && !isNaN(v));
+  if (values.length < 2) {
+    return (
+      <div className="h-12 flex items-center justify-center text-[10px] text-zinc-600">
+        Sem dados
+      </div>
+    );
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const W = 200;
+  const H = 48;
+
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * W;
+      const y = H - ((v - min) / range) * H;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const color = approved ? "#10b981" : "#f43f5e";
+  const gradId = `grad-${approved ? "app" : "rej"}-${id}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-12"
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${H} ${points} ${W},${H}`}
+        fill={`url(#${gradId})`}
+      />
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -229,7 +423,7 @@ export function EACard({
     if (!c || !Array.isArray(c) || c.length < 2 || !c[0]?.value || !c[c.length - 1]?.value) return null;
     return ((c[c.length - 1].value - c[0].value) / c[0].value) * 100;
   })();
-  
+
   // Fator de Recuperação = Ret/DD do OOS (oosRetDd) vindo do banco ou fallback para lucroPct / maxDrawdown
   const recoveryFactor = (() => {
     if (oosRetDd != null) return oosRetDd;
@@ -252,50 +446,51 @@ export function EACard({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] to-transparent" />
       )}
 
-      <div className="p-5 flex flex-col gap-4 relative">
+      <div className="p-5 flex flex-col gap-4 relative flex-1">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-mono text-[10px] text-zinc-600 tracking-wider uppercase">
+        <div className="flex flex-col gap-2 w-full">
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-zinc-400 font-bold tracking-wider uppercase">
                 {symbol} · {timeframe}
               </span>
-              <span className="text-[10px] text-zinc-700 uppercase tracking-wider">
+              <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
                 {STYLE_LABELS[style] ?? style}
               </span>
             </div>
-            <h3 className="text-sm font-semibold text-[#F5F5F5] leading-tight">
-              {name}
-            </h3>
-            
-            {/* Indicadores da Estratégia */}
-            <div className="flex flex-wrap gap-1 mt-2.5">
-              {getIndicators(style, name, strategyDef).map((ind, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-400 border border-blue-500/10 shadow-[0_0_4px_rgba(59,130,246,0.05)]"
-                >
-                  {ind}
-                </span>
-              ))}
-            </div>
+
+            {/* Badge de status */}
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider border ${cfg.bg} ${cfg.border} ${cfg.color} flex-shrink-0`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${
+                  approved ? "animate-pulse" : ""
+                }`}
+              />
+              {cfg.label}
+            </span>
           </div>
 
-          {/* Badge de status */}
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider border ${cfg.bg} ${cfg.border} ${cfg.color} flex-shrink-0`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${
-                approved ? "animate-pulse" : ""
-              }`}
-            />
-            {cfg.label}
-          </span>
+          <h3 className="text-base font-bold text-white leading-tight w-full tracking-tight">
+            {name}
+          </h3>
+          
+          {/* Indicadores da Estratégia */}
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {getIndicators(style, name, strategyDef).map((ind, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-500/20 shadow-[0_0_4px_rgba(59,130,246,0.05)]"
+              >
+                {ind}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Sparkline da curva OOS */}
-        <div className="rounded-lg overflow-hidden bg-[#050505] border border-[#f5f5f5]/[0.04]">
+        {/* Sparkline da curva OOS com Contorno Interno */}
+        <div className="rounded-xl overflow-hidden bg-[#0D0D0D] border border-white/[0.08] p-2 shadow-inner hover:border-blue-500/30 transition-all">
           <SparkLine id={id} data={equityCurveOos ?? []} approved={approved} />
         </div>
 
@@ -333,7 +528,7 @@ export function EACard({
         </div>
 
         {/* Ações */}
-        <div className="flex gap-2 mt-auto pt-2 border-t border-[#f5f5f5]/[0.04]">
+        <div className="flex gap-2 mt-auto pt-3 border-t border-[#f5f5f5]/[0.06]">
           {detailHref && (
             <Link
               href={detailHref}

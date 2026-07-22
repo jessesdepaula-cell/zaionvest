@@ -388,3 +388,15 @@ model MonitorEvent {
 
   @@index([accountId, ts])
 }
+
+model TutorialVideo {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  youtubeUrl  String
+  embedId     String
+  category    String   @default("Instalação e Configuração")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

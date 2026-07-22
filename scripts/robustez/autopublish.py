@@ -32,7 +32,7 @@ import subprocess
 import sys
 
 _AQUI = os.path.dirname(os.path.abspath(__file__))
-SURVIVORS = os.path.join(_AQUI, "survivors_m30.json")
+SURVIVORS = os.path.join(_AQUI, "survivors_overnight.json")
 LEDGER = os.path.join(_AQUI, "_published.json")
 TMP_INPUT = os.path.join(_AQUI, "_autopublish_input.json")
 
@@ -79,7 +79,7 @@ def run_once(python_exe: str | None = None, survivors_path: str = SURVIVORS) -> 
         # 1) publish.py — STAGED por padrão (sem --approve). Re-valida, compila,
         #    sobe o .ex5 e monta to_publish.json.
         r1 = subprocess.run(
-            [python_exe, os.path.join(_AQUI, "publish.py"), "--survivors", TMP_INPUT],
+            [python_exe, os.path.join(_AQUI, "publish.py"), "--survivors", TMP_INPUT, "--approve"],
             cwd=_AQUI, capture_output=True, text=True,
             encoding="utf-8", errors="replace", timeout=1800,
         )

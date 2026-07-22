@@ -131,6 +131,26 @@ export default async function EADetailPage({
               </div>
             </div>
 
+            {/* Histórico de revalidações e Relatório Técnico (Exclusivo Gestor) */}
+            {isOwner && latestValidation?.reportMd && (
+              <div className="rounded-xl border border-blue-500/20 bg-[#0A0A0A] p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-blue-400" />
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Relatório Técnico de Robustez (Exclusivo Gestor)
+                    </h3>
+                  </div>
+                  <span className="rounded bg-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold text-blue-400 border border-blue-500/30">
+                    GESTOR
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {parseMarkdown(latestValidation.reportMd)}
+                </div>
+              </div>
+            )}
+
             {/* Histórico de revalidações */}
             {ea.validations.length > 0 && (
               <div className="rounded-xl border border-[#f5f5f5]/8 bg-[#0A0A0A] overflow-hidden">

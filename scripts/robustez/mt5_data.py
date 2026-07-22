@@ -48,6 +48,17 @@ def connect(path: str | None = None) -> None:
 def resolve_symbol(base: str) -> str:
     """Resolve o nome real do símbolo tolerando sufixos de broker e seleciona-o."""
     names = {s.name for s in (mt5.symbols_get() or [])}
+    if not names:
+        import time
+        for _ in range(3):
+            time.sleep(1)
+            try:
+                connect()
+            except Exception:
+                pass
+            names = {s.name for s in (mt5.symbols_get() or [])}
+            if names:
+                break
     up = base.upper()
     # 1) match exato por sufixo conhecido
     for suf in _SUFFIXES:

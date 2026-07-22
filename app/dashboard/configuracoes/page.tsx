@@ -48,39 +48,44 @@ export default async function ConfiguracoesPage() {
 
         <Section
           icon={<CreditCard className="h-3.5 w-3.5" />}
-          title="Assinatura"
+          title="Assinatura ZaionVest Pro"
           right={
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-widest",
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
                 isActive
-                  ? "border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300"
-                  : "border-rose-500/30 bg-rose-500/[0.08] text-rose-300",
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                  : "border-rose-500/40 bg-rose-500/10 text-rose-400",
               )}
             >
-              {isActive ? "Ativa" : "Inativa"}
+              <span className={cn("h-1.5 w-1.5 rounded-full", isActive ? "bg-emerald-400 animate-pulse" : "bg-rose-400")} />
+              {isActive ? "Assinatura Ativa (Pro)" : "Inativa"}
             </span>
           }
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Plano" value="ZaionVest Pro" />
-            <Field label="Status" value={statusText(status)} />
+            <Field label="Plano" value="ZaionVest Pro — Acesso Ilimitado" />
+            <Field label="Status da Assinatura" value={statusText(status)} />
             <Field
-              label="Próxima cobrança"
+              label="Próxima Renovação"
               value={
                 user.currentPeriodEnd
-                  ? new Date(user.currentPeriodEnd).toLocaleDateString("pt-BR")
-                  : "—"
+                  ? `${new Date(user.currentPeriodEnd).toLocaleDateString("pt-BR")} (Renovação Automática)`
+                  : "Assinatura ilimitada ativada pelo Gestor"
               }
             />
-            <Field label="Pagamento" value="Cartão / Pix (Asaas)" />
+            <Field label="Forma de Pagamento" value="Cartão de Crédito / Pix (Asaas)" />
           </div>
-          <Link
-            href="/billing"
-            className="mt-4 inline-flex items-center gap-2 rounded-md border border-[#f5f5f5]/10 bg-[#f5f5f5]/[0.04] px-3 py-2 text-xs text-offwhite hover:bg-[#f5f5f5]/[0.08]"
-          >
-            Gerenciar assinatura
-          </Link>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 border-t border-white/5">
+            <Link
+              href="/billing"
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-2.5 text-xs font-bold text-blue-400 hover:bg-blue-600/20 hover:text-white transition shadow-sm"
+            >
+              <CreditCard className="h-4 w-4" />
+              Gerenciar Assinatura & Planos
+            </Link>
+          </div>
         </Section>
 
         <Section icon={<KeyRound className="h-3.5 w-3.5" />} title="Segurança">
