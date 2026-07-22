@@ -178,6 +178,12 @@ def main():
                         _touch_activity()
                         if os.path.exists(STOP_FILE):
                             break
+                        # Trava de Cota: Máximo 10 por par+timeframe (30 por ativo total)
+                        c_tf = sum(1 for s in survivors if s.get("symbol") == sym and s.get("timeframe") == tf)
+                        c_sym = sum(1 for s in survivors if s.get("symbol") == sym)
+                        if c_tf >= 10 or c_sym >= 30:
+                            print(f"[noite] {sym} {tf}: cota de {c_tf}/10 no TF ({c_sym}/30 no símbolo) atingida. Pulo para o próximo!", flush=True)
+                            continue
                         try:
                             df, name = mt5_data.get_candles(sym, tf, years=args.years)
                         except Exception as e:  # noqa: BLE001
