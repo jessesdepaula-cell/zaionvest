@@ -126,6 +126,8 @@ void CheckLicense()
          Alert("ZaionVest: assinatura inativa/expirada. Renove para continuar operando.");
       else if(StringFind(resp,"wrong_broker")>=0)
          Alert("ZaionVest: Este robô é exclusivo para a corretora RoboForex.");
+      else if(StringFind(resp,"not_partner_account")>=0)
+         Alert("ZaionVest: Esta conta não pertence ao grupo de parceiros ZAION na RoboForex. Abra sua conta pelo link oficial.");
    }
 }
 

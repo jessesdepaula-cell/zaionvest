@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { isAccountInPartnerTree } from "@/lib/roboforexApi";
 
 /**
  * Endpoint de licença consultado pelo EA no MT5 do cliente (WebRequest, ~30min).
@@ -14,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
  * Resposta (sempre 200 quando é um veredito; o EA interpreta `valid`/`reason`):
  *   { valid: boolean, status, reason }
  *     reason: "ok" | "ea_rejected" | "ea_pending" | "ea_not_found"
- *           | "unknown_client" | "no_subscription" | "wrong_broker"
+ *           | "unknown_client" | "no_subscription" | "wrong_broker" | "not_partner_account"
  */
 export async function POST(
   req: NextRequest,
@@ -90,7 +91,7 @@ export async function POST(
     });
   }
 
-  // Amarração EXCLUSIVA RoboForex: Bloqueia qualquer outra corretora por padrão.
+  // 1. Amarração EXCLUSIVA RoboForex: Bloqueia qualquer outra corretora por padrão.
   const requireRoboforex = process.env.REQUIRE_ROBOFOREX !== "false";
   if (requireRoboforex) {
     const company = (body.company ?? "").toLowerCase();
@@ -99,6 +100,19 @@ export async function POST(
         valid: false,
         status: ea.status,
         reason: "wrong_broker",
+      });
+    }
+  }
+
+  // 2. Amarração com o Grupo de Parceiros RoboForex (ZAION):
+  // Valida via API oficial se a conta do cliente está cadastrada na árvore de afiliados.
+  if (body.account && process.env.ROBOFOREX_API_KEY && process.env.ROBOFOREX_PARTNER_ACCOUNT) {
+    const isPartnerAccount = await isAccountInPartnerTree(body.account);
+    if (!isPartnerAccount) {
+      return NextResponse.json({
+        valid: false,
+        status: ea.status,
+        reason: "not_partner_account",
       });
     }
   }
