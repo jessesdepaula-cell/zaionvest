@@ -67,6 +67,7 @@ async function main() {
         // não do publish. Só o CREATE define o status inicial (STAGED).
         update: {
           name: ea.name,
+          status: ea.status,
           wfe: ea.wfe,
           profitFactor: ea.profitFactor,
           maxDrawdown: ea.maxDrawdown,
@@ -84,22 +85,24 @@ async function main() {
       easCreated++;
     } else if (row.table === "EAValidation") {
       const val = row.data;
-      console.log(`- Adicionando histórico de validação para EA ID: ${val.eaId}...`);
-      
-      await prisma.eAValidation.create({
-        data: {
-          id: val.id,
-          eaId: val.eaId,
-          wfe: val.wfe,
-          oosWins: val.oosWins,
-          oosTotalWin: val.oosTotalWin,
-          approved: val.approved,
-          reportMd: val.reportMd,
-          windowsJson: val.windowsJson,
-          validatedAt: new Date(val.validatedAt),
-        }
-      });
-      validationsCreated++;
+      try {
+        await prisma.eAValidation.create({
+          data: {
+            id: val.id,
+            ea: { connect: { id: val.eaId } },
+            wfe: val.wfe ?? 0.0,
+            oosWins: val.oosWins ?? 0,
+            oosTotalWin: val.oosTotalWin ?? 0,
+            approved: val.approved ?? true,
+            reportMd: val.reportMd,
+            windowsJson: val.windowsJson,
+            validatedAt: new Date(val.validatedAt),
+          }
+        });
+        validationsCreated++;
+      } catch (err: any) {
+        console.warn(`⚠️ Não foi possível vincular EAValidation ao eaId ${val.eaId}: ${err.message}`);
+      }
     }
   }
 
