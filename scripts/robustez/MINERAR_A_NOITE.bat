@@ -38,7 +38,7 @@ REM caminho ABSOLUTO (%~dp0 = pasta deste .bat). Caminho relativo comecando com
 REM ponto (.venv-numba\...) o cmd nao engole — quebra com "'numba' nao e
 REM reconhecido como um comando".
 "%~dp0.venv-numba\Scripts\python.exe" mine_overnight.py ^
-    --symbols USDJPY,GBPUSD,EURNZD,AUDUSD,XAGUSD,BTCUSD ^
+    --symbols EURUSD,USDJPY,GBPUSD,EURNZD,AUDUSD,XAGUSD,BTCUSD ^
     --timeframes H1,H2,H4 ^
     --years 4 ^
     --pop 80 ^
