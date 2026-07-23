@@ -1,8 +1,8 @@
 {
- "rodadas": 22,
- "sobreviventes": 549,
- "simbolos": "USDJPY,GBPUSD,EURNZD,AUDUSD,XAGUSD,BTCUSD",
+ "rodadas": 13,
+ "sobreviventes": 558,
+ "simbolos": "EURUSD,USDJPY,GBPUSD,EURNZD,AUDUSD,XAGUSD,BTCUSD",
  "timeframes": "H1,H2,H4",
- "horas": 6.55,
- "atualizado": "2026-07-22T23:28:16.485194"
+ "horas": 4.99,
+ "atualizado": "2026-07-23T15:51:56.463632"
 }

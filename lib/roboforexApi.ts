@@ -15,7 +15,10 @@ export async function isAccountInPartnerTree(accountNumber: string | number): Pr
     const url = `https://my.roboforex.com/api/partners/tree?account_id=${encodeURIComponent(partnerAccount)}&api_key=${encodeURIComponent(apiKey)}&referral_account_id=${encodeURIComponent(accountNumber)}`;
     const res = await fetch(url, {
       method: "GET",
-      headers: { Accept: "application/xml, text/xml" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/xml, text/xml, */*"
+      },
       next: { revalidate: 300 } // cache de 5 minutos por performance
     });
 
