@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback } from "react";
 
 const SYMBOLS = [
-  "XAUUSD", "XAGUSD", "XAUEUR", "EURUSD", "USDJPY",
+  "WIN$", "XAUUSD", "XAGUSD", "XAUEUR", "EURUSD", "USDJPY",
   "GBPUSD", "EURNZD", "AUDUSD", "BTCUSD",
 ];
 
