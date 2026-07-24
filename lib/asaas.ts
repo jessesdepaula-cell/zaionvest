@@ -19,6 +19,15 @@ const getAsaasBaseUrl = () => {
     : "https://sandbox.asaas.com/api/v3";
 };
 
+/**
+ * Mock SÓ fora de produção e explicitamente ligado. NUNCA inferir mock pela
+ * ausência de ASAAS_API_KEY — senão, sem a chave em produção, o pagamento roda
+ * em modo fake (cliente/checkout simulados) e ninguém é cobrado de verdade.
+ * Em produção sem a chave, as funções abaixo estouram erro (falha alto e visível).
+ */
+const isAsaasMock = () =>
+  process.env.ASAAS_MOCK === "true" && process.env.NODE_ENV !== "production";
+
 const getAsaasHeaders = () => {
   return {
     "Content-Type": "application/json",
@@ -27,9 +36,7 @@ const getAsaasHeaders = () => {
 };
 
 export async function createAsaasCustomer(input: AsaasCustomerInput): Promise<string> {
-  const isMock = process.env.ASAAS_MOCK === "true" || !process.env.ASAAS_API_KEY;
-
-  if (isMock) {
+  if (isAsaasMock()) {
     console.log("[Asaas Mock] Criando cliente:", input);
     return `cus_mock_${Math.random().toString(36).substring(2, 9)}`;
   }
@@ -56,9 +63,7 @@ export async function createAsaasCustomer(input: AsaasCustomerInput): Promise<st
 export async function createAsaasSubscriptionCheckout(
   input: AsaasSubscriptionInput
 ): Promise<string> {
-  const isMock = process.env.ASAAS_MOCK === "true" || !process.env.ASAAS_API_KEY;
-
-  if (isMock) {
+  if (isAsaasMock()) {
     console.log("[Asaas Mock] Criando checkout recorrente:", input);
     // Retorna uma URL interna de sucesso mockada para ativar o usuário de forma simulada
     return `${input.successUrl}&mock_active=true`;
