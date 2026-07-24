@@ -7,7 +7,12 @@ export async function POST(req: Request) {
   const user = await getOrCreateUser();
   if (!user) return NextResponse.redirect(new URL("/sign-in", req.url));
 
-  const isMock = process.env.ASAAS_MOCK === "true" || !process.env.ASAAS_API_KEY;
+  // Mock SÓ quando explicitamente ligado E fora de produção. NUNCA inferir mock
+  // pela ausência de ASAAS_API_KEY — senão esquecer a chave em produção liberaria
+  // assinatura "active" de graça para qualquer usuário logado. Sem a chave em
+  // prod, o checkout falha alto (catch abaixo → /billing?error).
+  const isMock =
+    process.env.ASAAS_MOCK === "true" && process.env.NODE_ENV !== "production";
 
   if (isMock) {
     await prisma.user.update({

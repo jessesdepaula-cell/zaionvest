@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkCronSecret } from "@/lib/apiAuth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -11,11 +12,8 @@ export const dynamic = "force-dynamic";
  * vira lixo rapidamente — esse housekeeping mantém o banco enxuto.
  */
 export async function GET(req: Request) {
-  const auth = req.headers.get("authorization");
-  const secret = process.env.CRON_SECRET;
-  if (secret && auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = checkCronSecret(req);
+  if (unauthorized) return unauthorized;
 
   const deleted = await prisma.$executeRawUnsafe(`
     WITH ranked AS (

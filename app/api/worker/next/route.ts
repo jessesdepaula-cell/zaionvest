@@ -1,17 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { checkCronSecret } from "@/lib/apiAuth";
 
 /**
  * O worker (PC/VPS Windows + MT5) chama aqui para reclamar o próximo job.
  * Claim atômico: marca PENDING → RUNNING garantindo que dois workers não
- * peguem o mesmo job. Protegido por Bearer CRON_SECRET.
+ * peguem o mesmo job. Protegido por Bearer CRON_SECRET (fail-closed).
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (secret && authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = checkCronSecret(req);
+  if (unauthorized) return unauthorized;
 
   const { workerId } = (await req.json().catch(() => ({}))) as {
     workerId?: string;

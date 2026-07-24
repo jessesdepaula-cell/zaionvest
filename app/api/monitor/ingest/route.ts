@@ -63,6 +63,16 @@ function toBig(v: string | number): bigint {
 }
 
 export async function POST(req: NextRequest) {
+  // Camada extra (defense-in-depth): se MONITOR_INGEST_SECRET estiver setado,
+  // exige o header `x-ingest-secret`. Opt-in para não quebrar os EAs já
+  // instalados nos MT5 dos clientes. NOTA: a identificação abaixo usa o id/clerkId
+  // do usuário como "chave", que não é um segredo rotacionável — o fix completo é
+  // uma coluna `monitorKey` por usuário (migração + atualizar o .mq5).
+  const ingestSecret = process.env.MONITOR_INGEST_SECRET;
+  if (ingestSecret && req.headers.get("x-ingest-secret") !== ingestSecret) {
+    return NextResponse.json({ ok: false, error: "invalid ingest secret" }, { status: 401 });
+  }
+
   const got =
     req.headers.get("x-api-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");

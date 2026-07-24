@@ -64,19 +64,22 @@ export async function requireActiveSubscription() {
   const user = await getOrCreateUser();
   if (!user) return { ok: false as const, reason: "unauthenticated" as const };
 
-  let status = user.subscriptionStatus as SubscriptionStatus;
+  const status = user.subscriptionStatus as SubscriptionStatus;
+  const active = status === "active" || status === "trialing";
+  if (!active) return { ok: false as const, reason: "inactive" as const, user };
 
-  // Se o trial expirou, atualiza para inativo no banco
-  if (status === "trialing" && user.currentPeriodEnd && user.currentPeriodEnd < new Date()) {
+  // Expiração vale para QUALQUER status pago (active ou trialing), não só trial.
+  // Antes, um "active" com currentPeriodEnd vencido continuava passando aqui e só
+  // era barrado se o webhook tivesse rebaixado para past_due — se o webhook se
+  // perdesse, o acesso vazava. Agora a data é a fonte da verdade (igual ao
+  // download do .ex5). Rebaixa no banco para refletir o estado real.
+  if (user.currentPeriodEnd && user.currentPeriodEnd < new Date()) {
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: { subscriptionStatus: "inactive" },
     });
     return { ok: false as const, reason: "inactive" as const, user: updated };
   }
-
-  const active = status === "active" || status === "trialing";
-  if (!active) return { ok: false as const, reason: "inactive" as const, user };
 
   return { ok: true as const, user };
 }

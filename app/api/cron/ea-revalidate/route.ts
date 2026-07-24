@@ -1,19 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { enqueueRevalidation } from "@/lib/queue";
+import { checkCronSecret } from "@/lib/apiAuth";
 
 /**
  * Cron de revalidação. Enfileira (não executa) a revalidação dos EAs APPROVED
  * cuja cadência venceu. O worker Windows/MT5 consome a fila depois.
- * Protegido por Bearer CRON_SECRET.
+ * Protegido por Bearer CRON_SECRET (fail-closed).
  */
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-
-  if (secret && authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = checkCronSecret(req);
+  if (unauthorized) return unauthorized;
 
   // Cadência de revalidação (dias). Default: 30.
   const revalidationDays = Number(process.env.REVALIDATION_DAYS ?? "30");

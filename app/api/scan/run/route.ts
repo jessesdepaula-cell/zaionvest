@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrCreateUser } from "@/lib/subscription";
+import { requireActiveSubscription } from "@/lib/subscription";
 import { scanAllActiveForUser, scanWatchlistItem } from "@/lib/scan/orchestrator";
 
 export const runtime = "nodejs";
@@ -9,10 +9,16 @@ export const maxDuration = 300;
 // Body opcional: { watchlistId } → scan apenas desse item
 // Sem body → scan de toda a watchlist ativa do usuário
 export async function POST(req: Request) {
-  const user = await getOrCreateUser();
-  if (!user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  // Scan roda o motor de IA (custa OpenAI/Gemini) — exige assinatura ativa, não
+  // só login. Um usuário inativo não pode disparar scans pagos.
+  const sub = await requireActiveSubscription();
+  if (!sub.ok) {
+    return NextResponse.json(
+      { error: sub.reason === "unauthenticated" ? "Não autenticado" : "Assinatura inativa" },
+      { status: sub.reason === "unauthenticated" ? 401 : 402 },
+    );
   }
+  const user = sub.user;
 
   const body = (await req.json().catch(() => null)) as
     | { watchlistId?: string; listOnly?: boolean }

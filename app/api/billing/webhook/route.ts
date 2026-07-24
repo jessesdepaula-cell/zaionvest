@@ -2,14 +2,26 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  const isMock = process.env.ASAAS_MOCK === "true" || !process.env.ASAAS_API_KEY;
+  // Mock só fora de produção e explicitamente ligado (mesma regra do checkout).
+  const isMock =
+    process.env.ASAAS_MOCK === "true" && process.env.NODE_ENV !== "production";
   if (isMock) {
     return NextResponse.json({ ok: true, mock: true });
   }
 
-  const token = req.headers.get("asaas-access-token");
+  // FAIL-CLOSED: sem o segredo configurado, o webhook rejeita. Antes era
+  // `if (expectedToken && ...)` — sem ASAAS_WEBHOOK_SECRET, qualquer POST anônimo
+  // podia marcar um cliente como "active" (fraude de assinatura).
   const expectedToken = process.env.ASAAS_WEBHOOK_SECRET;
-  if (expectedToken && token !== expectedToken) {
+  if (!expectedToken) {
+    console.error("[webhook] ASAAS_WEBHOOK_SECRET não configurado — rejeitando");
+    return NextResponse.json(
+      { error: "Webhook não configurado" },
+      { status: 503 },
+    );
+  }
+  const token = req.headers.get("asaas-access-token");
+  if (token !== expectedToken) {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 

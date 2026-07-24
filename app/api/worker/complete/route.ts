@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEARejectedEmail } from "@/lib/email";
+import { checkCronSecret } from "@/lib/apiAuth";
 
 /**
  * O worker devolve o resultado de um job aqui. Toda a mutação de estado do EA
@@ -24,11 +25,8 @@ type RevalidationResult = {
 };
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (secret && authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = checkCronSecret(req);
+  if (unauthorized) return unauthorized;
 
   const body = (await req.json().catch(() => null)) as {
     jobId?: string;

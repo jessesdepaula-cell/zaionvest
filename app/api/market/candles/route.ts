@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCandles } from "@/lib/market/router";
 import type { Timeframe } from "@/lib/market/types";
+import { getOrCreateUser } from "@/lib/subscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,6 +9,12 @@ export const dynamic = "force-dynamic";
 const VALID_TFS: Timeframe[] = ["M5", "M15", "M30", "H1", "H4", "D1"];
 
 export async function GET(req: Request) {
+  // Não é proxy público: exige login (alimenta os gráficos do dashboard).
+  const user = await getOrCreateUser();
+  if (!user) {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const symbol = url.searchParams.get("symbol");
   const tfParam = url.searchParams.get("tf") ?? "M15";
