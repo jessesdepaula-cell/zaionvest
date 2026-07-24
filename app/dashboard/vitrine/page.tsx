@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { EACard } from "@/components/vitrine/EACard";
 import { EAFilters } from "@/components/vitrine/EAFilters";
+import { PortfoliosSection } from "@/components/vitrine/PortfoliosSection";
 import { Suspense } from "react";
 import { Bot } from "lucide-react";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import Link from "next/link";
 export const revalidate = 120;
 
 export const metadata = {
-  title: "Vitrine de EAs — ZaionVest",
+  title: "Vitrine de EAs (Forex & Cripto) — ZaionVest",
 };
 
 interface SearchParams {
@@ -49,7 +50,11 @@ export default async function DashboardVitrinePage({
 
   const downloadedIds = new Set(user.eaDownloads.map((d) => d.eaId));
 
-  const where: Record<string, unknown> = { status: "APPROVED" };
+  // Vitrine de Forex / Cripto (Exclui robôs do Mini Índice Bovespa B3 que possuem sua vitrine exclusiva)
+  const where: Record<string, unknown> = {
+    status: "APPROVED",
+    symbol: { notIn: ["WIN$", "WIN", "WINZ26", "WINFOOT", "WIN@"] },
+  };
   if (params.symbol) where.symbol = params.symbol;
   if (params.timeframe) where.timeframe = params.timeframe;
   if (params.style) where.style = params.style;
@@ -156,6 +161,9 @@ export default async function DashboardVitrinePage({
             </p>
           </div>
         )}
+
+        {/* Portfólios Prontos Zaion */}
+        <PortfoliosSection />
 
         {/* Filtros */}
         <Suspense fallback={null}>

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Download, LifeBuoy, User, Users, Activity, Video, ShieldCheck } from "lucide-react";
+import { Bot, Download, LifeBuoy, User, Users, Activity, Video, ShieldCheck, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard/vitrine", icon: Bot, label: "Vitrine de EAs" },
+  { href: "/dashboard/vitrine", icon: Bot, label: "Vitrine Forex / Cripto" },
+  { href: "/dashboard/vitrine-bovespa", icon: TrendingUp, label: "Vitrine Bovespa (B3)" },
   { href: "/dashboard/downloads", icon: Download, label: "Meus Downloads" },
   { href: "/dashboard/monitor", icon: Activity, label: "Zaion Monitor" },
   { href: "/dashboard/tutoriais", icon: Video, label: "Tutoriais" },
