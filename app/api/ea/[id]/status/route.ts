@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { isAccountInPartnerTree } from "@/lib/roboforexApi";
+import { isOwner } from "@/lib/subscription";
 
 /**
  * Endpoint de licença consultado pelo EA no MT5 do cliente (WebRequest, ~30min).
@@ -77,43 +78,47 @@ export async function POST(
     });
   }
 
-  const activeStatus =
-    user.subscriptionStatus === "active" ||
-    user.subscriptionStatus === "trialing";
-  const notExpired =
-    !user.currentPeriodEnd || user.currentPeriodEnd.getTime() > Date.now();
+  const userIsOwner = isOwner({ email });
 
-  if (!activeStatus || !notExpired) {
-    return NextResponse.json({
-      valid: false,
-      status: ea.status,
-      reason: "no_subscription",
-    });
-  }
+  if (!userIsOwner) {
+    const activeStatus =
+      user.subscriptionStatus === "active" ||
+      user.subscriptionStatus === "trialing";
+    const notExpired =
+      !user.currentPeriodEnd || user.currentPeriodEnd.getTime() > Date.now();
 
-  // 1. Amarração EXCLUSIVA RoboForex: Bloqueia qualquer outra corretora por padrão.
-  const requireRoboforex = process.env.REQUIRE_ROBOFOREX !== "false";
-  if (requireRoboforex) {
-    const company = (body.company ?? "").toLowerCase();
-    if (!company.includes("roboforex")) {
+    if (!activeStatus || !notExpired) {
       return NextResponse.json({
         valid: false,
         status: ea.status,
-        reason: "wrong_broker",
+        reason: "no_subscription",
       });
     }
-  }
 
-  // 2. Amarração com o Grupo de Parceiros RoboForex (ZAION):
-  // Valida via API oficial se a conta do cliente está cadastrada na árvore de afiliados.
-  if (body.account && process.env.ROBOFOREX_API_KEY && process.env.ROBOFOREX_PARTNER_ACCOUNT) {
-    const isPartnerAccount = await isAccountInPartnerTree(body.account);
-    if (!isPartnerAccount) {
-      return NextResponse.json({
-        valid: false,
-        status: ea.status,
-        reason: "not_partner_account",
-      });
+    // 1. Amarração EXCLUSIVA RoboForex: Bloqueia qualquer outra corretora para assinantes.
+    const requireRoboforex = process.env.REQUIRE_ROBOFOREX !== "false";
+    if (requireRoboforex) {
+      const company = (body.company ?? "").toLowerCase();
+      if (!company.includes("roboforex")) {
+        return NextResponse.json({
+          valid: false,
+          status: ea.status,
+          reason: "wrong_broker",
+        });
+      }
+    }
+
+    // 2. Amarração com o Grupo de Parceiros RoboForex (ZAION):
+    // Valida via API oficial se a conta do cliente está cadastrada na árvore de afiliados.
+    if (body.account && process.env.ROBOFOREX_API_KEY && process.env.ROBOFOREX_PARTNER_ACCOUNT) {
+      const isPartnerAccount = await isAccountInPartnerTree(body.account);
+      if (!isPartnerAccount) {
+        return NextResponse.json({
+          valid: false,
+          status: ea.status,
+          reason: "not_partner_account",
+        });
+      }
     }
   }
 
